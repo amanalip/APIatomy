@@ -71,11 +71,11 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
   };
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950 p-3">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3 shadow-sm transition-colors duration-150">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
-          <Terminal className="w-4 h-4 text-slate-400" />
-          <span className="text-xs font-semibold text-slate-300">cURL Command</span>
+          <Terminal className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+          <span className="text-xs font-semibold text-slate-800 dark:text-slate-300">cURL Command</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -83,7 +83,7 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
             <select
               value={selectedServer}
               onChange={(e) => setSelectedServer(e.target.value)}
-              className="bg-slate-900 border border-slate-700 text-slate-300 text-[11px] rounded px-2 py-0.5"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] rounded px-2 py-0.5"
             >
               {servers.map((s) => (
                 <option key={s.url} value={s.url}>
@@ -95,17 +95,17 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
 
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+            className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-sm"
             title="Copy curl command to clipboard"
           >
             {copied ? (
               <>
-                <Check className="w-3 h-3 text-emerald-400" />
-                <span className="text-emerald-400 text-[11px]">Copied</span>
+                <Check className="w-3 h-3 text-emerald-500" />
+                <span className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">Copied</span>
               </>
             ) : (
               <>
-                <Copy className="w-3 h-3 text-slate-400" />
+                <Copy className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                 <span className="text-[11px]">Copy</span>
               </>
             )}
@@ -113,7 +113,7 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
         </div>
       </div>
 
-      <pre className="p-2.5 rounded-lg bg-slate-900/90 text-slate-300 text-xs font-mono overflow-x-auto whitespace-pre leading-relaxed border border-slate-800/80">
+      <pre className="p-3 rounded-lg bg-slate-900 text-slate-200 text-xs font-mono overflow-x-auto whitespace-pre leading-relaxed border border-slate-800 shadow-inner">
         <code>{curlCommand}</code>
       </pre>
     </div>

@@ -11,7 +11,6 @@ import { EndpointDetails } from './ui/EndpointDetails';
 import { SchemaViewer } from './ui/SchemaViewer';
 import { TopologyGraph } from './graph/TopologyGraph';
 import { DiagnosticsBar } from './ui/DiagnosticsBar';
-import { ThemeProvider } from './theme/ThemeContext';
 
 export function App() {
   const [rawText, setRawText] = useState<string>(() => {
@@ -109,116 +108,114 @@ export function App() {
   };
 
   return (
-    <ThemeProvider>
-      <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden font-sans select-none">
-        {/* Header Navigation */}
-        <Header
-          spec={spec}
-          activeView={activeView}
-          setActiveView={setActiveView}
-          onSelectSample={handleSelectSample}
-          onUploadText={handleUploadText}
-          isEditorOpen={isEditorOpen}
-          setIsEditorOpen={setIsEditorOpen}
-        />
+    <div className="flex flex-col h-screen w-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans select-none transition-colors duration-150">
+      {/* Header Navigation */}
+      <Header
+        spec={spec}
+        activeView={activeView}
+        setActiveView={setActiveView}
+        onSelectSample={handleSelectSample}
+        onUploadText={handleUploadText}
+        isEditorOpen={isEditorOpen}
+        setIsEditorOpen={setIsEditorOpen}
+      />
 
-        {/* Main Split-Pane Workspace */}
-        <div className="flex-1 flex overflow-hidden relative">
-          {/* Left: Code Editor Pane */}
-          {isEditorOpen && (
+      {/* Main Split-Pane Workspace */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left: Code Editor Pane */}
+        {isEditorOpen && (
+          <div
+            style={{ width: `${editorWidth}px` }}
+            className="h-full flex flex-col border-r border-slate-200 dark:border-slate-800 shrink-0 relative bg-white dark:bg-slate-950 transition-colors duration-150"
+          >
+            <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/60 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+              <span className="font-mono text-[11px] font-medium">
+                Spec Editor ({spec.originalFormat === 'swagger2' ? 'Swagger 2.0' : 'OpenAPI 3.x'})
+              </span>
+              <span className="text-[10px] text-slate-500">Live Parser</span>
+            </div>
+
+            <div className="flex-1 overflow-hidden">
+              <EditorPane
+                ref={editorPaneRef}
+                value={rawText}
+                onChange={(newText) => setRawText(newText)}
+                format="yaml"
+              />
+            </div>
+
+            {/* Resizer Handle */}
             <div
-              style={{ width: `${editorWidth}px` }}
-              className="h-full flex flex-col border-r border-slate-800 shrink-0 relative bg-slate-950"
-            >
-              <div className="px-3 py-2 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between text-xs text-slate-400">
-                <span className="font-mono text-[11px]">
-                  Spec Editor ({spec.originalFormat === 'swagger2' ? 'Swagger 2.0' : 'OpenAPI 3.x'})
-                </span>
-                <span className="text-[10px] text-slate-500">Auto-parsing</span>
-              </div>
+              onMouseDown={handleMouseDownResize}
+              className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-blue-500/50 active:bg-blue-500 transition z-20"
+              title="Drag to resize editor pane"
+            />
+          </div>
+        )}
 
-              <div className="flex-1 overflow-hidden">
-                <EditorPane
-                  ref={editorPaneRef}
-                  value={rawText}
-                  onChange={(newText) => setRawText(newText)}
-                  format="yaml"
+        {/* Right: Visual Explorer Workspace */}
+        <div className="flex-1 flex overflow-hidden relative bg-slate-50 dark:bg-slate-950 transition-colors duration-150">
+          {/* View 1: Endpoints Explorer */}
+          {activeView === 'endpoints' && (
+            <div className="flex-1 flex h-full overflow-hidden">
+              <div className={`${selectedEndpoint ? 'w-1/2' : 'w-full'} h-full transition-all duration-150`}>
+                <EndpointExplorer
+                  endpoints={spec.endpoints}
+                  selectedEndpoint={selectedEndpoint}
+                  onSelectEndpoint={(ep) => setSelectedEndpoint(ep)}
                 />
               </div>
 
-              {/* Resizer Handle */}
-              <div
-                onMouseDown={handleMouseDownResize}
-                className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-blue-500/50 active:bg-blue-500 transition z-20"
-                title="Drag to resize editor pane"
+              {selectedEndpoint && (
+                <div className="w-1/2 h-full">
+                  <EndpointDetails
+                    endpoint={selectedEndpoint}
+                    servers={spec.servers}
+                    schemas={spec.schemas}
+                    securitySchemes={spec.securitySchemes}
+                    onClose={() => setSelectedEndpoint(null)}
+                    onSelectSchema={handleNavigateToSchema}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* View 2: Schema Viewer */}
+          {activeView === 'schemas' && (
+            <div className="flex-1 h-full">
+              <SchemaViewer
+                schemas={spec.schemas}
+                selectedSchemaName={selectedSchemaName}
+                onSelectSchema={(name) => setSelectedSchemaName(name)}
               />
             </div>
           )}
 
-          {/* Right: Visual Explorer Workspace */}
-          <div className="flex-1 flex overflow-hidden relative bg-slate-950">
-            {/* View 1: Endpoints Explorer */}
-            {activeView === 'endpoints' && (
-              <div className="flex-1 flex h-full overflow-hidden">
-                <div className={`${selectedEndpoint ? 'w-1/2' : 'w-full'} h-full transition-all duration-150`}>
-                  <EndpointExplorer
-                    endpoints={spec.endpoints}
-                    selectedEndpoint={selectedEndpoint}
-                    onSelectEndpoint={(ep) => setSelectedEndpoint(ep)}
-                  />
-                </div>
-
-                {selectedEndpoint && (
-                  <div className="w-1/2 h-full">
-                    <EndpointDetails
-                      endpoint={selectedEndpoint}
-                      servers={spec.servers}
-                      schemas={spec.schemas}
-                      securitySchemes={spec.securitySchemes}
-                      onClose={() => setSelectedEndpoint(null)}
-                      onSelectSchema={handleNavigateToSchema}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* View 2: Schema Viewer */}
-            {activeView === 'schemas' && (
-              <div className="flex-1 h-full">
-                <SchemaViewer
-                  schemas={spec.schemas}
-                  selectedSchemaName={selectedSchemaName}
-                  onSelectSchema={(name) => setSelectedSchemaName(name)}
-                />
-              </div>
-            )}
-
-            {/* View 3: API Topology Graph */}
-            {activeView === 'graph' && (
-              <div className="flex-1 h-full">
-                <TopologyGraph
-                  spec={spec}
-                  onSelectEndpoint={(ep) => {
-                    setSelectedEndpoint(ep);
-                    setActiveView('endpoints');
-                  }}
-                  onSelectSchema={(schemaName, schema) => {
-                    handleNavigateToSchema(schemaName, schema);
-                  }}
-                />
-              </div>
-            )}
-          </div>
+          {/* View 3: API Topology Graph */}
+          {activeView === 'graph' && (
+            <div className="flex-1 h-full">
+              <TopologyGraph
+                spec={spec}
+                onSelectEndpoint={(ep) => {
+                  setSelectedEndpoint(ep);
+                  setActiveView('endpoints');
+                }}
+                onSelectSchema={(schemaName, schema) => {
+                  handleNavigateToSchema(schemaName, schema);
+                }}
+              />
+            </div>
+          )}
         </div>
-
-        {/* Bottom Diagnostics Drawer */}
-        <DiagnosticsBar
-          diagnostics={spec.diagnostics}
-          onSelectDiagnostic={handleSelectDiagnostic}
-        />
       </div>
-    </ThemeProvider>
+
+      {/* Bottom Diagnostics Drawer */}
+      <DiagnosticsBar
+        diagnostics={spec.diagnostics}
+        onSelectDiagnostic={handleSelectDiagnostic}
+      />
+    </div>
   );
 }
 

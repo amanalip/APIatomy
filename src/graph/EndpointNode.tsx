@@ -17,14 +17,16 @@ export const EndpointNode: React.FC<NodeProps<any>> = memo(({ data, selected }) 
 
   return (
     <div
-      className={`relative rounded-xl border px-3 py-2.5 shadow-md transition-all duration-150 w-[280px] bg-slate-900/95 backdrop-blur text-slate-100 ${
-        selected ? 'ring-2 ring-blue-500 border-blue-500 shadow-blue-500/20' : 'border-slate-800 hover:border-slate-700'
+      className={`relative rounded-xl border px-3 py-2.5 shadow-md transition-all duration-150 w-[280px] bg-white/95 dark:bg-slate-900/95 backdrop-blur text-slate-900 dark:text-slate-100 ${
+        selected
+          ? 'ring-2 ring-blue-500 border-blue-500 shadow-blue-500/20'
+          : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
       }`}
     >
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-2.5 !h-2.5 !bg-slate-400 !border-2 !border-slate-900"
+        className="!w-2.5 !h-2.5 !bg-slate-400 !border-2 !border-white dark:!border-slate-900"
       />
 
       <div className="flex items-center gap-2 mb-1.5">
@@ -34,14 +36,14 @@ export const EndpointNode: React.FC<NodeProps<any>> = memo(({ data, selected }) 
           {methodConfig.label}
         </span>
         <span
-          className="text-xs font-mono font-medium text-slate-200 truncate flex-1"
+          className="text-xs font-mono font-semibold text-slate-800 dark:text-slate-200 truncate flex-1"
           title={nodeData.path}
         >
           {nodeData.path}
         </span>
       </div>
 
-      <div className="text-[11px] text-slate-400 truncate leading-snug" title={nodeData.summary}>
+      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate leading-snug" title={nodeData.summary}>
         {nodeData.summary}
       </div>
 
@@ -50,13 +52,13 @@ export const EndpointNode: React.FC<NodeProps<any>> = memo(({ data, selected }) 
           {nodeData.tags.slice(0, 2).map((t) => (
             <span
               key={t}
-              className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-300 border border-slate-700/50"
+              className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700/50"
             >
               {t}
             </span>
           ))}
           {nodeData.tags.length > 2 && (
-            <span className="text-[10px] text-slate-500">+{nodeData.tags.length - 2}</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">+{nodeData.tags.length - 2}</span>
           )}
         </div>
       )}
@@ -64,7 +66,7 @@ export const EndpointNode: React.FC<NodeProps<any>> = memo(({ data, selected }) 
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-2.5 !h-2.5 !bg-blue-500 !border-2 !border-slate-900"
+        className="!w-2.5 !h-2.5 !bg-blue-500 !border-2 !border-white dark:!border-slate-900"
       />
     </div>
   );

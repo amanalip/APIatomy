@@ -1,12 +1,16 @@
 import { toPng } from 'html-to-image';
 
-export async function exportGraphToPng(elementId: string, filename = 'apiatomy-topology.png'): Promise<boolean> {
+export async function exportGraphToPng(
+  elementId: string,
+  filename = 'apiatomy-topology.png',
+  backgroundColor = '#020617'
+): Promise<boolean> {
   const element = document.getElementById(elementId);
   if (!element) return false;
 
   try {
     const dataUrl = await toPng(element, {
-      backgroundColor: '#020617', // slate-950
+      backgroundColor,
       quality: 0.95,
       pixelRatio: 2,
       filter: (node) => {

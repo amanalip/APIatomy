@@ -24,53 +24,55 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
   });
 
   return (
-    <div className="border-t border-slate-800 bg-slate-950 text-slate-200 z-20">
+    <div className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 z-20 transition-colors duration-150 shadow-lg">
       {/* Diagnostics Bar Toggle */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900/90 text-xs border-b border-slate-800">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50/90 dark:bg-slate-900/90 text-xs border-b border-slate-200 dark:border-slate-800">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-3 hover:text-white transition"
+          className="flex items-center gap-3 hover:text-slate-900 dark:hover:text-white transition"
         >
-          <div className="flex items-center gap-1.5 font-medium">
+          <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-200">
             {diagnostics.length === 0 ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             ) : errorCount > 0 ? (
-              <XCircle className="w-4 h-4 text-red-400" />
+              <XCircle className="w-4 h-4 text-red-500" />
             ) : (
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
             )}
             <span>Diagnostics</span>
           </div>
 
           <div className="flex items-center gap-2 font-mono text-[11px]">
             {errorCount > 0 && (
-              <span className="flex items-center gap-1 px-1.5 py-0.2 rounded bg-red-500/20 text-red-400 font-bold">
+              <span className="flex items-center gap-1 px-1.5 py-0.2 rounded bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
                 {errorCount} {errorCount === 1 ? 'error' : 'errors'}
               </span>
             )}
             {warningCount > 0 && (
-              <span className="flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">
+              <span className="flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-500/30">
                 {warningCount} {warningCount === 1 ? 'warning' : 'warnings'}
               </span>
             )}
             {infoCount > 0 && (
-              <span className="flex items-center gap-1 px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-400">
+              <span className="flex items-center gap-1 px-1.5 py-0.2 rounded bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-500/30">
                 {infoCount} info
               </span>
             )}
             {diagnostics.length === 0 && (
-              <span className="text-emerald-400 text-[11px]">No issues detected</span>
+              <span className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">No issues detected</span>
             )}
           </div>
         </button>
 
         <div className="flex items-center gap-2">
           {isOpen && (
-            <div className="flex items-center gap-1 bg-slate-800/80 p-0.5 rounded text-[11px]">
+            <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 p-0.5 rounded text-[11px]">
               <button
                 onClick={() => setActiveFilter('all')}
                 className={`px-2 py-0.5 rounded ${
-                  activeFilter === 'all' ? 'bg-slate-700 text-white font-medium' : 'text-slate-400'
+                  activeFilter === 'all'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-medium shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
                 All ({diagnostics.length})
@@ -78,7 +80,9 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
               <button
                 onClick={() => setActiveFilter('error')}
                 className={`px-2 py-0.5 rounded ${
-                  activeFilter === 'error' ? 'bg-red-900/60 text-red-300 font-medium' : 'text-slate-400'
+                  activeFilter === 'error'
+                    ? 'bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-300 font-medium'
+                    : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
                 Errors ({errorCount})
@@ -86,7 +90,9 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
               <button
                 onClick={() => setActiveFilter('warning')}
                 className={`px-2 py-0.5 rounded ${
-                  activeFilter === 'warning' ? 'bg-amber-900/60 text-amber-300 font-medium' : 'text-slate-400'
+                  activeFilter === 'warning'
+                    ? 'bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-medium'
+                    : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
                 Warnings ({warningCount})
@@ -96,7 +102,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
 
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200"
+            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
           >
             {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           </button>
@@ -105,7 +111,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
 
       {/* Expandable Drawer Content */}
       {isOpen && (
-        <div className="max-h-48 overflow-y-auto divide-y divide-slate-800/60 bg-slate-950/95 font-mono text-xs">
+        <div className="max-h-48 overflow-y-auto divide-y divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/95 font-mono text-xs">
           {filteredDiagnostics.length === 0 ? (
             <div className="p-3 text-center text-slate-500 font-sans">
               No diagnostic entries match the selected filter.
@@ -119,30 +125,30 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
                 <div
                   key={`${diag.id}-${index}`}
                   onClick={() => onSelectDiagnostic?.(diag)}
-                  className="flex items-center justify-between p-2.5 hover:bg-slate-900/80 cursor-pointer transition"
+                  className="flex items-center justify-between p-2.5 hover:bg-slate-100/80 dark:hover:bg-slate-900/80 cursor-pointer transition"
                 >
                   <div className="flex items-center gap-2.5 min-w-0 pr-4">
                     {isError ? (
-                      <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                      <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
                     ) : isWarning ? (
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     ) : (
-                      <Info className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                      <Info className="w-3.5 h-3.5 text-sky-500 shrink-0" />
                     )}
 
-                    <span className="text-slate-200 truncate font-sans text-xs">
+                    <span className="text-slate-800 dark:text-slate-200 truncate font-sans text-xs">
                       {diag.message}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0 text-[11px] text-slate-400">
+                  <div className="flex items-center gap-3 shrink-0 text-[11px] text-slate-500 dark:text-slate-400">
                     {diag.path && (
-                      <span className="text-slate-500 text-[10px] truncate max-w-xs">
+                      <span className="text-slate-400 dark:text-slate-500 text-[10px] truncate max-w-xs">
                         {diag.path}
                       </span>
                     )}
                     {diag.line && (
-                      <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px]">
+                      <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] border border-slate-200 dark:border-slate-700">
                         Line {diag.line}
                       </span>
                     )}

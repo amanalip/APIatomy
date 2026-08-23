@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ApiSpecModel } from '../model';
 import { SAMPLE_SPECS, SampleSpecOption } from '../samples';
 import { compressSpecToHash, copyTextToClipboard } from '../share/urlHash';
@@ -37,9 +37,21 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { theme, toggleTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [copiedShare, setCopiedShare] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
   const [isSampleDropdownOpen, setIsSampleDropdownOpen] = useState(false);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsSampleDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleShare = async () => {
     const hash = compressSpecToHash(spec.rawText);
@@ -76,7 +88,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="h-14 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md px-4 flex items-center justify-between text-slate-100 shrink-0 z-30 select-none">
+    <header className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/90 backdrop-blur-md px-4 flex items-center justify-between text-slate-800 dark:text-slate-100 shrink-0 z-30 select-none transition-colors duration-150">
       {/* Brand & Spec Info */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
@@ -85,25 +97,25 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm tracking-tight text-white">APIatomy</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded font-mono font-medium bg-blue-500/20 text-blue-300 border border-blue-500/30">
+              <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">APIatomy</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded font-mono font-medium bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
                 v{spec.version}
               </span>
             </div>
-            <div className="text-[11px] text-slate-400 font-mono truncate max-w-[200px]" title={spec.title}>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[200px]" title={spec.title}>
               {spec.title}
             </div>
           </div>
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="hidden md:flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 ml-4">
+        <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-900/90 p-1 rounded-xl border border-slate-200 dark:border-slate-800 ml-4">
           <button
             onClick={() => setActiveView('endpoints')}
             className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg transition ${
               activeView === 'endpoints'
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -115,7 +127,7 @@ export const Header: React.FC<HeaderProps> = ({
             className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg transition ${
               activeView === 'schemas'
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             <Code2 className="w-3.5 h-3.5" />
@@ -127,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({
             className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg transition ${
               activeView === 'graph'
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             <Network className="w-3.5 h-3.5" />
@@ -143,28 +155,28 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => setIsEditorOpen(!isEditorOpen)}
           className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition ${
             isEditorOpen
-              ? 'bg-blue-950/60 text-blue-300 border-blue-700/60'
-              : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
+              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700/60 font-semibold'
+              : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800'
           }`}
           title="Toggle OpenAPI YAML / JSON Code Editor"
         >
-          <Code2 className="w-3.5 h-3.5 text-blue-400" />
+          <Code2 className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
           <span className="hidden sm:inline">Editor</span>
         </button>
 
         {/* Sample Spec Selector */}
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsSampleDropdownOpen(!isSampleDropdownOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 transition"
           >
             <span>Samples</span>
-            <ChevronDown className="w-3 h-3 text-slate-400" />
+            <ChevronDown className="w-3 h-3 text-slate-500 dark:text-slate-400" />
           </button>
 
           {isSampleDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-64 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl p-1.5 space-y-1 z-50">
-              <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-500">
+            <div className="absolute right-0 mt-2 w-64 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 space-y-1 z-50">
+              <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Preset Specifications
               </div>
               {SAMPLE_SPECS.map((sample) => (
@@ -174,10 +186,10 @@ export const Header: React.FC<HeaderProps> = ({
                     onSelectSample(sample);
                     setIsSampleDropdownOpen(false);
                   }}
-                  className="w-full text-left p-2 rounded-lg hover:bg-slate-800/80 transition flex flex-col gap-0.5"
+                  className="w-full text-left p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/80 transition flex flex-col gap-0.5"
                 >
-                  <div className="text-xs font-semibold text-slate-200">{sample.name}</div>
-                  <div className="text-[11px] text-slate-400 leading-tight">
+                  <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">{sample.name}</div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
                     {sample.description}
                   </div>
                 </button>
@@ -189,10 +201,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Upload Spec */}
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 transition"
           title="Upload OpenAPI or Swagger file (.yaml, .yml, .json)"
         >
-          <Upload className="w-3.5 h-3.5 text-slate-400" />
+          <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span className="hidden sm:inline">Upload</span>
         </button>
         <input
@@ -206,13 +218,13 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Copy Normalized JSON */}
         <button
           onClick={handleCopyJson}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 transition"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 transition"
           title="Copy normalized AST JSON to clipboard"
         >
           {copiedJson ? (
-            <Check className="w-3.5 h-3.5 text-emerald-400" />
+            <Check className="w-3.5 h-3.5 text-emerald-500" />
           ) : (
-            <FileJson className="w-3.5 h-3.5 text-slate-400" />
+            <FileJson className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           )}
           <span className="hidden md:inline">{copiedJson ? 'Copied' : 'JSON'}</span>
         </button>
@@ -239,10 +251,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition"
-          title="Toggle light/dark theme"
+          className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         >
-          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
         </button>
 
         {/* GitHub Link */}
@@ -250,7 +262,7 @@ export const Header: React.FC<HeaderProps> = ({
           href="https://github.com/amanalip/APIatomy"
           target="_blank"
           rel="noreferrer"
-          className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition hidden sm:flex items-center justify-center"
+          className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition hidden sm:flex items-center justify-center"
           title="View on GitHub"
         >
           <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">

@@ -77,9 +77,9 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
   const methodsList: (HttpMethod | 'all')[] = ['all', 'get', 'post', 'put', 'delete', 'patch'];
 
   return (
-    <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-150">
       {/* Top Search & Filter Bar */}
-      <div className="p-3 border-b border-slate-800 space-y-2.5 bg-slate-900/50">
+      <div className="p-3 border-b border-slate-200 dark:border-slate-800 space-y-2.5 bg-white/70 dark:bg-slate-900/50 backdrop-blur">
         {/* Search */}
         <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
@@ -88,7 +88,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search endpoints by path, summary, or tag..."
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-900 border border-slate-700 text-xs text-slate-100 rounded-lg placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full pl-9 pr-3 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
 
@@ -103,9 +103,9 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                 className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold transition ${
                   isSelected
                     ? m === 'all'
-                      ? 'bg-slate-700 text-white shadow'
+                      ? 'bg-slate-800 dark:bg-slate-700 text-white shadow'
                       : HTTP_METHODS[m as HttpMethod]?.badgeBg || 'bg-blue-600 text-white'
-                    : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    : 'bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800'
                 }`}
               >
                 {m.toUpperCase()}
@@ -121,7 +121,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
             <select
               value={selectedTag}
               onChange={(e) => setSelectedTag(e.target.value)}
-              className="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-lg px-2.5 py-1 w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-lg px-2.5 py-1 w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="all">All Tags ({endpoints.length})</option>
               {allTags.map((tag) => (
@@ -137,7 +137,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
       {/* Endpoint Cards Grouped by Tag */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {filteredEndpoints.length === 0 ? (
-          <div className="text-center py-12 text-slate-500 text-xs">
+          <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-xs">
             No endpoints found matching your filter criteria.
           </div>
         ) : (
@@ -149,18 +149,18 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                 {/* Tag Header */}
                 <button
                   onClick={() => toggleTagCollapse(tag)}
-                  className="w-full flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-900 text-slate-300 transition text-left"
+                  className="w-full flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 transition text-left"
                 >
-                  <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-200">
+                  <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-800 dark:text-slate-200">
                     {isCollapsed ? (
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                     ) : (
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                     )}
-                    <span className="uppercase tracking-wider text-[11px] text-slate-400 font-mono">
+                    <span className="uppercase tracking-wider text-[11px] text-slate-600 dark:text-slate-400 font-mono">
                       {tag}
                     </span>
-                    <span className="text-[10px] text-slate-500 font-normal">({eps.length})</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">({eps.length})</span>
                   </div>
                 </button>
 
@@ -177,8 +177,8 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                           onClick={() => onSelectEndpoint(ep)}
                           className={`group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 ${
                             isSelected
-                              ? 'bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/50 shadow-lg'
-                              : 'bg-slate-900/60 border-slate-800/80 hover:bg-slate-900 hover:border-slate-700'
+                              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/50 shadow-md'
+                              : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm'
                           }`}
                         >
                           <div className="flex items-center gap-2">
@@ -188,13 +188,13 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                               {methodConfig.label}
                             </span>
                             <span
-                              className="font-mono text-xs font-medium text-slate-200 truncate flex-1"
+                              className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate flex-1"
                               title={ep.path}
                             >
                               {ep.path}
                             </span>
                             {ep.deprecated && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-500/20 text-red-400 font-bold">
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
                                 dep
                               </span>
                             )}
@@ -202,14 +202,14 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
 
                           {ep.summary && (
                             <div
-                              className="text-[11px] text-slate-400 truncate pl-0.5"
+                              className="text-[11px] text-slate-600 dark:text-slate-400 truncate pl-0.5"
                               title={ep.summary}
                             >
                               {ep.summary}
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500 pt-0.5">
+                          <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
                             {ep.parameters.length > 0 && (
                               <span>
                                 {ep.parameters.length} param{ep.parameters.length > 1 ? 's' : ''}
@@ -220,7 +220,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                               <span>• {ep.responses.length} responses</span>
                             )}
                             {ep.security.length > 0 && (
-                              <span className="flex items-center gap-0.5 text-amber-400/80 ml-auto">
+                              <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400/80 ml-auto font-medium">
                                 <Shield className="w-2.5 h-2.5" />
                                 Secured
                               </span>
