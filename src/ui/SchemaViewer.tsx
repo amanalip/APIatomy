@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { SchemaModel } from '../model';
+import { generateMockData } from '../model/mockGenerator';
 import { Search, Box, ChevronRight, ChevronDown, AlertCircle, Copy, Check, X } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
 import YAML from 'yaml';
@@ -572,84 +573,3 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
     </div>
   );
 };
-
-function generateMockData(schema: SchemaModel, allSchemas: Record<string, SchemaModel>, depth = 0): unknown {
-  if (depth > 4) return '...';
-
-  if (schema.example !== undefined) return schema.example;
-  if (schema.default !== undefined) return schema.default;
-
-  if (schema.enum && schema.enum.length > 0) {
-    return schema.enum[0];
-  }
-
-  if (schema.refTarget && allSchemas[schema.refTarget]) {
-    return generateMockData(allSchemas[schema.refTarget], allSchemas, depth + 1);
-  }
-
-  // Handle allOf / oneOf / anyOf composition in mock generation
-  if (schema.allOf && schema.allOf.length > 0) {
-    const merged: Record<string, unknown> = {};
-    for (const sub of schema.allOf) {
-      const subData = generateMockData(sub, allSchemas, depth + 1);
-      if (typeof subData === 'object' && subData !== null) {
-        Object.assign(merged, subData);
-      }
-    }
-    if (schema.properties) {
-      for (const [key, prop] of Object.entries(schema.properties)) {
-        merged[key] = generateMockData(prop, allSchemas, depth + 1);
-      }
-    }
-    return merged;
-  }
-
-  if (schema.oneOf && schema.oneOf.length > 0) {
-    return generateMockData(schema.oneOf[0], allSchemas, depth + 1);
-  }
-
-  if (schema.anyOf && schema.anyOf.length > 0) {
-    return generateMockData(schema.anyOf[0], allSchemas, depth + 1);
-  }
-
-  if (schema.type === 'string') {
-    if (schema.format === 'email') return 'alex@example.com';
-    if (schema.format === 'date-time') return new Date().toISOString();
-    if (schema.format === 'date') return '2026-08-23';
-    if (schema.format === 'ipv4') return '192.168.1.1';
-    if (schema.format === 'hostname') return 'api.example.com';
-    if (schema.format === 'uuid') return 'a1b2c3d4-e5f6-7a8b-9c0d-ef1234567890';
-    if (schema.format === 'uri') return 'https://api.example.com';
-    return schema.name || 'string_value';
-  }
-
-  if (schema.type === 'integer') {
-    return schema.minimum ?? 1;
-  }
-
-  if (schema.type === 'number') {
-    return schema.minimum ?? 19.99;
-  }
-
-  if (schema.type === 'boolean') {
-    return true;
-  }
-
-  if (schema.type === 'array' || schema.items) {
-    const count = typeof schema.minItems === 'number' && schema.minItems > 0 ? Math.min(schema.minItems, 5) : 1;
-    const itemData = schema.items
-      ? generateMockData(schema.items, allSchemas, depth + 1)
-      : 'item';
-    return Array.from({ length: count }, () => itemData);
-  }
-
-  if (schema.properties) {
-    const obj: Record<string, unknown> = {};
-    for (const [key, prop] of Object.entries(schema.properties)) {
-      obj[key] = generateMockData(prop, allSchemas, depth + 1);
-    }
-    return obj;
-  }
-
-  return {};
-}

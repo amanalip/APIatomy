@@ -660,3 +660,11 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 
 ### Fix 132: Comprehensive PNG Graph Export Unit Test Suite
 - **Improvement**: Added dedicated test suite in `tests/exportPng.test.ts` verifying graph canvas element targeting, anchor download triggers, and error recovery during image rendering.
+
+### Fix 133: Comprehensive Schema Mock Data Generator Unit Test Suite
+- **Improvement**: Extracted `generateMockData` into modular engine [`src/model/mockGenerator.ts`](file:///home/amanap/Documents/GitHub/APIatomy/src/model/mockGenerator.ts) and added dedicated test suite [`tests/mockGenerator.test.ts`](file:///home/amanap/Documents/GitHub/APIatomy/tests/mockGenerator.test.ts) testing format mock generation, arrays, compositions, and recursive reference resolution.
+
+### Fix 134: Extended Schema Format Mock Support for IPv6, Time, Byte, and Binary
+- **Issue**: Schema definitions specifying formats `ipv6`, `time`, `byte`, or `binary` fell back to generic strings in generated mock payloads.
+- **Root Cause**: Missing format handlers in mock data generator.
+- **Resolution**: Added realistic mock payload values for `ipv6`, `time`, `byte`, and `binary` formats.
