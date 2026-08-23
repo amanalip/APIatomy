@@ -230,7 +230,8 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       });
     }
 
-    // Rule: Empty or blank tag name
+    // Rule: Empty or blank tag name & duplicate operation tags
+    const seenOpTags = new Set<string>();
     for (const tag of ep.tags) {
       if (typeof tag === 'string' && tag.trim() === '') {
         const line = findLineForPattern(rawText, `${ep.method}:`) || findLineForPattern(rawText, ep.path);
@@ -242,6 +243,20 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
           line,
           source: 'linter',
         });
+      } else if (typeof tag === 'string') {
+        const normTag = tag.trim();
+        if (seenOpTags.has(normTag)) {
+          const line = findLineForPattern(rawText, `${ep.method}:`) || findLineForPattern(rawText, ep.path);
+          diagnostics.push({
+            id: `duplicate-op-tag-${ep.id}-${normTag}`,
+            severity: 'info',
+            message: `Endpoint ${ep.method.toUpperCase()} ${ep.path} defines duplicate tag "${normTag}".`,
+            path: `/paths${ep.path}/${ep.method}/tags`,
+            line,
+            source: 'linter',
+          });
+        }
+        seenOpTags.add(normTag);
       }
     }
 

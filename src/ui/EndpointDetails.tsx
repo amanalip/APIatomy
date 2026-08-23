@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { EndpointModel, ServerModel, SchemaModel, SecuritySchemeModel } from '../model';
 import { HTTP_METHODS, getStatusCategory } from '../model/httpMethods';
 import { CurlGenerator } from './CurlGenerator';
@@ -27,6 +27,16 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
     '200': true,
     '201': true,
   });
+
+  const sortedParameters = useMemo(() => {
+    const locationOrder: Record<string, number> = { path: 0, query: 1, header: 2, cookie: 3 };
+    return [...endpoint.parameters].sort((a, b) => {
+      const ordA = locationOrder[a.in] !== undefined ? locationOrder[a.in] : 4;
+      const ordB = locationOrder[b.in] !== undefined ? locationOrder[b.in] : 4;
+      if (ordA !== ordB) return ordA - ordB;
+      return a.name.localeCompare(b.name);
+    });
+  }, [endpoint.parameters]);
 
   const handleCopyPath = () => {
     navigator.clipboard.writeText(endpoint.path);
@@ -219,7 +229,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                      {endpoint.parameters.map((p) => (
+                      {sortedParameters.map((p) => (
                         <tr key={`${p.in}-${p.name}`} className="hover:bg-slate-100/60 dark:hover:bg-slate-900/40">
                           <td className="py-2.5 px-3 font-mono font-medium text-slate-800 dark:text-slate-200">
                             <div className="flex items-center gap-1.5">

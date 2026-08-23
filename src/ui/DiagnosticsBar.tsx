@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DiagnosticItem } from '../model';
-import { AlertTriangle, XCircle, Info, ChevronUp, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, XCircle, Info, ChevronUp, ChevronDown, CheckCircle2, Copy, Check } from 'lucide-react';
 
 interface DiagnosticsBarProps {
   diagnostics: DiagnosticItem[];
@@ -13,6 +13,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'error' | 'warning' | 'info'>('all');
+  const [copiedDiagnostics, setCopiedDiagnostics] = useState(false);
 
   const errorCount = diagnostics.filter((d) => d.severity === 'error').length;
   const warningCount = diagnostics.filter((d) => d.severity === 'warning').length;
@@ -22,6 +23,19 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
     if (activeFilter === 'all') return true;
     return d.severity === activeFilter;
   });
+
+  const handleCopyDiagnostics = () => {
+    if (filteredDiagnostics.length === 0) return;
+    const text = filteredDiagnostics
+      .map(
+        (d) =>
+          `[${d.severity.toUpperCase()}] ${d.message}${d.line ? ` (Line ${d.line}${d.column ? `:${d.column}` : ''})` : ''}`
+      )
+      .join('\n');
+    navigator.clipboard.writeText(text);
+    setCopiedDiagnostics(true);
+    setTimeout(() => setCopiedDiagnostics(false), 2000);
+  };
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -118,6 +132,26 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
                 Info ({infoCount})
               </button>
             </div>
+          )}
+
+          {isOpen && filteredDiagnostics.length > 0 && (
+            <button
+              onClick={handleCopyDiagnostics}
+              className="flex items-center gap-1 px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800/80 hover:bg-slate-300 dark:hover:bg-slate-700 text-[11px] text-slate-700 dark:text-slate-300 transition"
+              title="Copy diagnostics list to clipboard"
+            >
+              {copiedDiagnostics ? (
+                <>
+                  <Check className="w-3 h-3 text-emerald-500" />
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3 h-3" />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
           )}
 
           <button

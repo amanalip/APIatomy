@@ -642,3 +642,21 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: When search or tag filters yielded 0 results, users had to manually reset each individual filter.
 - **Root Cause**: Lack of batch filter reset action in `src/ui/EndpointExplorer.tsx`.
 - **Resolution**: Added a one-click `Clear all filters` button in the empty search view.
+
+### Fix 129: Duplicate Operation Tag Declaration Linter Diagnostic
+- **Issue**: Operations declaring identical tag names multiple times in `op.tags` were not flagged.
+- **Root Cause**: Missing duplicate tag check per operation in `src/parser/validator.ts`.
+- **Resolution**: Added a validation rule detecting duplicate operation tags.
+
+### Fix 130: Logical Parameter Sorting by Transport Location
+- **Issue**: Parameters in the Endpoint Inspector appeared in arbitrary specification order.
+- **Root Cause**: Direct iteration of unordered array in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Sorted parameters logically by location (`path` first, then `query`, `header`, `cookie`).
+
+### Fix 131: One-Click Copy Diagnostics Action in Diagnostics Drawer
+- **Issue**: Developers had no quick way to copy the full list of errors and warnings as text.
+- **Root Cause**: Lack of batch copy control in `src/ui/DiagnosticsBar.tsx`.
+- **Resolution**: Added a `Copy` diagnostics button with temporary copied feedback.
+
+### Fix 132: Comprehensive PNG Graph Export Unit Test Suite
+- **Improvement**: Added dedicated test suite in `tests/exportPng.test.ts` verifying graph canvas element targeting, anchor download triggers, and error recovery during image rendering.
