@@ -91,3 +91,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Endpoint parameter enum constraints and response header specifications were not displayed in the Inspector drawer.
 - **Root Cause**: Missing rendering blocks in `src/ui/EndpointDetails.tsx`.
 - **Resolution**: Added enum badges under parameter type cells and a response headers summary block for responses that define headers.
+
+### Fix 16: Topology Graph Empty State Overlay
+- **Issue**: When opening an empty or stripped specification with no endpoints or schemas, the topology graph view showed a blank canvas without user guidance.
+- **Root Cause**: Missing empty node list conditional placeholder in `src/graph/TopologyGraph.tsx`.
+- **Resolution**: Added an intuitive centered overlay explaining that no graphable endpoints or schemas were found in the current spec.
