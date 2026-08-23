@@ -133,10 +133,12 @@ export function buildCurlCommand(
           }
         } else {
           let delimiter = ',';
-          if (p.style === 'spaceDelimited') delimiter = ' ';
+          if (p.style === 'spaceDelimited') delimiter = '%20';
           else if (p.style === 'pipeDelimited') delimiter = '|';
-          const joined = arrVal.map(String).join(delimiter);
-          qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(joined)}`);
+          // Encode each value individually and keep delimiter unencoded per OpenAPI spec
+          const encodedVals = arrVal.map((v) => encodeURIComponent(String(v)));
+          const joined = delimiter === '%20' ? encodedVals.join('%20') : encodedVals.join(delimiter);
+          qParts.push(`${encodeURIComponent(p.name)}=${joined}`);
         }
       } else {
         let val = p.example !== undefined
@@ -198,15 +200,16 @@ export function buildCurlCommand(
   }
 
   if (endpoint.security.length > 0 && !hasExplicitAuthHeader) {
-    // Support multiple security schemes (include all, dedup)
     const seen = new Set<string>();
     for (const sec of endpoint.security) {
       if (seen.has(sec.name)) continue;
       seen.add(sec.name);
       const secNameLower = sec.name.toLowerCase();
-      if (secNameLower.includes('apikey') || secNameLower.includes('key')) {
+      const isApiKey = secNameLower === 'apikey' || secNameLower.includes('api_key') || secNameLower.includes('api-key');
+      const isBasic = secNameLower === 'basic' || secNameLower.includes('basic_auth') || secNameLower.includes('basic-auth');
+      if (isApiKey) {
         lines.push(`  -H "X-API-Key: YOUR_API_KEY"`);
-      } else if (secNameLower.includes('basic')) {
+      } else if (isBasic) {
         lines.push(`  -u "username:password"`);
       } else {
         lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);

@@ -144,13 +144,25 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
       }
     }, [value]);
 
-    // Handle File Drop
+    // Handle File Drop - accept only yaml/json/text
     const handleDrop = (e: React.DragEvent) => {
       e.preventDefault();
       setIsDragging(false);
 
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         const file = e.dataTransfer.files[0];
+        const validExt = /\.(yaml|yml|json)$/i;
+        const validMime = /^(application\/json|text\/yaml|text\/plain|application\/x-yaml)/i;
+        const nameOk = validExt.test(file.name);
+        const mimeOk = !file.type || validMime.test(file.type) || file.type === '';
+        if (!nameOk && !mimeOk) {
+          alert(`Unsupported file type "${file.name}". Please drop a .yaml, .yml or .json file.`);
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          alert('File too large. Maximum is 5 MB.');
+          return;
+        }
         const reader = new FileReader();
         reader.onload = (event) => {
           const text = event.target?.result as string;
@@ -162,6 +174,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
             onChange(text);
           }
         };
+        reader.onerror = () => alert('Failed to read dropped file.');
         reader.readAsText(file);
       }
     };

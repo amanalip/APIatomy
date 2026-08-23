@@ -60,13 +60,13 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
       // Tag filter
       if (selectedTag !== 'all' && !ep.tags.includes(selectedTag)) return false;
 
-      // Search query
+      // Search query - method uses exact match to avoid false positives (e.g. get in target)
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const pathMatch = ep.path.toLowerCase().includes(q);
         const summaryMatch = ep.summary?.toLowerCase().includes(q);
         const descMatch = ep.description?.toLowerCase().includes(q);
-        const methodMatch = ep.method.toLowerCase().includes(q);
+        const methodMatch = ep.method.toLowerCase() === q;
         const tagMatch = ep.tags.some((t) => t.toLowerCase().includes(q));
 
         if (!pathMatch && !summaryMatch && !descMatch && !methodMatch && !tagMatch) {

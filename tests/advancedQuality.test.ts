@@ -68,9 +68,9 @@ describe('Quality: CurlBuilder pure helper (server & path handling)', () => {
       producedSchemaRefs: [],
     };
     const cmd = buildCurlCommand(ep, 'https://api.example.com', undefined);
-    // pipeDelimited uses '|' encoded as %7C
-    expect(cmd).toContain('cats=a%7Cb');
-    // spaceDelimited uses space encoded as %20
+    // pipeDelimited uses literal | delimiter (unencoded) with encoded values
+    expect(cmd).toContain('cats=a|b');
+    // spaceDelimited uses %20 delimiter
     expect(cmd).toContain('dogs=x%20y');
   });
 });

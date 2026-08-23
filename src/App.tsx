@@ -169,15 +169,30 @@ export function App() {
                 ref={editorPaneRef}
                 value={rawText}
                 onChange={(newText) => setRawText(newText)}
-                format={spec.originalFormat === 'swagger2' ? 'yaml' : rawText.trim().startsWith('{') ? 'json' : 'yaml'}
+                format={(() => {
+                  const t = rawText.trim();
+                  // Detect JSON by leading brace after optional BOM, regardless of swagger/openapi version
+                  const isJson = t.startsWith('{') || t.startsWith('[');
+                  if (isJson) return 'json';
+                  // Swagger 2.0 in YAML should still use yaml highlighting
+                  return 'yaml';
+                })()}
               />
             </div>
 
             {/* Resizer Handle */}
             <div
               onMouseDown={handleMouseDownResize}
-              className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-blue-500/50 active:bg-blue-500 transition z-20"
-              title="Drag to resize editor pane"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize editor pane"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowLeft') setEditorWidth((w) => Math.max(280, w - 20));
+                if (e.key === 'ArrowRight') setEditorWidth((w) => Math.min(window.innerWidth - 360, w + 20));
+              }}
+              className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-blue-500/50 active:bg-blue-500 transition z-20 focus-visible:ring-1 focus-visible:ring-blue-500 outline-none"
+              title="Drag to resize editor pane (or use Arrow keys when focused)"
             />
           </div>
         )}

@@ -104,7 +104,7 @@ paths:
       method: 'get', path: '/search', parameters: [{ name: 'ids', in: 'query', style: 'pipeDelimited', explode: false, schema: { type: 'array' }, example: ['1', '2', '3'] }], security: [], responses: []
     };
     const cmd = buildCurlCommand(ep, 'https://api.example.com', undefined);
-    expect(cmd).toContain('ids=1%7C2%7C3');
+    expect(cmd).toContain('ids=1|2|3');
   });
 
   it('13: buildCurlCommand handles header format uuid fallback', () => {

@@ -78,14 +78,20 @@ export function resolveSchema(
       };
     }
 
-    // Cache lookup - deep clone shallow shared structures via spread + clone properties
+    // Cache lookup - deep clone composed structures to avoid mutation leaking into cache
     if (context.resolvedCache.has(ref)) {
       const cached = context.resolvedCache.get(ref)!;
       return {
         ...cached,
-        // clone nested map refs to avoid shallow mutation leaking into cache
         properties: cached.properties ? { ...cached.properties } : undefined,
         items: cached.items ? { ...cached.items } : undefined,
+        additionalProperties: typeof cached.additionalProperties === 'object' && cached.additionalProperties !== null
+          ? { ...(cached.additionalProperties as Record<string, unknown>) } as any
+          : cached.additionalProperties,
+        allOf: cached.allOf ? [...cached.allOf] : undefined,
+        oneOf: cached.oneOf ? [...cached.oneOf] : undefined,
+        anyOf: cached.anyOf ? [...cached.anyOf] : undefined,
+        not: cached.not ? { ...cached.not } : undefined,
         $ref: ref,
         refTarget: targetName,
         name: schemaName || targetName,

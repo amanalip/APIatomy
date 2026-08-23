@@ -16,6 +16,7 @@ import {
 import { extractRefTargetName, RefResolutionContext, resolveJsonPointer, resolveSchema } from './refResolver';
 import { isSwagger2, convertSwagger2ToOpenApi3 } from './swaggerConverter';
 import { validateSpec, findLineForPattern } from './validator';
+// isRecord type guard available for future parser hardening via ../utils/typeGuards
 
 export function normalizeSpec(
   rawDoc: Record<string, unknown>,
@@ -425,7 +426,7 @@ function collectRefsFromSchema(schema: SchemaModel, targetSet: Set<string>): voi
   if (schema.anyOf) {
     for (const sub of schema.anyOf) collectRefsFromSchema(sub, targetSet);
   }
-  if ((schema as any).not) {
-    collectRefsFromSchema((schema as any).not, targetSet);
+  if (schema.not) {
+    collectRefsFromSchema(schema.not, targetSet);
   }
 }

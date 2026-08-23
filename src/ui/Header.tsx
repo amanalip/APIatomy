@@ -104,11 +104,19 @@ export const Header: React.FC<HeaderProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+    const maxBytes = 5 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      alert(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 5 MB.`);
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
       if (text) onUploadText(text);
+    };
+    reader.onerror = () => {
+      alert('Failed to read file. Please try again.');
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -252,7 +260,8 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={() => fileInputRef.current?.click()}
           className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 transition"
-          title="Upload OpenAPI or Swagger file (.yaml, .yml, .json)"
+          title="Upload OpenAPI or Swagger file (.yaml, .yml, .json) - max 5 MB"
+          aria-label="Upload spec file"
         >
           <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span className="hidden sm:inline">Upload</span>

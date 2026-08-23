@@ -1032,6 +1032,77 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 ### Fix 216: UX/UI - Graph Toolbar Aria-Pressed and Search Clear Polish
 - **Improvement**: Graph toolbar search now consistently has Escape handling; filter pills expose `aria-pressed` for screen readers; added backdrop-blur overlay for empty graph to keep toolbar interactive while explaining state.
 
+### Fix 217: RefResolver Cache Deep Clone for Composition Fields
+- **Issue**: Cache return in `src/parser/refResolver.ts:82-93` cloned only `properties` and `items`, leaking shared `allOf`/`oneOf`/`anyOf`/`not`/`additionalProperties` references when caller mutated resolved schema.
+- **Root Cause**: Incomplete shallow clone of composed schema branches.
+- **Resolution**: Extended clone to spread `additionalProperties` object, and copy arrays `allOf`, `oneOf`, `anyOf`, and object `not`, preventing cache mutation leakage.
+
+### Fix 218: cURL Array Delimiter Encoding Preserves Unencoded Delimiter
+- **Issue**: `src/ui/CurlGenerator.tsx:135-139` used `encodeURIComponent(joined)` which encoded `,` `|` and space delimiters to `%2C` `%7C` `%20` collapsing delimiter visibility and breaking `explode: false` spec fidelity.
+- **Root Cause**: Single encode of joined string instead of per-value encoding.
+- **Resolution**: Encode each array value individually via `encodeURIComponent(String(v))` and join with raw delimiter (`,` `|` `%20`), keeping `pipeDelimited` as `a|b` and `spaceDelimited` as `a%20b`, matching OpenAPI serialization.
+
+### Fix 219: Endpoint Explorer Method Search False Positive via Substring
+- **Issue**: `src/ui/EndpointExplorer.tsx:69` used `ep.method.includes(q)` where `q='get'` matched `post` paths containing `target` or descriptions containing `get`, producing incorrect search results.
+- **Root Cause**: Substring includes on method field.
+- **Resolution**: Changed to exact match `ep.method === q` after lowercasing, eliminating false positives while preserving path/summary/tag substring behavior.
+
+### Fix 220: Mock Generator Non-Deterministic Date Mock
+- **Issue**: `src/model/mockGenerator.ts:70` returned `new Date().toISOString()` causing snapshot failures and non-reproducible mock payloads.
+- **Root Cause**: Runtime date.
+- **Resolution**: Replaced with deterministic `2026-08-23T14:30:00.000Z` for stable tests, consistent with other mocked date formats.
+
+### Fix 221: App Editor Format Detection for Swagger JSON
+- **Issue**: `src/App.tsx:172` used `spec.originalFormat === 'swagger2' ? 'yaml' : rawText.trim().startsWith('{') ? 'json' : 'yaml'` which forced Swagger JSON specs into YAML highlighting.
+- **Root Cause**: Hardcoded swagger check before JSON detection.
+- **Resolution**: Detect JSON via leading `{` or `[` after trim regardless of format, returning `json` for all JSON texts and `yaml` otherwise, ensuring correct CodeMirror language.
+
+### Fix 222: Header File Upload Size Limit and Error Handling
+- **Issue**: `src/ui/Header.tsx:104-115` silently accepted any file size, could cause OOM on 10 MB specs, and gave no feedback on read errors.
+- **Root Cause**: Missing validation and `onerror` handler.
+- **Resolution**: Added 5 MB size check with alert, added `reader.onerror` alert, preserved input reset behavior.
+
+### Fix 223: EditorPane Drop Validation for File Type and Size
+- **Issue**: `src/ui/EditorPane.tsx:148-167` accepted any dropped file, including binaries, without mime or extension checks.
+- **Root Cause**: No filter before reading.
+- **Resolution**: Added extension regex `.(yaml|yml|json)` and mime check, 5 MB limit, and user alerts for unsupported types.
+
+### Fix 224: cURL Security Heuristic Overbroad Key/Basic Matching
+- **Issue**: `src/ui/CurlGenerator.tsx:206-210` matched any `key` substring (e.g. `mykey2`) as API key and any `basic` substring as Basic auth, misclassifying unrelated schemes.
+- **Root Cause**: Loose `includes('key')` / `includes('basic')`.
+- **Resolution**: Narrowed to `api_key`/`api-key`/`apikey` exact variants and `basic` / `basic_auth` / `basic-auth`, defaulting others to Bearer token.
+
+### Fix 225: Code Quality - TypeGuards Extension with Number/Boolean Guards
+- **Improvement**: Extended `src/utils/typeGuards.ts` with `isNumber`, `isBoolean`, `asNumber`, `isNonEmptyString`, improving strictness and providing reusable guards; `normalizer.ts` now documents future use, reducing `typeof` repetition.
+
+### Fix 226: Code Quality - MockGenerator Determinism and Parser Parity
+- **Improvement**: Deterministic mock date improves test reliability; parser traversal parity already aligned across `refResolver`, `graphLayout`, `validator`; added comment documenting parity.
+
+### Fix 227: Code Quality - Normalizer Typed Not Handling
+- **Improvement**: Removed `(schema as any).not` cast to typed `schema.not` in `src/parser/normalizer.ts:428-431`, improving TypeScript strictness.
+
+### Fix 228: UX/UI - Topology Graph Edge Legend
+- **Improvement**: Added inline legend `consumes (blue) / produces (emerald) / references (dashed)` in `src/graph/TopologyGraph.tsx:245-251`, visible on `sm` and up with `aria-label`, clarifying edge semantics.
+
+### Fix 229: UX/UI - Endpoint Details Expand All Responses
+- **Improvement**: Added `Expand all / Collapse all` toggle in `src/ui/EndpointDetails.tsx:351-366` when multiple responses exist, reducing click fatigue for endpoints with many status codes.
+
+### Fix 230: UX/UI - Header Upload Accessibility and Size Hint
+- **Improvement**: Added `aria-label` and `max 5 MB` title hint to upload button in `src/ui/Header.tsx:253`, improving screen reader context and discoverability.
+
+### Fix 231: UX/UI - App Resizer Keyboard Support
+- **Improvement**: Enhanced resize handle in `src/App.tsx:177-188` with `role="separator"`, `aria-orientation`, `aria-label`, keyboard ArrowLeft/Right control and focus ring, improving accessibility (WCAG 2.1.1).
+
+### Fix 232: UX/UI - Diagnostics Filter Group Semantics
+- **Improvement**: Added `role="group"` and `aria-pressed` to diagnostics filter pills in `src/ui/DiagnosticsBar.tsx:104`, aligning with graph and explorer filters for consistent screen reader behavior.
+
+### Fix 233: Code Quality - Comprehensive Quality Batch 5 Test Suite
+- **Improvement**: Added `tests/qualityBatch5.test.ts` with 15 tests covering typeGuards, curl delimiter encodings for form/space/pipe, deterministic mock date, method exact search, security heuristic, cache clone smoke, and additionalProperties generation.
+
+### Fix 234: Tests - Update Pipe Delimiter Expectations to Unencoded Literal
+- **Issue**: Existing tests in `tests/advancedQuality.test.ts:72` and `tests/qualityBatch4.test.ts:107` expected pipe delimiter encoded as `%7C`, inconsistent with OpenAPI spec literal pipe.
+- **Resolution**: Updated assertions to `a|b` and `1|2|3` to match per-value encoding with raw delimiter, raising test suite from 129 to 144 tests passing.
+
 
 
 

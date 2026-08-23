@@ -242,6 +242,13 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
           </select>
         )}
 
+        {/* Edge Legend */}
+        <div className="hidden sm:flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 border-l border-slate-200 dark:border-slate-700 pl-2 ml-1" aria-label="Edge legend">
+          <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-blue-500 rounded"></span>consumes</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-emerald-500 rounded"></span>produces</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-slate-400 border-t border-dashed border-slate-400"></span>references</span>
+        </div>
+
         {/* Reset / Fit View */}
         <button
           aria-label="Fit view to all visible nodes"

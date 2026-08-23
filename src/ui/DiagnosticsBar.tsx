@@ -101,8 +101,9 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
 
         <div className="flex items-center gap-2">
           {isOpen && (
-            <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 p-0.5 rounded text-[11px]">
+            <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 p-0.5 rounded text-[11px]" role="group" aria-label="Filter diagnostics by severity">
               <button
+                aria-pressed={activeFilter === 'all'}
                 onClick={() => setActiveFilter('all')}
                 className={`px-2 py-0.5 rounded ${
                   activeFilter === 'all'
@@ -113,6 +114,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
                 All ({diagnostics.length})
               </button>
               <button
+                aria-pressed={activeFilter === 'error'}
                 onClick={() => setActiveFilter('error')}
                 className={`px-2 py-0.5 rounded ${
                   activeFilter === 'error'
@@ -123,6 +125,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
                 Errors ({errorCount})
               </button>
               <button
+                aria-pressed={activeFilter === 'warning'}
                 onClick={() => setActiveFilter('warning')}
                 className={`px-2 py-0.5 rounded ${
                   activeFilter === 'warning'
@@ -133,6 +136,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
                 Warnings ({warningCount})
               </button>
               <button
+                aria-pressed={activeFilter === 'info'}
                 onClick={() => setActiveFilter('info')}
                 className={`px-2 py-0.5 rounded ${
                   activeFilter === 'info'

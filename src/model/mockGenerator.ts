@@ -67,7 +67,7 @@ export function generateMockData(
 
   if (normType === 'string') {
     if (schema.format === 'email') return 'alex@example.com';
-    if (schema.format === 'date-time') return new Date().toISOString();
+    if (schema.format === 'date-time') return '2026-08-23T14:30:00.000Z';
     if (schema.format === 'date') return '2026-08-23';
     if (schema.format === 'time') return '14:30:00Z';
     if (schema.format === 'ipv4') return '192.168.1.1';
