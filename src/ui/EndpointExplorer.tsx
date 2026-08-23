@@ -55,20 +55,24 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
     });
   }, [endpoints, selectedMethod, selectedTag, searchQuery]);
 
-  // Group by primary tag
+  // Group by primary or selected tag
   const groupedEndpoints = useMemo(() => {
     const groups: Record<string, EndpointModel[]> = {};
 
     for (const ep of filteredEndpoints) {
-      const primaryTag = ep.tags[0] || 'Default';
-      if (!groups[primaryTag]) {
-        groups[primaryTag] = [];
+      const tagKey =
+        selectedTag !== 'all' && ep.tags.includes(selectedTag)
+          ? selectedTag
+          : ep.tags[0] || 'Default';
+
+      if (!groups[tagKey]) {
+        groups[tagKey] = [];
       }
-      groups[primaryTag].push(ep);
+      groups[tagKey].push(ep);
     }
 
     return groups;
-  }, [filteredEndpoints]);
+  }, [filteredEndpoints, selectedTag]);
 
   const toggleTagCollapse = (tag: string) => {
     setCollapsedTags((prev) => ({ ...prev, [tag]: !prev[tag] }));

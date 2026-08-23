@@ -14,6 +14,7 @@ import {
   Layers,
   Network,
   ChevronDown,
+  Menu,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -38,15 +39,20 @@ export const Header: React.FC<HeaderProps> = ({
   const { theme, toggleTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileNavRef = useRef<HTMLDivElement>(null);
   const [copiedShare, setCopiedShare] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
   const [isSampleDropdownOpen, setIsSampleDropdownOpen] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsSampleDropdownOpen(false);
+      }
+      if (mobileNavRef.current && !mobileNavRef.current.contains(event.target as Node)) {
+        setIsMobileNavOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -102,13 +108,13 @@ export const Header: React.FC<HeaderProps> = ({
                 v{spec.version}
               </span>
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[200px]" title={spec.title}>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[160px] sm:max-w-[200px]" title={spec.title}>
               {spec.title}
             </div>
           </div>
         </div>
 
-        {/* View Switcher Tabs */}
+        {/* Desktop View Switcher Tabs */}
         <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-900/90 p-1 rounded-xl border border-slate-200 dark:border-slate-800 ml-4">
           <button
             onClick={() => setActiveView('endpoints')}
@@ -146,10 +152,62 @@ export const Header: React.FC<HeaderProps> = ({
             <span>Topology Graph</span>
           </button>
         </div>
+
+        {/* Mobile View Dropdown Button */}
+        <div className="relative md:hidden ml-1" ref={mobileNavRef}>
+          <button
+            onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
+            className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
+          >
+            <Menu className="w-3.5 h-3.5 text-slate-500" />
+            <span className="capitalize">{activeView}</span>
+          </button>
+
+          {isMobileNavOpen && (
+            <div className="absolute left-0 mt-2 w-44 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 space-y-1 z-50">
+              <button
+                onClick={() => {
+                  setActiveView('endpoints');
+                  setIsMobileNavOpen(false);
+                }}
+                className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left ${
+                  activeView === 'endpoints' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Endpoints ({spec.endpoints.length})</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveView('schemas');
+                  setIsMobileNavOpen(false);
+                }}
+                className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left ${
+                  activeView === 'schemas' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Code2 className="w-3.5 h-3.5" />
+                <span>Schemas ({Object.keys(spec.schemas).length})</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveView('graph');
+                  setIsMobileNavOpen(false);
+                }}
+                className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left ${
+                  activeView === 'graph' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Network className="w-3.5 h-3.5" />
+                <span>Topology Graph</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Right Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         {/* Toggle Editor */}
         <button
           onClick={() => setIsEditorOpen(!isEditorOpen)}
@@ -238,12 +296,12 @@ export const Header: React.FC<HeaderProps> = ({
           {copiedShare ? (
             <>
               <Check className="w-3.5 h-3.5 text-white" />
-              <span>Link Copied</span>
+              <span className="hidden xs:inline">Link Copied</span>
             </>
           ) : (
             <>
               <Share2 className="w-3.5 h-3.5 text-white" />
-              <span>Share</span>
+              <span className="hidden xs:inline">Share</span>
             </>
           )}
         </button>

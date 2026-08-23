@@ -9,11 +9,16 @@ interface EndpointNodeData {
   path: string;
   summary: string;
   tags: string[];
+  direction?: 'LR' | 'TB';
 }
 
 export const EndpointNode: React.FC<NodeProps<any>> = memo(({ data, selected }) => {
   const nodeData = data as EndpointNodeData;
   const methodConfig = HTTP_METHODS[nodeData.method] || HTTP_METHODS.get;
+  const isVertical = nodeData.direction === 'TB';
+
+  const targetPosition = isVertical ? Position.Top : Position.Left;
+  const sourcePosition = isVertical ? Position.Bottom : Position.Right;
 
   return (
     <div
@@ -25,7 +30,7 @@ export const EndpointNode: React.FC<NodeProps<any>> = memo(({ data, selected }) 
     >
       <Handle
         type="target"
-        position={Position.Left}
+        position={targetPosition}
         className="!w-2.5 !h-2.5 !bg-slate-400 !border-2 !border-white dark:!border-slate-900"
       />
 
@@ -65,7 +70,7 @@ export const EndpointNode: React.FC<NodeProps<any>> = memo(({ data, selected }) 
 
       <Handle
         type="source"
-        position={Position.Right}
+        position={sourcePosition}
         className="!w-2.5 !h-2.5 !bg-blue-500 !border-2 !border-white dark:!border-slate-900"
       />
     </div>

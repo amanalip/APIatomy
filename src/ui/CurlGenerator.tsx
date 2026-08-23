@@ -10,12 +10,25 @@ interface CurlGeneratorProps {
 
 export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers }) => {
   const [copied, setCopied] = useState(false);
-  const [selectedServer, setSelectedServer] = useState<string>(
+  const [selectedServerUrl, setSelectedServerUrl] = useState<string>(
     servers[0]?.url || 'https://api.example.com'
   );
 
+  const activeServer = useMemo(() => {
+    return servers.find((s) => s.url === selectedServerUrl) || servers[0];
+  }, [servers, selectedServerUrl]);
+
   const curlCommand = useMemo(() => {
-    let url = selectedServer.replace(/\/$/, '') + endpoint.path;
+    let rawUrl = selectedServerUrl.replace(/\/$/, '');
+
+    // Resolve server variables if present
+    if (activeServer?.variables) {
+      for (const [varName, varDef] of Object.entries(activeServer.variables)) {
+        rawUrl = rawUrl.replace(`{${varName}}`, varDef.default || 'default');
+      }
+    }
+
+    let url = rawUrl + endpoint.path;
 
     // Substitute path parameters with placeholders
     for (const param of endpoint.parameters.filter((p) => p.in === 'path')) {
@@ -60,7 +73,7 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
     }
 
     return lines.join(' \\\n');
-  }, [endpoint, selectedServer]);
+  }, [endpoint, selectedServerUrl, activeServer]);
 
   const handleCopy = async () => {
     const success = await copyTextToClipboard(curlCommand);
@@ -81,8 +94,8 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
         <div className="flex items-center gap-2">
           {servers.length > 1 && (
             <select
-              value={selectedServer}
-              onChange={(e) => setSelectedServer(e.target.value)}
+              value={selectedServerUrl}
+              onChange={(e) => setSelectedServerUrl(e.target.value)}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] rounded px-2 py-0.5"
             >
               {servers.map((s) => (

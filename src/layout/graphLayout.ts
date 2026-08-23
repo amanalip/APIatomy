@@ -19,8 +19,8 @@ export function computeApiTopologyGraph(
   dagreGraph.setGraph({
     rankdir: options.direction,
     align: 'UL',
-    nodesep: 50,
-    ranksep: 90,
+    nodesep: 60,
+    ranksep: 100,
   });
 
   const nodes: Node[] = [];
@@ -53,6 +53,7 @@ export function computeApiTopologyGraph(
         path: ep.path,
         summary: ep.summary || ep.description || `${ep.method.toUpperCase()} ${ep.path}`,
         tags: ep.tags,
+        direction: options.direction,
       },
     });
 
@@ -124,6 +125,7 @@ export function computeApiTopologyGraph(
         propertyCount: propCount,
         reuseCount: reuse,
         isCircular: schemaObj.isCircular,
+        direction: options.direction,
       },
     });
 

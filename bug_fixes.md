@@ -51,3 +51,23 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Status code badge colors in `src/model/httpMethods.ts` were tuned only for high contrast against dark backgrounds and looked pale in light mode.
 - **Root Cause**: Lack of dual-mode Tailwind classes in `getStatusCategory`.
 - **Resolution**: Updated status category configurations with high-contrast text and border styles for both light and dark modes.
+
+### Fix 8: Vertical Graph Layout Handle Orientation
+- **Issue**: Switching the topology graph to Vertical (Top-to-Bottom) flow produced awkward horizontal connection loops because node handles remained anchored to Left/Right.
+- **Root Cause**: Fixed `Position.Left` and `Position.Right` on `EndpointNode` and `SchemaNode` without orientation awareness.
+- **Resolution**: Passed layout direction metadata to node data and dynamically switched handles to `Position.Top` (target) and `Position.Bottom` (source) when vertical layout (`TB`) is active.
+
+### Fix 9: Server Variables Substitution in cURL Generator
+- **Issue**: OpenAPI servers containing URL variable templates (e.g. `https://{environment}.example.com/v1`) were rendered literally in the cURL snippet.
+- **Root Cause**: Missing server variable resolution logic in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Added automatic substitution of server variable default values into the base URL before constructing endpoint cURL commands.
+
+### Fix 10: Multi-Tag Endpoint Filtering
+- **Issue**: When an endpoint had multiple tags and the user filtered by a secondary tag, the endpoint was placed under its primary tag header or could be misplaced.
+- **Root Cause**: Grouping logic defaulted strictly to `ep.tags[0]`.
+- **Resolution**: Updated `groupedEndpoints` in `src/ui/EndpointExplorer.tsx` to group by the actively selected tag filter when one is chosen.
+
+### Fix 11: Schema Viewer Active Schema Resilience
+- **Issue**: If the active schema was removed or renamed during live spec edits, the viewer could get stuck in an unselected state.
+- **Root Cause**: Missing synchronization check against the available schemas map.
+- **Resolution**: Added automatic fallback to the first available schema key in `src/ui/SchemaViewer.tsx` when the previously active schema no longer exists.

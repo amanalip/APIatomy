@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { SchemaModel } from '../model';
 import { Search, Box, ChevronRight, ChevronDown, AlertCircle, Copy, Check } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
@@ -21,12 +21,15 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
   const [viewMode, setViewMode] = useState<'tree' | 'example'>('tree');
   const [copiedExample, setCopiedExample] = useState(false);
 
-  // Sync if selectedSchemaName changes from parent
-  React.useEffect(() => {
+  // Sync if selectedSchemaName changes from parent or if current active schema is removed
+  useEffect(() => {
     if (selectedSchemaName && schemas[selectedSchemaName]) {
       setActiveSchemaName(selectedSchemaName);
+    } else if (!schemas[activeSchemaName]) {
+      const firstAvailable = Object.keys(schemas)[0] || '';
+      setActiveSchemaName(firstAvailable);
     }
-  }, [selectedSchemaName, schemas]);
+  }, [selectedSchemaName, schemas, activeSchemaName]);
 
   const schemaNames = useMemo(() => {
     const names = Object.keys(schemas).sort();

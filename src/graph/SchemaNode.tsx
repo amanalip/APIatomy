@@ -9,10 +9,15 @@ interface SchemaNodeData {
   propertyCount: number;
   reuseCount: number;
   isCircular?: boolean;
+  direction?: 'LR' | 'TB';
 }
 
 export const SchemaNode: React.FC<NodeProps<any>> = memo(({ data, selected }) => {
   const nodeData = data as SchemaNodeData;
+  const isVertical = nodeData.direction === 'TB';
+
+  const targetPosition = isVertical ? Position.Top : Position.Left;
+  const sourcePosition = isVertical ? Position.Bottom : Position.Right;
 
   // Heavily referenced schemas get highlighted borders
   const isHighReuse = nodeData.reuseCount > 2;
@@ -29,7 +34,7 @@ export const SchemaNode: React.FC<NodeProps<any>> = memo(({ data, selected }) =>
     >
       <Handle
         type="target"
-        position={Position.Left}
+        position={targetPosition}
         className="!w-2.5 !h-2.5 !bg-indigo-500 !border-2 !border-white dark:!border-slate-900"
       />
 
@@ -77,7 +82,7 @@ export const SchemaNode: React.FC<NodeProps<any>> = memo(({ data, selected }) =>
 
       <Handle
         type="source"
-        position={Position.Right}
+        position={sourcePosition}
         className="!w-2.5 !h-2.5 !bg-indigo-400 !border-2 !border-white dark:!border-slate-900"
       />
     </div>
