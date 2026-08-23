@@ -248,6 +248,24 @@ paths:
     expect(longSumDiag?.severity).toBe('info');
   });
 
+  it('flags missing info object with error diagnostic', () => {
+    const missingInfoSpec = `
+openapi: 3.0.0
+paths:
+  /ping:
+    get:
+      summary: Ping
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(missingInfoSpec);
+    const missingInfoDiag = parsed.diagnostics.find((d) => d.id === 'missing-info-object');
+    expect(missingInfoDiag).toBeDefined();
+    expect(missingInfoDiag?.severity).toBe('error');
+  });
+
   it('recognizes 2XX wildcard responses as valid success definitions', () => {
     const wildcardSpec = `
 openapi: 3.0.0

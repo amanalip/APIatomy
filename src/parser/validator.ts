@@ -15,6 +15,40 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
   // Track all schemas referenced anywhere in endpoints or other schemas
   const referencedSchemas = new Set<string>();
 
+  // Rule: Validate info object
+  if (!rawDoc.info || typeof rawDoc.info !== 'object') {
+    diagnostics.push({
+      id: 'missing-info-object',
+      severity: 'error',
+      message: 'The specification is missing the required "info" object.',
+      path: '/info',
+      line: 1,
+      source: 'schema',
+    });
+  } else {
+    const info = rawDoc.info as Record<string, unknown>;
+    if (!info.title || typeof info.title !== 'string' || !info.title.trim()) {
+      diagnostics.push({
+        id: 'missing-info-title',
+        severity: 'error',
+        message: 'The info object must define a non-empty "title" string.',
+        path: '/info/title',
+        line: findLineForPattern(rawText, 'title:') || findLineForPattern(rawText, 'info:') || 1,
+        source: 'schema',
+      });
+    }
+    if (!info.version || typeof info.version !== 'string' || !info.version.trim()) {
+      diagnostics.push({
+        id: 'missing-info-version',
+        severity: 'warning',
+        message: 'The info object should define an API "version" string.',
+        path: '/info/version',
+        line: findLineForPattern(rawText, 'version:') || findLineForPattern(rawText, 'info:') || 1,
+        source: 'schema',
+      });
+    }
+  }
+
   // Check path formatting in rawDoc
   if (rawDoc.paths && typeof rawDoc.paths === 'object') {
     for (const pKey of Object.keys(rawDoc.paths as Record<string, unknown>)) {

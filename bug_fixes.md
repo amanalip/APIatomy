@@ -356,3 +356,28 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Uploading a specification file, making changes in an external editor, and attempting to re-upload the same file failed to trigger the upload handler.
 - **Root Cause**: HTML file input preserved the previous file path in `src/ui/Header.tsx`.
 - **Resolution**: Reset `e.target.value = ''` immediately following file processing.
+
+### Fix 69: Required Info Object and Title/Version Validation in Linter
+- **Issue**: Specifications missing the required root `info` object or `info.title` were not flagged with actionable error diagnostics.
+- **Root Cause**: Missing check for `rawDoc.info` presence in `src/parser/validator.ts`.
+- **Resolution**: Added validation requiring `info` object, non-empty `info.title`, and recommending `info.version`.
+
+### Fix 70: Prominent Deprecation Banner in Endpoint Inspector
+- **Issue**: When inspecting an endpoint marked with `deprecated: true`, no visual deprecation banner was presented at the top of the details drawer.
+- **Root Cause**: Missing deprecation alert in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Added a styled deprecation warning banner at the top of the inspector panel.
+
+### Fix 71: Security Scheme Awareness in cURL Command Generator
+- **Issue**: Endpoints using API Key or Basic Authentication had generic `Authorization: Bearer` headers generated in cURL commands.
+- **Root Cause**: Hardcoded bearer header generation in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Tailored cURL authentication flags to produce `-H "X-API-Key: ..."` for API key auth, `-u "username:password"` for Basic auth, and `-H "Authorization: Bearer ..."` for OAuth/Bearer.
+
+### Fix 72: Search Clear Button in Endpoint Explorer
+- **Issue**: Resetting a search filter in the Endpoint Explorer required manually deleting all text in the search input.
+- **Root Cause**: Lack of clear button in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Added an instant one-click clear button (`X`) inside the endpoint search box.
+
+### Fix 73: Search Clear Button in Schema Viewer
+- **Issue**: Resetting a schema search required manually backspacing the query text in the Schema Viewer.
+- **Root Cause**: Lack of clear button in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Added an instant one-click clear button (`X`) inside the schema search box.

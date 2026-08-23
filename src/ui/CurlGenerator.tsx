@@ -112,7 +112,15 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
 
     // Security header defaults (only if not already provided as explicit header param)
     if (endpoint.security.length > 0 && !hasExplicitAuthHeader) {
-      lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
+      const firstSec = endpoint.security[0];
+      const secNameLower = firstSec.name.toLowerCase();
+      if (secNameLower.includes('apikey') || secNameLower.includes('key')) {
+        lines.push(`  -H "X-API-Key: YOUR_API_KEY"`);
+      } else if (secNameLower.includes('basic')) {
+        lines.push(`  -u "username:password"`);
+      } else {
+        lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
+      }
     }
 
     // Request Body

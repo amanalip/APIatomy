@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { EndpointModel, HttpMethod } from '../model';
 import { HTTP_METHODS } from '../model/httpMethods';
-import { Search, ChevronDown, ChevronRight, Tag, Shield } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, Tag, Shield, X } from 'lucide-react';
 
 interface EndpointExplorerProps {
   endpoints: EndpointModel[];
@@ -112,8 +112,17 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search endpoints by path, summary, or tag..."
-            className="w-full pl-9 pr-3 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full pl-9 pr-8 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+              title="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Method filter pills */}

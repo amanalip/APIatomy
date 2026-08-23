@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { EndpointModel, ServerModel, SchemaModel, SecuritySchemeModel } from '../model';
 import { HTTP_METHODS, getStatusCategory } from '../model/httpMethods';
 import { CurlGenerator } from './CurlGenerator';
-import { X, Shield, ArrowRight, FileCode, CheckCircle2, ChevronRight, ChevronDown } from 'lucide-react';
+import { X, Shield, ArrowRight, FileCode, CheckCircle2, ChevronRight, ChevronDown, AlertCircle } from 'lucide-react';
 
 interface EndpointDetailsProps {
   endpoint: EndpointModel;
@@ -116,6 +116,17 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
           <CurlGenerator endpoint={endpoint} servers={servers} />
         ) : (
           <>
+            {/* Deprecation Warning */}
+            {endpoint.deprecated && (
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs">
+                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                <div>
+                  <span className="font-semibold">This endpoint is deprecated.</span>
+                  <span className="ml-1 text-slate-600 dark:text-slate-400">It may be removed or replaced in future revisions of this API.</span>
+                </div>
+              </div>
+            )}
+
             {/* Security */}
             {endpoint.security.length > 0 && (
               <div className="space-y-2">
