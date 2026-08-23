@@ -41,6 +41,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
         view.dispatch({
           selection: { anchor: lineInfo.from },
           scrollIntoView: true,
+          effects: EditorView.scrollIntoView(lineInfo.from, { y: 'center' }),
         });
         view.focus();
       },

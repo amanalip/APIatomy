@@ -106,3 +106,13 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Specifications starting with curly braces that used relaxed YAML formatting were flagged with premature JSON parsing syntax errors even when successfully parsed by the YAML engine.
 - **Root Cause**: Fast-path JSON check in `src/parser/yamlJson.ts` pushed errors to the diagnostic list before attempting YAML fallback.
 - **Resolution**: Cleaned diagnostics during YAML parser fallback to ensure valid documents remain error-free.
+
+### Fix 19: Viewport Centered Scrolling on Code Diagnostics Navigation
+- **Issue**: Clicking a diagnostic entry jumped to the line but positioned it at the extreme top edge of the editor view.
+- **Root Cause**: `scrollIntoView: true` without explicit vertical alignment parameter in `EditorPane.tsx`.
+- **Resolution**: Added `EditorView.scrollIntoView(lineInfo.from, { y: 'center' })` effect to cleanly position the target line in the center of the viewport.
+
+### Fix 20: Robust URL Hash Parameter Decompression
+- **Issue**: Shared URL links containing extra hash fragments, raw LZ-compressed tokens, or encoded prefixes could fail extraction in certain browser environments.
+- **Root Cause**: Strict regex dependency on `#spec=` without fallback for stripped or prefixed hashes.
+- **Resolution**: Enhanced `decompressSpecFromHash` in `src/share/urlHash.ts` to handle direct, query-param, and raw hash string variations gracefully.

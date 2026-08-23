@@ -8,9 +8,22 @@ export function compressSpecToHash(specText: string): string {
 
 export function decompressSpecFromHash(hashString: string): string | null {
   if (!hashString) return null;
-  const cleanHash = hashString.startsWith('#') ? hashString.slice(1) : hashString;
-  const params = new URLSearchParams(cleanHash);
-  const specEncoded = params.get('spec');
+  const cleanHash = hashString.replace(/^[#?]+/, '').trim();
+  if (!cleanHash) return null;
+
+  let specEncoded: string | null = null;
+
+  if (cleanHash.startsWith('spec=')) {
+    specEncoded = cleanHash.slice(5);
+  } else {
+    const params = new URLSearchParams(cleanHash);
+    specEncoded = params.get('spec');
+  }
+
+  // Fallback: If entire hash is raw compressed string
+  if (!specEncoded && cleanHash.length > 20 && !cleanHash.includes('=')) {
+    specEncoded = cleanHash;
+  }
 
   if (!specEncoded) return null;
 
@@ -27,7 +40,7 @@ export function copyTextToClipboard(text: string): Promise<boolean> {
     return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
   }
 
-  // Fallback for older browsers
+  // Fallback for older environments
   try {
     const textArea = document.createElement('textarea');
     textArea.value = text;
