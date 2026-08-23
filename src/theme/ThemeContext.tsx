@@ -21,6 +21,24 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   });
 
+  // Listen to OS system color-scheme changes if user hasn't explicitly set preference
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('apiatomy_theme');
+      if (saved) return;
+
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = (e: MediaQueryListEvent) => {
+        setThemeState(e.matches ? 'dark' : 'light');
+      };
+
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    } catch {
+      // Ignore media query errors
+    }
+  }, []);
+
   useEffect(() => {
     try {
       localStorage.setItem('apiatomy_theme', theme);

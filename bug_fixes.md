@@ -136,3 +136,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Schemas combining inheritance or polymorphic composition (`allOf`, `oneOf`, `anyOf`) with direct properties hid the direct properties from view in the schema tree inspector.
 - **Root Cause**: Early return statement in `TreeNodeRenderer` within `src/ui/SchemaViewer.tsx` when composition keywords were present.
 - **Resolution**: Refactored `TreeNodeRenderer` to render both composition branch nodes and direct property trees in unified hierarchy.
+
+### Fix 25: Dynamic OS System Theme Synchronization Listener
+- **Issue**: When users changed their operating system dark/light preference while the application was open without an explicit manual theme override, the theme did not update dynamically.
+- **Root Cause**: Missing media query listener for `(prefers-color-scheme: dark)` in `src/theme/ThemeContext.tsx`.
+- **Resolution**: Added a reactive `change` event listener on `matchMedia` to update the application theme in real time.
