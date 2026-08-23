@@ -64,7 +64,7 @@ export function resolveSchema(
     const ref = s.$ref;
     const targetName = extractRefTargetName(ref);
 
-    // Circular reference check — normalize encoded ref for comparison
+    // Circular reference check - normalize encoded ref for comparison
     const canonicalPath = `#/components/schemas/${targetName}`;
     const normalizedRef = (() => { try { return decodeURIComponent(ref); } catch { return ref; } })();
     if (context.visitingPath.has(ref) || context.visitingPath.has(normalizedRef) || (targetName && context.visitingPath.has(canonicalPath))) {
@@ -78,7 +78,7 @@ export function resolveSchema(
       };
     }
 
-    // Cache lookup — deep clone shallow shared structures via spread + clone properties
+    // Cache lookup - deep clone shallow shared structures via spread + clone properties
     if (context.resolvedCache.has(ref)) {
       const cached = context.resolvedCache.get(ref)!;
       return {
@@ -178,7 +178,7 @@ export function resolveSchema(
     model.items = resolveSchema(s.items, context);
   }
 
-  // Composition: allOf, oneOf, anyOf, not — typed handling
+  // Composition: allOf, oneOf, anyOf, not - typed handling
   if (Array.isArray(s.allOf)) {
     model.allOf = s.allOf.map((sub) => resolveSchema(sub, context));
   }

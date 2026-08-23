@@ -156,7 +156,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
           )}
         </div>
 
-        {/* Method filter pills — UX: aria-pressed + per-method count + TRACE support */}
+        {/* Method filter pills - UX: aria-pressed + per-method count + TRACE support */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5" role="toolbar" aria-label="Filter by HTTP method">
           {methodsList.map((m) => {
             const isSelected = selectedMethod === m;

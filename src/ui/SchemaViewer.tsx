@@ -410,7 +410,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
             ))}
             {(schema as any).not && (
               <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60">
-                <div className="text-[11px] font-mono text-rose-600 dark:text-rose-400 mb-1.5">Not — must NOT match</div>
+                <div className="text-[11px] font-mono text-rose-600 dark:text-rose-400 mb-1.5">Not - must NOT match</div>
                 <TreeNodeRenderer
                   schema={(schema as any).not}
                   schemas={schemas}

@@ -7,7 +7,7 @@ import { generateMockData } from '../src/model/mockGenerator';
 
 // 15 quality / feature tests covering recent bug fixes
 
-describe('Quality Batch 4 — Bug Fixes & UX', () => {
+describe('Quality Batch 4 - Bug Fixes & UX', () => {
   it('1: validator rejects array info object as missing-info', () => {
     const yaml = `openapi: 3.0.0
 info: []

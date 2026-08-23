@@ -894,25 +894,25 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Root Cause**: Missing `hasAdditional` and `not` in composition check.
 - **Resolution**: Added `hasAdditional = !!schemaObj.additionalProperties` and extended `hasComposition` to include `(schemaObj as any).not`; guard now `!hasProps && !hasComposition && !hasItems && !hasAdditional && !isPrimitive && !hasRef`.
 
-### Fix 183: Code Quality — Mock Generator AdditionalProperties Sample Support
+### Fix 183: Code Quality - Mock Generator AdditionalProperties Sample Support
 - **Improvement**: Enhanced `src/model/mockGenerator.ts:98-107` to generate realistic mock samples for `additionalProperties` dictionary schemas, returning `{ additionalProp: <mock> }` alongside normal properties and for pure map schemas.
 
-### Fix 184: Code Quality — Editor Format Detection Dynamic
+### Fix 184: Code Quality - Editor Format Detection Dynamic
 - **Improvement**: Updated `src/App.tsx:153-158` to pass `format` to `EditorPane` dynamically based on `spec.originalFormat` and `rawText.trim().startsWith('{')`, ensuring JSON specs get JSON syntax highlighting instead of forced YAML.
 
-### Fix 185: Code Quality — Swagger Rewrite Parent-Key Context Typing
+### Fix 185: Code Quality - Swagger Rewrite Parent-Key Context Typing
 - **Improvement**: Refactored `rewriteSwaggerRefs` signature to `(obj, seen, parentKey?)` with explicit `string | undefined` typing and propagated through array/object branches, improving type safety and documenting intent.
 
-### Fix 186: Code Quality — Endpoint Explorer Methods List as Constant with Trace
+### Fix 186: Code Quality - Endpoint Explorer Methods List as Constant with Trace
 - **Improvement**: Centralized `methodsList` includes `trace` and is now used consistently for pill rendering and filtering, eliminating magic strings and ensuring future method additions require single-site change.
 
-### Fix 187: Code Quality — Validator Empty Schema Helper Clarity
+### Fix 187: Code Quality - Validator Empty Schema Helper Clarity
 - **Improvement**: Expanded validator empty-schema variables with explicit `hasAdditional` and `not` inclusion, with comment documenting map-type schemas, improving readability and preventing regression.
 
-### Fix 188: Code Quality — Mock Generator Depth Normalization Preserved
+### Fix 188: Code Quality - Mock Generator Depth Normalization Preserved
 - **Improvement**: Retained `normalizeType` helper for OAS 3.1 union array types and documented additionalProperties handling parity with graphLayout/normalizer, aligning three modules on same traversal set.
 
-### Fix 189: UX/UI — Method Filter Pills Count Badges, Aria-Pressed, and Trace Visibility
+### Fix 189: UX/UI - Method Filter Pills Count Badges, Aria-Pressed, and Trace Visibility
 - **Improvement**: Revamped `src/ui/EndpointExplorer.tsx:156-175` method pills to display per-method counts `GET (3)`, `TRACE (1)` with `aria-pressed` and `title` tooltips, toolbar `role="toolbar"` and `aria-label`, improving discoverability for `TRACE` and accessibility (WCAG 4.1.2). Added trace count ensures users see rare methods exist.
 
 ### Fix 190: Comprehensive Quality Test Suite 2
@@ -931,7 +931,7 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 ### Fix 193: Schema Viewer Tree Missing `not` Composition Rendering
 - **Issue**: `TreeNodeRenderer` in `src/ui/SchemaViewer.tsx:350` computed `hasComposition` only from `allOf/oneOf/anyOf`, hiding `not` negation schemas entirely; leaf fallback rendered generic `object / any` box without indicating negation (`src/model/index.ts:106` defines `not` field).
 - **Root Cause**: Hardcoded composition check omitting `not`.
-- **Resolution**: Extended `hasComposition` to include `(schema as any).not`, added `not` branch rendering with rose-styled `Not — must NOT match` container and recursive `TreeNodeRenderer` call. Verified mock handles `not`.
+- **Resolution**: Extended `hasComposition` to include `(schema as any).not`, added `not` branch rendering with rose-styled `Not - must NOT match` container and recursive `TreeNodeRenderer` call. Verified mock handles `not`.
 
 ### Fix 194: EndpointDetails `SchemaPropertyTree` Missing `additionalProperties` and `not` Display
 - **Issue**: Inline property tree in `src/ui/EndpointDetails.tsx:500` rendered only `properties` and `items`, omitting `additionalProperties` map signatures and `not` negations for request/response body previews.
@@ -958,13 +958,13 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Root Cause**: Static option rendering and missing accessibility adornments.
 - **Resolution**: Mapped `allTags` to `count = endpoints.filter(e=>e.tags.includes(tag)).length` rendering `tag (count)`; added `aria-label` to both Explorer and SchemaViewer search inputs and visual `/` badge (`hidden sm:flex`) with `pr-16` padding.
 
-### Fix 199: Code Quality — Centralized Validator/RefResolver/GraphLayout Traversal Parity
+### Fix 199: Code Quality - Centralized Validator/RefResolver/GraphLayout Traversal Parity
 - **Improvement**: Aligned three traversal utilities (`validator.ts:collectSubRefs`, `refResolver.ts:collectSchemaRefs`, `graphLayout.ts:collectChildSchemaNames`) to identical field set (`properties`, `items`, `additionalProperties`, `not`, `allOf/oneOf/anyOf`), documented parity and added shared test `collectSchemaRefs additionalProperties/not parity` in `tests/qualityImprovements3.test.ts`.
 
 ### Fix 200: Comprehensive Quality Improvements Test Suite 3
 - **Improvement**: Added `tests/qualityImprovements3.test.ts` with 8 tests: (1) validator additionalProperties/not unused false positives, (2) getStatusCategory default emerald mapping, (3) mockGenerator not handling (string/array), (4) graph layout indirect reuse count, (5) collectSchemaRefs parity (A/B/C/D).
 
-### Fix 201: UX/UI — Topology Graph Clear Search + Tag Count + Keyboard Hints
+### Fix 201: UX/UI - Topology Graph Clear Search + Tag Count + Keyboard Hints
 - **Improvement**: TopologyGraph search now has Escape + ✕ clear, Explorer tag dropdown shows `(count)`, both main searches display `/` kbd badge with `aria-label`, improving discoverability (WCAG) and consistency with header `/` shortcut.
 
 ### Fix 202: Validator Info Object Array Bypass
@@ -1017,19 +1017,19 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Root Cause**: Catch block discarded error message.
 - **Resolution**: Catch now prepends a `parse-crash` error diagnostic (`Critical parser crash: ${msg}`) to fallback diagnostics and preserves `rawText`, surfacing crash reason in DiagnosticsBar.
 
-### Fix 212: Code Quality — Typed `not` Handling and Utility Extraction
+### Fix 212: Code Quality - Typed `not` Handling and Utility Extraction
 - **Improvement**: Replaced all `(schema as any).not` casts with typed `schema.not` in `src/model/mockGenerator.ts:56`, `src/parser/validator.ts:371,499`, documented via comment. Added `src/utils/typeGuards.ts` with `isRecord`/`isString` reusable guards for future refactoring, improving strictness and reducing `any` surface. File counts as code quality improvement.
 
-### Fix 213: Code Quality — Comprehensive Test Coverage Expansion (15 Tests)
-- **Improvement**: Added `tests/qualityBatch4.test.ts` with 15 tests verifying (1) array info rejection, (2) multiple slash normalization, (3) single-quote escaping, (4) swagger `2` variant, (5) paths fallback decompression, (6) hash + extra params, (7) server enum fallback, (8) invalid slash warning, (9) mock `not` violating placeholder, (10) array clone isolation, (11) parse-crash absence smoke, (12) pipeDelimited encoding, (13) uuid header fallback, (14) swagger rewrite example preservation, (15) unused-schema Orphan detection — raising coverage from 114 to 129 tests.
+### Fix 213: Code Quality - Comprehensive Test Coverage Expansion (15 Tests)
+- **Improvement**: Added `tests/qualityBatch4.test.ts` with 15 tests verifying (1) array info rejection, (2) multiple slash normalization, (3) single-quote escaping, (4) swagger `2` variant, (5) paths fallback decompression, (6) hash + extra params, (7) server enum fallback, (8) invalid slash warning, (9) mock `not` violating placeholder, (10) array clone isolation, (11) parse-crash absence smoke, (12) pipeDelimited encoding, (13) uuid header fallback, (14) swagger rewrite example preservation, (15) unused-schema Orphan detection - raising coverage from 114 to 129 tests.
 
-### Fix 214: UX/UI — Accessible Skip Link and Filter Button Semantics
+### Fix 214: UX/UI - Accessible Skip Link and Filter Button Semantics
 - **Improvement**: Added `Skip to content` sr-only link in `src/ui/Header.tsx:113` targeting `#main-content` added to `src/App.tsx:153`, improving keyboard navigation (WCAG 2.4.1). Topology graph filter group now has `role="group"` + `aria-label` and each button has `aria-pressed` + transition, header theme toggle adds `aria-pressed`/`aria-label`/`focus-visible:ring`, explorer empty state gains centered icon + descriptive subtext + styled clear button.
 
-### Fix 215: UX/UI — Enhanced Empty and Filtered States Consistency
+### Fix 215: UX/UI - Enhanced Empty and Filtered States Consistency
 - **Improvement**: Revamped empty states across `src/ui/EndpointExplorer.tsx:225` (icon + subtext + bordered clear button) and `src/ui/SchemaViewer.tsx:149` (icon + “Clear search” when query active), plus graph dual-overlay (empty + “No nodes match filters” banner with inline clear). Ensures consistent guidance and one-click recovery.
 
-### Fix 216: UX/UI — Graph Toolbar Aria-Pressed and Search Clear Polish
+### Fix 216: UX/UI - Graph Toolbar Aria-Pressed and Search Clear Polish
 - **Improvement**: Graph toolbar search now consistently has Escape handling; filter pills expose `aria-pressed` for screen readers; added backdrop-blur overlay for empty graph to keep toolbar interactive while explaining state.
 
 

@@ -52,7 +52,7 @@ export function computeApiTopologyGraph(
     }
   }
 
-  // Add Endpoint Nodes — respect LayoutOptions dimensions
+  // Add Endpoint Nodes - respect LayoutOptions dimensions
   const endpointWidth = options.nodeWidth;
   const endpointHeight = options.nodeHeight;
   const schemaWidth = Math.max(180, options.nodeWidth - 40);

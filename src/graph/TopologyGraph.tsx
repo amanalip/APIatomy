@@ -84,7 +84,7 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
     return () => clearTimeout(t);
   }, [initialNodes, initialEdges, fitView]);
 
-  // Apply filtering and search highlighting — deterministic hidden set prevents stale closure race
+  // Apply filtering and search highlighting - deterministic hidden set prevents stale closure race
   useEffect(() => {
     // Hidden set derived from initialNodes (source of truth) to avoid mutating Set inside setNodes callback
     const hiddenIds = new Set<string>();
@@ -201,7 +201,7 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
           )}
         </div>
 
-        {/* Filter buttons — UX: aria-pressed + counts */}
+        {/* Filter buttons - UX: aria-pressed + counts */}
         <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/60 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/60 text-xs" role="group" aria-label="Filter graph by node type">
           <button
             aria-pressed={filterType === 'all'}
@@ -295,7 +295,7 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
       )}
       {initialNodes.length > 0 && nodes.filter((n) => !n.hidden).length === 0 && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-amber-50 dark:bg-amber-950/90 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs px-3 py-2 rounded-lg shadow">
-          No nodes match current filters — <button onClick={() => { setSearchQuery(''); setFilterType('all'); setSelectedTag('all'); }} className="underline font-semibold">Clear filters</button>
+          No nodes match current filters - <button onClick={() => { setSearchQuery(''); setFilterType('all'); setSelectedTag('all'); }} className="underline font-semibold">Clear filters</button>
         </div>
       )}
 
