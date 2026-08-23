@@ -96,3 +96,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: When opening an empty or stripped specification with no endpoints or schemas, the topology graph view showed a blank canvas without user guidance.
 - **Root Cause**: Missing empty node list conditional placeholder in `src/graph/TopologyGraph.tsx`.
 - **Resolution**: Added an intuitive centered overlay explaining that no graphable endpoints or schemas were found in the current spec.
+
+### Fix 17: Deep `$ref` Resolution on Parameters, Bodies, and Responses
+- **Issue**: References to reusable components outside schemas (e.g. `#/components/parameters/...`, `#/components/responses/...`, or `#/components/requestBodies/...`) were rendered as raw references without expanding their schema and properties.
+- **Root Cause**: Parameter, request body, and response AST parsers in `src/parser/normalizer.ts` only handled schema-level pointers.
+- **Resolution**: Added pointer traversal and full model resolution for component parameter, request body, and response references.

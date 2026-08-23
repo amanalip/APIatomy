@@ -13,7 +13,7 @@ import {
   ServerModel,
   TagModel,
 } from '../model';
-import { extractRefTargetName, RefResolutionContext, resolveSchema } from './refResolver';
+import { extractRefTargetName, RefResolutionContext, resolveJsonPointer, resolveSchema } from './refResolver';
 import { isSwagger2, convertSwagger2ToOpenApi3 } from './swaggerConverter';
 import { validateSpec, findLineForPattern } from './validator';
 
@@ -189,7 +189,16 @@ export function normalizeSpec(
       const consumedSchemaRefs = new Set<string>();
 
       if (typeof op.requestBody === 'object' && op.requestBody !== null) {
-        const rb = op.requestBody as Record<string, unknown>;
+        let rb = op.requestBody as Record<string, unknown>;
+
+        // Resolve $ref on requestBody if present
+        if (typeof rb.$ref === 'string') {
+          const resolvedRb = resolveJsonPointer(context.rootDoc, rb.$ref);
+          if (typeof resolvedRb === 'object' && resolvedRb !== null) {
+            rb = resolvedRb as Record<string, unknown>;
+          }
+        }
+
         const contentList: MediaTypeModel[] = [];
 
         if (typeof rb.content === 'object' && rb.content !== null) {
@@ -233,7 +242,16 @@ export function normalizeSpec(
             continue;
           }
 
-          const r = respObj as Record<string, unknown>;
+          let r = respObj as Record<string, unknown>;
+
+          // Resolve $ref on response if present
+          if (typeof r.$ref === 'string') {
+            const resolvedResp = resolveJsonPointer(context.rootDoc, r.$ref);
+            if (typeof resolvedResp === 'object' && resolvedResp !== null) {
+              r = resolvedResp as Record<string, unknown>;
+            }
+          }
+
           const contentList: MediaTypeModel[] = [];
 
           if (typeof r.content === 'object' && r.content !== null) {
@@ -259,6 +277,7 @@ export function normalizeSpec(
             statusCode: code,
             description: typeof r.description === 'string' ? r.description : '',
             content: contentList,
+            headers: typeof r.headers === 'object' && r.headers !== null ? (r.headers as any) : undefined,
           });
         }
       }
@@ -333,6 +352,10 @@ function parseParameter(p: unknown, context: RefResolutionContext): ParameterMod
 
   // Handle $ref on parameter
   if (typeof param.$ref === 'string') {
+    const resolvedRaw = resolveJsonPointer(context.rootDoc, param.$ref);
+    if (typeof resolvedRaw === 'object' && resolvedRaw !== null) {
+      return parseParameter(resolvedRaw, context);
+    }
     const target = extractRefTargetName(param.$ref);
     return {
       name: target,
