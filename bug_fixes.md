@@ -156,3 +156,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Specs with broken schema references created ghost edges in dagre to nonexistent nodes, causing layout positioning distortion.
 - **Root Cause**: Missing schema existence validation before creating dagre edges in `src/layout/graphLayout.ts`.
 - **Resolution**: Guarded all schema edge creation against `spec.schemas[targetRef]` existence.
+
+### Fix 29: Composition and Default Value Integration in Mock JSON Generator
+- **Issue**: Generating mock sample JSON for schemas using `allOf`, `oneOf`, or `anyOf` compositions or declaring schema-level `default` values resulted in incomplete or fallback sample payloads.
+- **Root Cause**: `generateMockData` in `src/ui/SchemaViewer.tsx` lacked composition merging branches and default property evaluations.
+- **Resolution**: Enhanced `generateMockData` to merge `allOf` properties, evaluate `oneOf`/`anyOf` targets, and prioritize schema `default` values.

@@ -387,6 +387,7 @@ function generateMockData(schema: SchemaModel, allSchemas: Record<string, Schema
   if (depth > 4) return '...';
 
   if (schema.example !== undefined) return schema.example;
+  if (schema.default !== undefined) return schema.default;
 
   if (schema.enum && schema.enum.length > 0) {
     return schema.enum[0];
@@ -394,6 +395,31 @@ function generateMockData(schema: SchemaModel, allSchemas: Record<string, Schema
 
   if (schema.refTarget && allSchemas[schema.refTarget]) {
     return generateMockData(allSchemas[schema.refTarget], allSchemas, depth + 1);
+  }
+
+  // Handle allOf / oneOf / anyOf composition in mock generation
+  if (schema.allOf && schema.allOf.length > 0) {
+    const merged: Record<string, unknown> = {};
+    for (const sub of schema.allOf) {
+      const subData = generateMockData(sub, allSchemas, depth + 1);
+      if (typeof subData === 'object' && subData !== null) {
+        Object.assign(merged, subData);
+      }
+    }
+    if (schema.properties) {
+      for (const [key, prop] of Object.entries(schema.properties)) {
+        merged[key] = generateMockData(prop, allSchemas, depth + 1);
+      }
+    }
+    return merged;
+  }
+
+  if (schema.oneOf && schema.oneOf.length > 0) {
+    return generateMockData(schema.oneOf[0], allSchemas, depth + 1);
+  }
+
+  if (schema.anyOf && schema.anyOf.length > 0) {
+    return generateMockData(schema.anyOf[0], allSchemas, depth + 1);
   }
 
   if (schema.type === 'string') {
