@@ -71,6 +71,19 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       });
     }
 
+    // Rule: Excessively long summary (> 120 chars)
+    if (ep.summary && ep.summary.length > 120) {
+      const line = findLineForPattern(rawText, ep.path);
+      diagnostics.push({
+        id: `long-summary-${ep.id}`,
+        severity: 'info',
+        message: `Endpoint ${ep.method.toUpperCase()} ${ep.path} summary exceeds 120 characters (${ep.summary.length} chars). Consider using description for detailed explanations.`,
+        path: `/paths${ep.path}/${ep.method}/summary`,
+        line,
+        source: 'linter',
+      });
+    }
+
     // Rule: Missing 2xx success response
     const hasSuccessResponse = ep.responses.some((r) => {
       const code = r.statusCode.toLowerCase();

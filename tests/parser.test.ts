@@ -227,6 +227,27 @@ paths:
     expect(dupParamDiag?.message).toContain('q');
   });
 
+  it('flags excessively long summary strings with info diagnostics', () => {
+    const longSummarySpec = `
+openapi: 3.0.0
+info:
+  title: Long Summary Spec
+  version: 1.0.0
+paths:
+  /status:
+    get:
+      summary: This is an extraordinarily long summary that should have been placed inside the description field rather than inside the concise summary field according to OpenAPI documentation recommendations.
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(longSummarySpec);
+    const longSumDiag = parsed.diagnostics.find((d) => d.id.startsWith('long-summary-'));
+    expect(longSumDiag).toBeDefined();
+    expect(longSumDiag?.severity).toBe('info');
+  });
+
   it('recognizes 2XX wildcard responses as valid success definitions', () => {
     const wildcardSpec = `
 openapi: 3.0.0

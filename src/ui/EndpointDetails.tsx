@@ -339,13 +339,20 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                               <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
                                 Response Headers
                               </span>
-                              <div className="p-2 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono space-y-1">
+                              <div className="p-2 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono space-y-1.5 divide-y divide-slate-200/60 dark:divide-slate-800/60">
                                 {Object.entries(resp.headers).map(([hKey, hVal]: [string, any]) => (
-                                  <div key={hKey} className="flex items-center justify-between">
-                                    <span className="text-slate-800 dark:text-slate-200">{hKey}</span>
-                                    <span className="text-slate-500 text-[11px]">
-                                      {hVal.description || hVal.schema?.type || 'string'}
-                                    </span>
+                                  <div key={hKey} className="pt-1 first:pt-0">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-slate-800 dark:text-slate-200 font-semibold">{hKey}</span>
+                                      <span className="text-blue-600 dark:text-blue-400 text-[10px]">
+                                        {hVal.schema?.type || (typeof hVal.type === 'string' ? hVal.type : 'string')}
+                                      </span>
+                                    </div>
+                                    {hVal.description && (
+                                      <div className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-0.5">
+                                        {hVal.description}
+                                      </div>
+                                    )}
                                   </div>
                                 ))}
                               </div>

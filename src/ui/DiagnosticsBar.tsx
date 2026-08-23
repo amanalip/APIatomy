@@ -97,6 +97,16 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
               >
                 Warnings ({warningCount})
               </button>
+              <button
+                onClick={() => setActiveFilter('info')}
+                className={`px-2 py-0.5 rounded ${
+                  activeFilter === 'info'
+                    ? 'bg-sky-100 dark:bg-sky-900/60 text-sky-800 dark:text-sky-300 font-medium'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Info ({infoCount})
+              </button>
             </div>
           )}
 

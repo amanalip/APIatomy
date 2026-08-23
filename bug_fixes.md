@@ -325,9 +325,34 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 ### Fix 62: Array Query Parameter Explode Formatting in cURL Snippets
 - **Issue**: Array query parameters were serialized as single string values regardless of `explode` configuration.
 - **Root Cause**: Direct value extraction without array iteration in `src/ui/CurlGenerator.tsx`.
-- **Resolution**: Formatted exploded array query parameters as repeated key-value pairs (`key=v1&key=v2`) and unexploded parameters as comma-separated values.
+- **Resolution**: Formatted exploded array query parameters as repeated key-value pairs (`key=v1&key=v2`) and unexploded parameters as comma-separated values (`key=v1,v2`).
 
 ### Fix 63: Request Body Direct Reference Target Tracking in Graph Normalizer
 - **Issue**: Operations referencing component request bodies directly did not always register top-level schema references in graph edge maps.
 - **Root Cause**: Reference target extraction omitted direct pointer names in `src/parser/normalizer.ts`.
 - **Resolution**: Captured direct request body schema reference targets into `consumedSchemaRefs`.
+
+### Fix 64: Missing Info Severity Filter in Diagnostics Bar
+- **Issue**: The diagnostics panel displayed info count in the status bar but lacked an `Info` tab button in the expanded filter drawer.
+- **Root Cause**: Omission of info button in `src/ui/DiagnosticsBar.tsx` button list.
+- **Resolution**: Added an `Info ({infoCount})` filter tab button.
+
+### Fix 65: Distinct Response Header Schema Type and Description Formatting
+- **Issue**: In the Endpoint Inspector, response headers that had both descriptions and schema types overrode the type with the description string.
+- **Root Cause**: Single ternary fallback expression in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Separated header type badges and descriptions into distinct hierarchical rows.
+
+### Fix 66: JSON and YAML Toggle for Mock Schema Payloads
+- **Issue**: Developers reviewing schemas could only generate and copy mock data in JSON format.
+- **Root Cause**: Hardcoded JSON formatting in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Added a format toggle enabling real-time switching and copying between JSON and YAML mock data representations.
+
+### Fix 67: Excessively Long Summary Linter Diagnostic
+- **Issue**: OpenAPI endpoints declaring overly long summaries (> 120 chars) that belonged in description fields were not flagged.
+- **Root Cause**: Missing summary length threshold in `src/parser/validator.ts`.
+- **Resolution**: Emitted an `info` diagnostic recommending using `description` for detailed documentation.
+
+### Fix 68: Spec Re-Upload Input Reset
+- **Issue**: Uploading a specification file, making changes in an external editor, and attempting to re-upload the same file failed to trigger the upload handler.
+- **Root Cause**: HTML file input preserved the previous file path in `src/ui/Header.tsx`.
+- **Resolution**: Reset `e.target.value = ''` immediately following file processing.

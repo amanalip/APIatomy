@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { SchemaModel } from '../model';
 import { Search, Box, ChevronRight, ChevronDown, AlertCircle, Copy, Check } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
+import YAML from 'yaml';
 
 interface SchemaViewerProps {
   schemas: Record<string, SchemaModel>;
@@ -19,6 +20,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
     selectedSchemaName || Object.keys(schemas)[0] || ''
   );
   const [viewMode, setViewMode] = useState<'tree' | 'example'>('tree');
+  const [mockFormat, setMockFormat] = useState<'json' | 'yaml'>('json');
   const [copiedExample, setCopiedExample] = useState(false);
 
   // Sync if selectedSchemaName changes from parent or if current active schema is removed
@@ -49,13 +51,21 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
 
   const activeSchema = schemas[activeSchemaName];
 
-  const generatedMockJson = useMemo(() => {
-    if (!activeSchema) return '{}';
-    return JSON.stringify(generateMockData(activeSchema, schemas), null, 2);
-  }, [activeSchema, schemas]);
+  const generatedMockText = useMemo(() => {
+    if (!activeSchema) return mockFormat === 'yaml' ? '' : '{}';
+    const mockData = generateMockData(activeSchema, schemas);
+    if (mockFormat === 'yaml') {
+      try {
+        return YAML.stringify(mockData);
+      } catch {
+        return JSON.stringify(mockData, null, 2);
+      }
+    }
+    return JSON.stringify(mockData, null, 2);
+  }, [activeSchema, schemas, mockFormat]);
 
   const handleCopyMock = async () => {
-    const success = await copyTextToClipboard(generatedMockJson);
+    const success = await copyTextToClipboard(generatedMockText);
     if (success) {
       setCopiedExample(true);
       setTimeout(() => setCopiedExample(false), 2000);
@@ -186,7 +196,31 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">Generated Example Object</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">Format:</span>
+                      <div className="flex items-center bg-slate-200/80 dark:bg-slate-800/80 p-0.5 rounded text-[11px] font-mono">
+                        <button
+                          onClick={() => setMockFormat('json')}
+                          className={`px-2 py-0.5 rounded transition ${
+                            mockFormat === 'json'
+                              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-medium shadow-sm'
+                              : 'text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          JSON
+                        </button>
+                        <button
+                          onClick={() => setMockFormat('yaml')}
+                          className={`px-2 py-0.5 rounded transition ${
+                            mockFormat === 'yaml'
+                              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-medium shadow-sm'
+                              : 'text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          YAML
+                        </button>
+                      </div>
+                    </div>
                     <button
                       onClick={handleCopyMock}
                       className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-sm"
@@ -199,14 +233,14 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                       ) : (
                         <>
                           <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                          <span>Copy Mock JSON</span>
+                          <span>Copy Mock {mockFormat.toUpperCase()}</span>
                         </>
                       )}
                     </button>
                   </div>
 
                   <pre className="p-4 rounded-xl bg-slate-900 text-slate-100 border border-slate-800 text-xs font-mono overflow-x-auto whitespace-pre leading-relaxed shadow-sm">
-                    <code>{generatedMockJson}</code>
+                    <code>{generatedMockText}</code>
                   </pre>
                 </div>
               )}
