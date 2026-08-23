@@ -293,14 +293,14 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       });
     }
 
-    // Check duplicate parameters in rawDoc operation
+    // Check duplicate parameters in rawDoc operation (including path-level vs operation-level collision)
     if (rawDoc.paths && typeof rawDoc.paths === 'object') {
       const pathsObj = rawDoc.paths as Record<string, unknown>;
       const pathItem = pathsObj[ep.path] as Record<string, unknown> | undefined;
       const opItem = pathItem?.[ep.method] as Record<string, unknown> | undefined;
-      if (opItem && Array.isArray(opItem.parameters)) {
-        const rawSeen = new Set<string>();
-        for (const p of opItem.parameters) {
+      const rawSeen = new Set<string>();
+      const checkParams = (params: unknown[], source: string) => {
+        for (const p of params) {
           if (typeof p === 'object' && p !== null) {
             const pObj = p as Record<string, unknown>;
             const key = `${pObj.in || 'query'}:${pObj.name}`;
@@ -309,7 +309,7 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
               diagnostics.push({
                 id: `duplicate-param-${ep.id}-${key}`,
                 severity: 'warning',
-                message: `Duplicate parameter "${pObj.name}" in "${pObj.in || 'query'}" declared in ${ep.method.toUpperCase()} ${ep.path}.`,
+                message: `Duplicate parameter "${pObj.name}" in "${pObj.in || 'query'}" declared in ${ep.method.toUpperCase()} ${ep.path}${source ? ` (duplicate across ${source})` : ''}.`,
                 path: `/paths${ep.path}/${ep.method}/parameters`,
                 line,
                 source: 'linter',
@@ -319,6 +319,12 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
             }
           }
         }
+      };
+      if (pathItem && Array.isArray((pathItem as Record<string, unknown>).parameters)) {
+        checkParams((pathItem as Record<string, unknown>).parameters as unknown[], 'path-level');
+      }
+      if (opItem && Array.isArray(opItem.parameters)) {
+        checkParams(opItem.parameters as unknown[], pathItem && Array.isArray((pathItem as Record<string, unknown>).parameters) ? 'path vs operation' : 'operation');
       }
     }
 

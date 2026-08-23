@@ -15,188 +15,21 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
     servers[0]?.url || 'https://api.example.com'
   );
 
+  // Sync selected server when available servers change (e.g., new spec loaded)
+  React.useEffect(() => {
+    if (servers.length === 0) return;
+    const exists = servers.some((s) => s.url === selectedServerUrl);
+    if (!exists) {
+      setSelectedServerUrl(servers[0].url);
+    }
+  }, [servers, selectedServerUrl]);
+
   const activeServer = useMemo(() => {
     return servers.find((s) => s.url === selectedServerUrl) || servers[0];
   }, [servers, selectedServerUrl]);
 
   const curlCommand = useMemo(() => {
-    let rawUrl = selectedServerUrl.replace(/\/$/, '');
-
-    // Resolve server variables if present
-    if (activeServer?.variables) {
-      for (const [varName, varDef] of Object.entries(activeServer.variables)) {
-        rawUrl = rawUrl.split(`{${varName}}`).join(varDef.default || 'default');
-      }
-    }
-
-    let normalizedPath = endpoint.path.startsWith('/') ? endpoint.path : `/${endpoint.path}`;
-    let url = rawUrl.replace(/\/+$/, '') + normalizedPath;
-
-    // Substitute path parameters with placeholders (handle repeated placeholders)
-    for (const param of endpoint.parameters.filter((p) => p.in === 'path')) {
-      const val = param.example !== undefined
-        ? encodeURIComponent(String(param.example))
-        : param.schema?.default !== undefined
-          ? encodeURIComponent(String(param.schema.default))
-          : `:${param.name}`;
-      url = url.split(`{${param.name}}`).join(val);
-    }
-
-    // Query parameters
-    const queryParams = endpoint.parameters.filter((p) => p.in === 'query');
-    if (queryParams.length > 0) {
-      const qParts: string[] = [];
-      for (const p of queryParams) {
-        if (p.schema?.type === 'array' || Array.isArray(p.example)) {
-          const arrVal = Array.isArray(p.example)
-            ? p.example
-            : Array.isArray(p.schema?.default)
-              ? (p.schema.default as unknown[])
-              : ['value1', 'value2'];
-
-          if (p.explode !== false) {
-            for (const item of arrVal) {
-              qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(String(item))}`);
-            }
-          } else {
-            let delimiter = ',';
-            if (p.style === 'spaceDelimited') delimiter = ' ';
-            else if (p.style === 'pipeDelimited') delimiter = '|';
-            const joined = arrVal.map(String).join(delimiter);
-            qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(joined)}`);
-          }
-        } else {
-          let val = p.example !== undefined
-            ? p.example
-            : p.schema?.default !== undefined
-              ? p.schema.default
-              : undefined;
-
-          if (val === undefined) {
-            if (p.schema?.type === 'boolean') {
-              val = 'true';
-            } else if (p.schema?.type === 'integer' || p.schema?.type === 'number') {
-              if (p.schema.minimum !== undefined) {
-                val = String(p.schema.minimum);
-              } else if (p.schema.maximum !== undefined && p.schema.maximum < 1) {
-                val = String(p.schema.maximum);
-              } else {
-                val = '1';
-              }
-            } else {
-              val = 'value';
-            }
-          }
-          qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(String(val))}`);
-        }
-      }
-      if (qParts.length > 0) {
-        url += `?${qParts.join('&')}`;
-      }
-    }
-
-    const lines: string[] = [`curl -X ${endpoint.method.toUpperCase()} "${url}"`];
-
-    const hasExplicitAuthHeader = endpoint.parameters.some(
-      (p) => p.in === 'header' && p.name.toLowerCase() === 'authorization'
-    );
-    const hasExplicitContentTypeHeader = endpoint.parameters.some(
-      (p) => p.in === 'header' && p.name.toLowerCase() === 'content-type'
-    );
-
-    // Header parameters
-    for (const header of endpoint.parameters.filter((p) => p.in === 'header')) {
-      let val = header.example !== undefined
-        ? header.example
-        : header.schema?.default !== undefined
-          ? header.schema.default
-          : undefined;
-
-      if (val === undefined) {
-        if (header.schema?.format === 'uuid') {
-          val = '123e4567-e89b-12d3-a456-426614174000';
-        } else if (header.schema?.type === 'integer' || header.schema?.type === 'number') {
-          val = '1';
-        } else if (header.schema?.type === 'boolean') {
-          val = 'true';
-        } else {
-          val = 'string';
-        }
-      }
-      const sanitizedVal = String(val).replace(/"/g, '\\"');
-      lines.push(`  -H "${header.name}: ${sanitizedVal}"`);
-    }
-
-    // Cookie parameters
-    const cookieParams = endpoint.parameters.filter((p) => p.in === 'cookie');
-    if (cookieParams.length > 0) {
-      const cookieStr = cookieParams
-        .map((c) => {
-          const val = c.example !== undefined
-            ? c.example
-            : c.schema?.default !== undefined
-              ? c.schema.default
-              : 'value';
-          return `${c.name}=${val}`;
-        })
-        .join('; ');
-      lines.push(`  -b "${cookieStr}"`);
-    }
-
-    // Security header defaults (only if not already provided as explicit header param)
-    if (endpoint.security.length > 0 && !hasExplicitAuthHeader) {
-      const firstSec = endpoint.security[0];
-      const secNameLower = firstSec.name.toLowerCase();
-      if (secNameLower.includes('apikey') || secNameLower.includes('key')) {
-        lines.push(`  -H "X-API-Key: YOUR_API_KEY"`);
-      } else if (secNameLower.includes('basic')) {
-        lines.push(`  -u "username:password"`);
-      } else {
-        lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
-      }
-    }
-
-    // Request Body
-    if (endpoint.requestBody && endpoint.requestBody.content.length > 0) {
-      const primaryMedia = endpoint.requestBody.content[0];
-      const isMultipart = primaryMedia.contentType.includes('multipart/form-data');
-      const isFormUrlEncoded = primaryMedia.contentType.includes('application/x-www-form-urlencoded');
-
-      if (isMultipart) {
-        if (primaryMedia.schema?.properties) {
-          for (const [propKey, propVal] of Object.entries(primaryMedia.schema.properties)) {
-            const isFile = propVal.format === 'binary' || (propVal.type as string) === 'file';
-            lines.push(`  -F "${propKey}=${isFile ? '@filename.ext' : 'value'}"`);
-          }
-        } else {
-          lines.push(`  -F "file=@filename.ext"`);
-        }
-      } else {
-        if (!hasExplicitContentTypeHeader) {
-          lines.push(`  -H "Content-Type: ${primaryMedia.contentType}"`);
-        }
-
-        if (primaryMedia.contentType.includes('json')) {
-          const sampleBody = primaryMedia.example
-            ? JSON.stringify(primaryMedia.example, null, 2)
-            : generateSampleJsonFromSchema(primaryMedia.schema);
-          lines.push(`  -d '${sampleBody}'`);
-        } else if (isFormUrlEncoded) {
-          if (primaryMedia.schema?.properties) {
-            const formFields = Object.keys(primaryMedia.schema.properties)
-              .map((k) => `${k}=value`)
-              .join('&');
-            lines.push(`  --data-urlencode "${formFields || 'field=value'}"`);
-          } else {
-            lines.push(`  -d "field=value"`);
-          }
-        } else {
-          lines.push(`  -d "field=value"`);
-        }
-      }
-    }
-
-    return lines.join(' \\\n');
+    return buildCurlCommand(endpoint, selectedServerUrl, activeServer);
   }, [endpoint, selectedServerUrl, activeServer]);
 
   const handleCopy = async () => {
@@ -257,7 +90,164 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
   );
 };
 
-function generateSampleJsonFromSchema(schema?: any): string {
+export function buildCurlCommand(
+  endpoint: EndpointModel,
+  selectedServerUrl: string,
+  activeServer?: ServerModel
+): string {
+  let rawUrl = (selectedServerUrl || 'https://api.example.com').replace(/\/$/, '');
+
+  if (activeServer?.variables) {
+    for (const [varName, varDef] of Object.entries(activeServer.variables)) {
+      rawUrl = rawUrl.split(`{${varName}}`).join((varDef as any).default || 'default');
+    }
+  }
+
+  let normalizedPath = endpoint.path.startsWith('/') ? endpoint.path : `/${endpoint.path}`;
+  let url = rawUrl.replace(/\/+$/, '') + normalizedPath;
+
+  for (const param of endpoint.parameters.filter((p) => p.in === 'path')) {
+    const val = param.example !== undefined
+      ? encodeURIComponent(String(param.example))
+      : param.schema?.default !== undefined
+        ? encodeURIComponent(String(param.schema.default))
+        : `:${param.name}`;
+    url = url.split(`{${param.name}}`).join(val);
+  }
+
+  const queryParams = endpoint.parameters.filter((p) => p.in === 'query');
+  if (queryParams.length > 0) {
+    const qParts: string[] = [];
+    for (const p of queryParams) {
+      if (p.schema?.type === 'array' || Array.isArray(p.example)) {
+        const arrVal = Array.isArray(p.example)
+          ? p.example
+          : Array.isArray(p.schema?.default)
+            ? (p.schema.default as unknown[])
+            : ['value1', 'value2'];
+        if (p.explode !== false) {
+          for (const item of arrVal) {
+            qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(String(item))}`);
+          }
+        } else {
+          let delimiter = ',';
+          if (p.style === 'spaceDelimited') delimiter = ' ';
+          else if (p.style === 'pipeDelimited') delimiter = '|';
+          const joined = arrVal.map(String).join(delimiter);
+          qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(joined)}`);
+        }
+      } else {
+        let val = p.example !== undefined
+          ? p.example
+          : p.schema?.default !== undefined
+            ? p.schema.default
+            : undefined;
+        if (val === undefined) {
+          if (p.schema?.type === 'boolean') val = 'true';
+          else if (p.schema?.type === 'integer' || p.schema?.type === 'number') {
+            if (p.schema.minimum !== undefined) val = String(p.schema.minimum);
+            else if (p.schema.maximum !== undefined && p.schema.maximum < 1) val = String(p.schema.maximum);
+            else val = '1';
+          } else val = 'value';
+        }
+        qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(String(val))}`);
+      }
+    }
+    if (qParts.length > 0) url += `?${qParts.join('&')}`;
+  }
+
+  const lines: string[] = [`curl -X ${endpoint.method.toUpperCase()} "${url}"`];
+  const hasExplicitAuthHeader = endpoint.parameters.some(
+    (p) => p.in === 'header' && p.name.toLowerCase() === 'authorization'
+  );
+  const hasExplicitContentTypeHeader = endpoint.parameters.some(
+    (p) => p.in === 'header' && p.name.toLowerCase() === 'content-type'
+  );
+
+  for (const header of endpoint.parameters.filter((p) => p.in === 'header')) {
+    let val = header.example !== undefined
+      ? header.example
+      : header.schema?.default !== undefined
+        ? header.schema.default
+        : undefined;
+    if (val === undefined) {
+      if (header.schema?.format === 'uuid') val = '123e4567-e89b-12d3-a456-426614174000';
+      else if (header.schema?.type === 'integer' || header.schema?.type === 'number') val = '1';
+      else if (header.schema?.type === 'boolean') val = 'true';
+      else val = 'string';
+    }
+    const sanitizedVal = String(val).replace(/"/g, '\\"');
+    lines.push(`  -H "${header.name}: ${sanitizedVal}"`);
+  }
+
+  const cookieParams = endpoint.parameters.filter((p) => p.in === 'cookie');
+  if (cookieParams.length > 0) {
+    const cookieStr = cookieParams
+      .map((c) => {
+        const val = c.example !== undefined
+          ? c.example
+          : c.schema?.default !== undefined
+            ? c.schema.default
+            : 'value';
+        return `${c.name}=${val}`;
+      })
+      .join('; ');
+    lines.push(`  -b "${cookieStr}"`);
+  }
+
+  if (endpoint.security.length > 0 && !hasExplicitAuthHeader) {
+    const firstSec = endpoint.security[0];
+    const secNameLower = firstSec.name.toLowerCase();
+    if (secNameLower.includes('apikey') || secNameLower.includes('key')) {
+      lines.push(`  -H "X-API-Key: YOUR_API_KEY"`);
+    } else if (secNameLower.includes('basic')) {
+      lines.push(`  -u "username:password"`);
+    } else {
+      lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
+    }
+  }
+
+  if (endpoint.requestBody && endpoint.requestBody.content.length > 0) {
+    const primaryMedia = endpoint.requestBody.content[0];
+    const isMultipart = primaryMedia.contentType.includes('multipart/form-data');
+    const isFormUrlEncoded = primaryMedia.contentType.includes('application/x-www-form-urlencoded');
+    if (isMultipart) {
+      if (primaryMedia.schema?.properties) {
+        for (const [propKey, propVal] of Object.entries(primaryMedia.schema.properties)) {
+          const isFile = propVal.format === 'binary' || (propVal.type as string) === 'file';
+          lines.push(`  -F "${propKey}=${isFile ? '@filename.ext' : 'value'}"`);
+        }
+      } else {
+        lines.push(`  -F "file=@filename.ext"`);
+      }
+    } else {
+      if (!hasExplicitContentTypeHeader) {
+        lines.push(`  -H "Content-Type: ${primaryMedia.contentType}"`);
+      }
+      if (primaryMedia.contentType.includes('json')) {
+        const sampleBody = primaryMedia.example
+          ? JSON.stringify(primaryMedia.example, null, 2)
+          : generateSampleJsonFromSchema(primaryMedia.schema);
+        lines.push(`  -d '${sampleBody}'`);
+      } else if (isFormUrlEncoded) {
+        if (primaryMedia.schema?.properties) {
+          const formFields = Object.keys(primaryMedia.schema.properties)
+            .map((k) => `${k}=value`)
+            .join('&');
+          lines.push(`  --data-urlencode "${formFields || 'field=value'}"`);
+        } else {
+          lines.push(`  -d "field=value"`);
+        }
+      } else {
+        lines.push(`  -d "field=value"`);
+      }
+    }
+  }
+
+  return lines.join(' \\\n');
+}
+
+export function generateSampleJsonFromSchema(schema?: any): string {
   if (!schema) return '{}';
   if (schema.example !== undefined) return JSON.stringify(schema.example, null, 2);
   try {
@@ -266,7 +256,6 @@ function generateSampleJsonFromSchema(schema?: any): string {
   } catch {
     // fallback to legacy generation below
   }
-  // Legacy fallback for edge cases where mock generation yields non-serializable placeholder
   if (schema.type === 'array') {
     if (schema.items?.example) return JSON.stringify([schema.items.example], null, 2);
     return '[]';

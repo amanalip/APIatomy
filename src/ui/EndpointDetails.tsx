@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { EndpointModel, ServerModel, SchemaModel, SecuritySchemeModel } from '../model';
 import { HTTP_METHODS, getStatusCategory } from '../model/httpMethods';
 import { CurlGenerator } from './CurlGenerator';
+import { copyTextToClipboard } from '../share/urlHash';
 import { X, Shield, ArrowRight, FileCode, CheckCircle2, ChevronRight, ChevronDown, AlertCircle, Copy, Check } from 'lucide-react';
 
 interface EndpointDetailsProps {
@@ -38,10 +39,12 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
     });
   }, [endpoint.parameters]);
 
-  const handleCopyPath = () => {
-    navigator.clipboard.writeText(endpoint.path);
-    setCopiedPath(true);
-    setTimeout(() => setCopiedPath(false), 2000);
+  const handleCopyPath = async () => {
+    const success = await copyTextToClipboard(endpoint.path);
+    if (success) {
+      setCopiedPath(true);
+      setTimeout(() => setCopiedPath(false), 2000);
+    }
   };
 
   const methodConfig = HTTP_METHODS[endpoint.method] || HTTP_METHODS.get;

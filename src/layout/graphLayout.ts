@@ -42,10 +42,15 @@ export function computeApiTopologyGraph(
     }
   }
 
-  // Add Endpoint Nodes
+  // Add Endpoint Nodes — respect LayoutOptions dimensions
+  const endpointWidth = options.nodeWidth;
+  const endpointHeight = options.nodeHeight;
+  const schemaWidth = Math.max(180, options.nodeWidth - 40);
+  const schemaHeight = Math.max(60, options.nodeHeight - 10);
+
   for (const ep of spec.endpoints) {
     const nodeId = `ep_${ep.id}`;
-    dagreGraph.setNode(nodeId, { width: 280, height: 90 });
+    dagreGraph.setNode(nodeId, { width: endpointWidth, height: endpointHeight });
 
     nodes.push({
       id: nodeId,
@@ -119,7 +124,7 @@ export function computeApiTopologyGraph(
     const reuse = schemaReuseCount[schemaName] || 0;
     const propCount = schemaObj.properties ? Object.keys(schemaObj.properties).length : 0;
 
-    dagreGraph.setNode(nodeId, { width: 240, height: 80 });
+    dagreGraph.setNode(nodeId, { width: schemaWidth, height: schemaHeight });
 
     nodes.push({
       id: nodeId,

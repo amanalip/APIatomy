@@ -730,3 +730,39 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 
 ### Fix 148: Comprehensive Bug-Fix Verification Test Suite
 - **Improvement**: Added `tests/bugFixVerification.test.ts` covering duplicate placeholder/server-variable replacement, graph additionalProperties/not edges, mockGenerator depth type-aware placeholders and integer max bounds, jsdom environment availability, diagnostics clipboard fallback, and header DRY view counts.
+
+### Fix 149: Topology Graph Edge Visibility Stale Closure Race on Filtering
+- **Issue**: Filtering the topology canvas by type (`endpoints` vs `schemas`) or tag left connecting edges visible because `hiddenNodeIds` was mutated inside the `setNodes` updater callback and read synchronously via `setEdges` before React had flushed the state update, causing edges to remain unhidden (`src/graph/TopologyGraph.tsx:86-141`).
+- **Root Cause**: Shared mutable `Set` populated as side-effect inside `setNodes(prev => prev.map(...))` and immediately reused for `setEdges`, relying on updater execution order which is not guaranteed under concurrent rendering.
+- **Resolution**: Recomputed `hiddenIds` deterministically from `initialNodes` (source of truth) before calling state setters, then applied the same set to both `setNodes` (via `prev => prev.map` with `hiddenIds.has`) and `setEdges`, eliminating the race and adding `initialNodes` to deps.
+
+### Fix 150: cURL Generator Server URL Stale After Spec Change
+- **Issue**: After loading a new spec with different `servers`, the selected server dropdown retained the previous spec's URL because `selectedServerUrl` was initialized once from `servers[0]` and never synchronized (`src/ui/CurlGenerator.tsx:12-16`).
+- **Root Cause**: Missing effect to resync `selectedServerUrl` when `servers` prop changes.
+- **Resolution**: Added `useEffect` syncing `selectedServerUrl` to `servers[0].url` when current selection no longer exists in the new servers list.
+
+### Fix 151: Endpoint Details Path Copy Missing Clipboard Fallback
+- **Issue**: Copying the endpoint path used `navigator.clipboard.writeText` directly, failing in insecure (`http`) contexts or when clipboard API is unavailable (`src/ui/EndpointDetails.tsx:41-45`).
+- **Root Cause**: Inconsistent clipboard handling vs `DiagnosticsBar` and `CurlGenerator` which used `copyTextToClipboard`.
+- **Resolution**: Imported `copyTextToClipboard` and made `handleCopyPath` async with success-guarded feedback.
+
+### Fix 152: Graph Layout Ignoring LayoutOptions Dimensions
+- **Issue**: `computeApiTopologyGraph` accepted `LayoutOptions {nodeWidth, nodeHeight}` but always called `dagreGraph.setNode(..., {width:280,height:90})` and `{width:240,height:80}` hardcoded, ignoring caller-provided sizes (`src/layout/graphLayout.ts:46-53,122`).
+- **Root Cause**: Hardcoded literals instead of using `options.nodeWidth/nodeHeight`.
+- **Resolution**: Derived `endpointWidth = options.nodeWidth`, `endpointHeight = options.nodeHeight`, `schemaWidth = max(180, nodeWidth-40)`, `schemaHeight = max(60, nodeHeight-10)` and used them for `setNode` and layout fallback, allowing callers (`TopologyGraph` passes `280x90`) and tests to control spacing.
+
+### Fix 153: Validator Missing Duplicate Detection Across Path-Level and Operation-Level Parameters
+- **Issue**: Duplicate parameter validation only inspected `opItem.parameters`, missing collisions where the same `name+in` appeared at both path-item and operation levels (e.g., path defines `id` in `path` and operation redefines same), leading to silent shadowing (`src/parser/validator.ts:296-323`).
+- **Root Cause**: Check ignored `pathItem.parameters`.
+- **Resolution**: Added `checkParams` helper iterating path-level params first then operation params into a shared `rawSeen` set, emitting duplicate diagnostics with source tag `path-level` / `path vs operation`.
+
+### Fix 154: URL Hash Decompression Fails With Trailing Query Params
+- **Issue**: `decompressSpecFromHash('#spec=<compressed>&foo=bar')` incorrectly sliced `specEncoded = cleanHash.slice(5)` which retained `&foo=bar` in the compressed payload, causing `decompressFromEncodedURIComponent` to fail and returning `null` (`src/share/urlHash.ts:9-26`).
+- **Root Cause**: Manual `slice(5)` without stripping trailing `&`-delimited params.
+- **Resolution**: Parse via `URLSearchParams` first when `spec=` present, falling back to `raw.split('&')[0]` when needed, ensuring extra params are ignored.
+
+### Fix 155: cURL Generator Extracted to Pure Testable Helper (Code Quality)
+- **Improvement**: Refactored `src/ui/CurlGenerator.tsx` to extract pure `buildCurlCommand(endpoint, selectedServerUrl, activeServer)` and `generateSampleJsonFromSchema` exports, reducing the `useMemo` closure to a single delegation, improving testability and reusability.
+
+### Fix 156: Advanced Quality & Feature Test Suite
+- **Improvement**: Added `tests/advancedQuality.test.ts` covering (1) server variable all-occurrences replacement, (2) duplicate path placeholder replacement, (3) space/pipe delimited array query serialization, (4) layout options width sensitivity, (5) validator cross-level duplicate detection, and (6) robust URL hash decompression with extra params.

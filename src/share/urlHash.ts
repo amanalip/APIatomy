@@ -13,8 +13,19 @@ export function decompressSpecFromHash(hashString: string): string | null {
 
   let specEncoded: string | null = null;
 
-  if (cleanHash.startsWith('spec=')) {
-    specEncoded = cleanHash.slice(5);
+  // Prefer URLSearchParams parsing to correctly handle '#spec=xxx&extra=...' or query strings
+  if (cleanHash.includes('spec=')) {
+    try {
+      const params = new URLSearchParams(cleanHash);
+      specEncoded = params.get('spec');
+    } catch {
+      // fallback to manual slice
+    }
+    // Fallback manual slice that strips trailing '&' params if URLSearchParams failed or not present
+    if (!specEncoded && cleanHash.startsWith('spec=')) {
+      const raw = cleanHash.slice(5);
+      specEncoded = raw.split('&')[0];
+    }
   } else {
     const params = new URLSearchParams(cleanHash);
     specEncoded = params.get('spec');

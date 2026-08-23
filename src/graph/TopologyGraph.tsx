@@ -83,29 +83,25 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
     }, 50);
   }, [initialNodes, initialEdges, fitView]);
 
-  // Apply filtering and search highlighting
+  // Apply filtering and search highlighting — deterministic hidden set prevents stale closure race
   useEffect(() => {
-    const hiddenNodeIds = new Set<string>();
+    // Hidden set derived from initialNodes (source of truth) to avoid mutating Set inside setNodes callback
+    const hiddenIds = new Set<string>();
+    for (const n of initialNodes) {
+      let isVisible = true;
+      if (filterType === 'endpoints' && n.type !== 'endpointNode') isVisible = false;
+      if (filterType === 'schemas' && n.type !== 'schemaNode') isVisible = false;
+      if (selectedTag !== 'all' && n.type === 'endpointNode') {
+        const data = n.data as any;
+        if (!data.tags || !data.tags.includes(selectedTag)) isVisible = false;
+      }
+      if (!isVisible) hiddenIds.add(n.id);
+    }
 
     setNodes((prevNodes) =>
       prevNodes.map((n) => {
-        let isVisible = true;
+        const isVisible = !hiddenIds.has(n.id);
         let isMatch = true;
-
-        if (filterType === 'endpoints' && n.type !== 'endpointNode') isVisible = false;
-        if (filterType === 'schemas' && n.type !== 'schemaNode') isVisible = false;
-
-        if (selectedTag !== 'all' && n.type === 'endpointNode') {
-          const data = n.data as any;
-          if (!data.tags || !data.tags.includes(selectedTag)) {
-            isVisible = false;
-          }
-        }
-
-        if (!isVisible) {
-          hiddenNodeIds.add(n.id);
-        }
-
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           if (n.type === 'endpointNode') {
@@ -113,13 +109,12 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
             isMatch =
               data.path.toLowerCase().includes(q) ||
               data.method.toLowerCase().includes(q) ||
-              data.summary.toLowerCase().includes(q);
+              (data.summary || '').toLowerCase().includes(q);
           } else if (n.type === 'schemaNode') {
             const data = n.data as any;
-            isMatch = data.schemaName.toLowerCase().includes(q);
+            isMatch = (data.schemaName || '').toLowerCase().includes(q);
           }
         }
-
         return {
           ...n,
           hidden: !isVisible,
@@ -135,10 +130,10 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
     setEdges((prevEdges) =>
       prevEdges.map((e) => ({
         ...e,
-        hidden: hiddenNodeIds.has(e.source) || hiddenNodeIds.has(e.target),
+        hidden: hiddenIds.has(e.source) || hiddenIds.has(e.target),
       }))
     );
-  }, [searchQuery, filterType, selectedTag, setNodes, setEdges]);
+  }, [searchQuery, filterType, selectedTag, initialNodes, setNodes, setEdges]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
