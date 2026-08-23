@@ -28,11 +28,16 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
       }
     }
 
-    let url = rawUrl + endpoint.path;
+    let normalizedPath = endpoint.path.startsWith('/') ? endpoint.path : `/${endpoint.path}`;
+    let url = rawUrl + normalizedPath;
 
     // Substitute path parameters with placeholders
     for (const param of endpoint.parameters.filter((p) => p.in === 'path')) {
-      const val = param.example ? String(param.example) : `:${param.name}`;
+      const val = param.example !== undefined
+        ? String(param.example)
+        : param.schema?.default !== undefined
+          ? String(param.schema.default)
+          : `:${param.name}`;
       url = url.replace(`{${param.name}}`, val);
     }
 
@@ -40,7 +45,14 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
     const queryParams = endpoint.parameters.filter((p) => p.in === 'query');
     if (queryParams.length > 0) {
       const qString = queryParams
-        .map((p) => `${p.name}=${p.example ? encodeURIComponent(String(p.example)) : 'value'}`)
+        .map((p) => {
+          const val = p.example !== undefined
+            ? p.example
+            : p.schema?.default !== undefined
+              ? p.schema.default
+              : 'value';
+          return `${p.name}=${encodeURIComponent(String(val))}`;
+        })
         .join('&');
       url += `?${qString}`;
     }
@@ -49,7 +61,12 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
 
     // Header parameters
     for (const header of endpoint.parameters.filter((p) => p.in === 'header')) {
-      lines.push(`  -H "${header.name}: ${header.example || 'string'}"`);
+      const val = header.example !== undefined
+        ? header.example
+        : header.schema?.default !== undefined
+          ? header.schema.default
+          : 'string';
+      lines.push(`  -H "${header.name}: ${val}"`);
     }
 
     // Security header defaults

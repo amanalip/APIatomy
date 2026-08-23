@@ -171,3 +171,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Non-JSON responses or empty responses in the Endpoint Inspector lacked clear content-type badges and example previews.
 - **Root Cause**: Conditional rendering in `src/ui/EndpointDetails.tsx` only supported objects with nested schemas.
 - **Resolution**: Added explicit content-type badges, raw example code blocks, and clear empty-body notices.
+
+### Fix 32: URL Normalization and Schema Default Substitution in cURL Generator
+- **Issue**: Paths without leading slashes or servers with trailing slashes produced malformed URLs in cURL snippets, and parameter defaults were ignored.
+- **Root Cause**: Direct string concatenation in `src/ui/CurlGenerator.tsx` without slash normalization and missing `param.schema.default` lookups.
+- **Resolution**: Normalized URL paths and incorporated schema default value lookups across query, header, and path parameters.
