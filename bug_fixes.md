@@ -206,3 +206,28 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Operations that did not explicitly define an operation-level `security` array lost their top-level security requirements and appeared unauthenticated.
 - **Root Cause**: Endpoint parser in `src/parser/normalizer.ts` only evaluated `op.security` without falling back to `doc.security`.
 - **Resolution**: Configured endpoint normalizer to inherit global document security requirements when operation-level security is not specified.
+
+### Fix 39: Deprecated Parameter Badge in Endpoint Inspector
+- **Issue**: Parameters marked with `deprecated: true` did not display a deprecation tag in the endpoint parameter table.
+- **Root Cause**: Missing conditional rendering for `param.deprecated` in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Added an amber `dep` badge alongside parameter names when `deprecated: true` is configured.
+
+### Fix 40: Header Deduplication in cURL Command Generator
+- **Issue**: Operations with explicit `Authorization` or `Content-Type` header parameters received duplicate `-H` arguments in the generated cURL command.
+- **Root Cause**: Synthetic security and request body headers were unconditionally appended in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Checked for existing explicit header parameters before appending default security or content-type headers.
+
+### Fix 41: Path Template Parameter Mismatch Validation
+- **Issue**: Path templates containing parameter placeholders (e.g. `/users/{userId}`) without corresponding `in: 'path'` parameters were not flagged by the validator.
+- **Root Cause**: Missing path template regex matching in `src/parser/validator.ts`.
+- **Resolution**: Added validation rule emitting error diagnostics when path template placeholders lack matching `in: 'path'` parameter declarations.
+
+### Fix 42: Deep Property Searching in Schema Viewer
+- **Issue**: Searching schemas in the Schema Viewer only matched schema root keys, ignoring internal property names, titles, and descriptions.
+- **Root Cause**: Filter predicate in `src/ui/SchemaViewer.tsx` only checked `schemaName`.
+- **Resolution**: Expanded schema search filter to evaluate schema titles, descriptions, and nested property keys.
+
+### Fix 43: Swagger 2.0 Operation Schemes Conversion to OpenAPI 3.0 Servers
+- **Issue**: Swagger 2.0 operation-level `schemes` overrides (e.g. `schemes: ['https']` on an individual endpoint) were ignored during conversion.
+- **Root Cause**: Conversion routine in `src/parser/swaggerConverter.ts` only processed root schemes.
+- **Resolution**: Mapped operation-level `op.schemes` into operation-scoped `newOp.servers` entries.

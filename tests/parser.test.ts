@@ -141,6 +141,33 @@ paths:
     expect(pathDiag?.severity).toBe('warning');
   });
 
+  it('flags missing path parameter definitions for path templates', () => {
+    const missingPathParamSpec = `
+openapi: 3.0.0
+info:
+  title: Missing Path Param Spec
+  version: 1.0.0
+paths:
+  /users/{userId}/posts/{postId}:
+    get:
+      summary: Get post
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(missingPathParamSpec);
+    const missingParamDiag = parsed.diagnostics.find((d) => d.id.startsWith('missing-path-param-'));
+    expect(missingParamDiag).toBeDefined();
+    expect(missingParamDiag?.message).toContain('postId');
+  });
+
   it('inherits root-level security requirements in operations', () => {
     const rootSecSpec = `
 openapi: 3.0.0

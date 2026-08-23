@@ -35,7 +35,16 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
     const names = Object.keys(schemas).sort();
     if (!searchQuery.trim()) return names;
     const q = searchQuery.toLowerCase();
-    return names.filter((n) => n.toLowerCase().includes(q));
+    return names.filter((n) => {
+      if (n.toLowerCase().includes(q)) return true;
+      const s = schemas[n];
+      if (s?.title?.toLowerCase().includes(q)) return true;
+      if (s?.description?.toLowerCase().includes(q)) return true;
+      if (s?.properties && Object.keys(s.properties).some((propKey) => propKey.toLowerCase().includes(q))) {
+        return true;
+      }
+      return false;
+    });
   }, [schemas, searchQuery]);
 
   const activeSchema = schemas[activeSchemaName];

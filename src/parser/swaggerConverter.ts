@@ -152,6 +152,13 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
           security: op.security,
         };
 
+        if (Array.isArray(op.schemes) && (host || basePath)) {
+          newOp.servers = op.schemes.map((s) => ({
+            url: `${String(s)}://${host || 'localhost'}${basePath}`,
+            description: `Operation ${String(s).toUpperCase()} server`,
+          }));
+        }
+
         const consumes = Array.isArray(op.consumes) ? (op.consumes as string[]) : defaultConsumes;
         const produces = Array.isArray(op.produces) ? (op.produces as string[]) : defaultProduces;
 

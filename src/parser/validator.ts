@@ -95,6 +95,23 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
         });
       }
     }
+
+    // Rule: Path parameters in path string must be defined in parameters with in: 'path'
+    const pathParamMatches = Array.from(ep.path.matchAll(/\{([^}]+)\}/g)).map((m) => m[1]);
+    for (const expectedParam of pathParamMatches) {
+      const paramDef = ep.parameters.find((p) => p.name === expectedParam && p.in === 'path');
+      if (!paramDef) {
+        const line = findLineForPattern(rawText, ep.path);
+        diagnostics.push({
+          id: `missing-path-param-${ep.id}-${expectedParam}`,
+          severity: 'error',
+          message: `Path template "${ep.path}" expects parameter "{${expectedParam}}", but no parameter with in: "path" and name "${expectedParam}" is defined.`,
+          path: `/paths${ep.path}/${ep.method}/parameters`,
+          line,
+          source: 'schema',
+        });
+      }
+    }
   }
 
   // Collect nested refs inside schemas

@@ -179,6 +179,11 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                                   req
                                 </span>
                               )}
+                              {p.deprecated && (
+                                <span className="text-[9px] px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-500/30">
+                                  dep
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="py-2.5 px-3">

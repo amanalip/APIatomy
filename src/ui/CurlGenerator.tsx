@@ -59,6 +59,13 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
 
     const lines: string[] = [`curl -X ${endpoint.method.toUpperCase()} "${url}"`];
 
+    const hasExplicitAuthHeader = endpoint.parameters.some(
+      (p) => p.in === 'header' && p.name.toLowerCase() === 'authorization'
+    );
+    const hasExplicitContentTypeHeader = endpoint.parameters.some(
+      (p) => p.in === 'header' && p.name.toLowerCase() === 'content-type'
+    );
+
     // Header parameters
     for (const header of endpoint.parameters.filter((p) => p.in === 'header')) {
       const val = header.example !== undefined
@@ -69,15 +76,17 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
       lines.push(`  -H "${header.name}: ${val}"`);
     }
 
-    // Security header defaults
-    if (endpoint.security.length > 0) {
+    // Security header defaults (only if not already provided as explicit header param)
+    if (endpoint.security.length > 0 && !hasExplicitAuthHeader) {
       lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
     }
 
     // Request Body
     if (endpoint.requestBody && endpoint.requestBody.content.length > 0) {
       const primaryMedia = endpoint.requestBody.content[0];
-      lines.push(`  -H "Content-Type: ${primaryMedia.contentType}"`);
+      if (!hasExplicitContentTypeHeader) {
+        lines.push(`  -H "Content-Type: ${primaryMedia.contentType}"`);
+      }
 
       if (primaryMedia.contentType.includes('json')) {
         const sampleBody = primaryMedia.example
