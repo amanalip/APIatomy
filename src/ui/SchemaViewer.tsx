@@ -23,6 +23,13 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
   const [mockFormat, setMockFormat] = useState<'json' | 'yaml'>('json');
   const [copiedExample, setCopiedExample] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const activeSchemaRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (activeSchemaName && activeSchemaRef.current) {
+      activeSchemaRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [activeSchemaName]);
 
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
@@ -135,6 +142,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
               return (
                 <button
                   key={name}
+                  ref={isSelected ? activeSchemaRef : undefined}
                   onClick={() => {
                     setActiveSchemaName(name);
                     onSelectSchema?.(name, s);

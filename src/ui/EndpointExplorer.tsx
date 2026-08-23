@@ -19,6 +19,13 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [collapsedTags, setCollapsedTags] = useState<Record<string, boolean>>({});
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const activeEndpointRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedEndpoint && activeEndpointRef.current) {
+      activeEndpointRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [selectedEndpoint?.id]);
 
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
@@ -245,6 +252,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                       return (
                         <div
                           key={ep.id}
+                          ref={isSelected ? activeEndpointRef : undefined}
                           onClick={() => onSelectEndpoint(ep)}
                           className={`group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 ${
                             isSelected

@@ -550,3 +550,31 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 
 ### Fix 108: Comprehensive Dagre Graph Layout Unit Test Suite
 - **Improvement**: Added dedicated test suite in `tests/graphLayout.test.ts` verifying node positions, edge types (`produces`, `consumes`), schema reuse metrics, and direction configs (`LR`, `TB`).
+
+### Fix 109: Query String in Path Template Linter Diagnostic
+- **Issue**: Path items containing query parameters directly in the path template string (e.g. `/users?id={id}`) were not flagged with validation warnings.
+- **Root Cause**: Missing query string check on path keys in `src/parser/validator.ts`.
+- **Resolution**: Added a validation rule detecting `?` in path strings and recommending defining query parameters in `parameters`.
+
+### Fix 110: Smooth Scroll Into View on Active Endpoint Selection
+- **Issue**: Selecting an endpoint from the topology graph or diagnostics drawer did not scroll the item into view within the Explorer sidebar.
+- **Root Cause**: Missing ref and scroll-into-view effect in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Attached dynamic ref to the active endpoint item with smooth scroll on selection change.
+
+### Fix 111: Smooth Scroll Into View on Active Schema Selection
+- **Issue**: Selecting a schema via reference navigation or graph click did not scroll the active schema row into view.
+- **Root Cause**: Missing ref and scroll-into-view effect in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Attached dynamic ref to the active schema button with smooth scroll on selection change.
+
+### Fix 112: Query Parameter Key and Value URL Encoding in cURL Generator
+- **Issue**: Query parameter keys with special characters were not URL-encoded in generated cURL queries.
+- **Root Cause**: Parameter names were interpolated directly in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Wrapped query parameter names in `encodeURIComponent`.
+
+### Fix 113: Keyboard Shortcut for Code Editor Toggle
+- **Issue**: Users lacked a fast keyboard shortcut to toggle the code editor pane on and off.
+- **Root Cause**: Lack of keyboard listener in `src/ui/Header.tsx`.
+- **Resolution**: Added `Alt+E` shortcut to toggle the editor pane and updated the button tooltip.
+
+### Fix 114: Comprehensive OpenAPI Validator Unit Test Suite
+- **Improvement**: Added dedicated test suite in `tests/validator.test.ts` testing path query string checks, missing paths objects, missing info objects, empty parameter brackets, and invalid HTTP verbs.

@@ -55,14 +55,14 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
 
           if (p.explode !== false) {
             for (const item of arrVal) {
-              qParts.push(`${p.name}=${encodeURIComponent(String(item))}`);
+              qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(String(item))}`);
             }
           } else {
             let delimiter = ',';
             if (p.style === 'spaceDelimited') delimiter = ' ';
             else if (p.style === 'pipeDelimited') delimiter = '|';
             const joined = arrVal.map(String).join(delimiter);
-            qParts.push(`${p.name}=${encodeURIComponent(joined)}`);
+            qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(joined)}`);
           }
         } else {
           let val = p.example !== undefined
@@ -80,7 +80,7 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
               val = 'value';
             }
           }
-          qParts.push(`${p.name}=${encodeURIComponent(String(val))}`);
+          qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(String(val))}`);
         }
       }
       if (qParts.length > 0) {

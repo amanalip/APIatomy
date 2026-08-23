@@ -83,6 +83,17 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
           source: 'schema',
         });
       }
+      if (pKey.includes('?')) {
+        const line = findLineForPattern(rawText, pKey);
+        diagnostics.push({
+          id: `path-contains-query-${pKey}`,
+          severity: 'warning',
+          message: `Path "${pKey}" contains a query string "?". Query parameters should be defined in the operation parameters list with in: query.`,
+          path: `/paths/${pKey}`,
+          line,
+          source: 'schema',
+        });
+      }
     }
 
     const VALID_HTTP_METHODS = new Set(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);
