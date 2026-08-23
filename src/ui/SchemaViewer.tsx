@@ -22,8 +22,18 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
   const [viewMode, setViewMode] = useState<'tree' | 'example'>('tree');
   const [mockFormat, setMockFormat] = useState<'json' | 'yaml'>('json');
   const [copiedExample, setCopiedExample] = useState(false);
+  const [copiedSchemaAst, setCopiedSchemaAst] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const activeSchemaRef = useRef<HTMLButtonElement>(null);
+
+  const handleCopySchemaAst = async () => {
+    if (!activeSchema) return;
+    const success = await copyTextToClipboard(JSON.stringify(activeSchema, null, 2));
+    if (success) {
+      setCopiedSchemaAst(true);
+      setTimeout(() => setCopiedSchemaAst(false), 2000);
+    }
+  };
 
   useEffect(() => {
     if (activeSchemaName && activeSchemaRef.current) {
@@ -221,6 +231,24 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                   Mock Data
                 </button>
               </div>
+
+              <button
+                onClick={handleCopySchemaAst}
+                className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-sm"
+                title="Copy normalized schema AST JSON to clipboard"
+              >
+                {copiedSchemaAst ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">Copied AST</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    <span>Copy AST</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Content Area */}

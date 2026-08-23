@@ -75,7 +75,13 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
             if (p.schema?.type === 'boolean') {
               val = 'true';
             } else if (p.schema?.type === 'integer' || p.schema?.type === 'number') {
-              val = p.schema.minimum !== undefined ? String(p.schema.minimum) : '1';
+              if (p.schema.minimum !== undefined) {
+                val = String(p.schema.minimum);
+              } else if (p.schema.maximum !== undefined && p.schema.maximum < 1) {
+                val = String(p.schema.maximum);
+              } else {
+                val = '1';
+              }
             } else {
               val = 'value';
             }

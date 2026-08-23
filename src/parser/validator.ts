@@ -47,6 +47,22 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
         source: 'schema',
       });
     }
+    if (typeof info.contact === 'object' && info.contact !== null) {
+      const contact = info.contact as Record<string, unknown>;
+      if (typeof contact.email === 'string' && contact.email.trim()) {
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailPattern.test(contact.email.trim())) {
+          diagnostics.push({
+            id: 'invalid-contact-email',
+            severity: 'info',
+            message: `Contact email "${contact.email}" does not appear to be a valid email address.`,
+            path: '/info/contact/email',
+            line: findLineForPattern(rawText, 'email:') || findLineForPattern(rawText, 'contact:') || 1,
+            source: 'schema',
+          });
+        }
+      }
+    }
   }
 
   // Check paths mapping in rawDoc

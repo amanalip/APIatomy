@@ -596,3 +596,26 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 
 ### Fix 118: Comprehensive YAML / JSON Parser Engine Unit Test Suite
 - **Improvement**: Added dedicated test suite in `tests/yamlJson.test.ts` testing JSON object parsing, root array rejection, YAML parsing, syntax error positions, and empty document handling.
+
+### Fix 119: Contact Email Format Linter Validation
+- **Issue**: Malformed contact email addresses in `info.contact.email` were accepted without linting feedback.
+- **Root Cause**: Missing email regex check in `src/parser/validator.ts`.
+- **Resolution**: Added validation emitting informative diagnostics for invalid contact emails.
+
+### Fix 120: Deprecated Parameter Tooltip for Accessibility
+- **Issue**: The `dep` badge on deprecated parameters lacked descriptive tooltip text explaining its meaning.
+- **Root Cause**: Missing title attribute on badge in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Added an explanatory title attribute on the deprecation badge.
+
+### Fix 121: Upper-Bound Maximum Constraint Aware Defaults in cURL Generator
+- **Issue**: Numeric parameters with `maximum < 1` (e.g. negative numbers or 0) defaulted to `1`, violating the maximum constraint.
+- **Root Cause**: Hardcoded fallback to `1` in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Checked `schema.maximum` when setting fallback sample numeric values.
+
+### Fix 122: One-Click Copy Schema AST Action in Schema Viewer
+- **Issue**: Developers reviewing schemas had to switch to mock data or code editor to inspect the full schema definition.
+- **Root Cause**: Lack of copy AST button in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Added a `Copy AST` action button in the Schema Viewer toolbar with temporary copied feedback.
+
+### Fix 123: Comprehensive Built-in Sample Specifications Unit Test Suite
+- **Improvement**: Added dedicated test suite in `tests/sampleSpecs.test.ts` verifying parsing, error free processing, polymorphic schema resolution, and diagnostics generation across Petstore, GitHub, Stripe, Minimal, and Broken sample specifications.
