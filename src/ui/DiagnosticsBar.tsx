@@ -44,17 +44,17 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
 
           <div className="flex items-center gap-2 font-mono text-[11px]">
             {errorCount > 0 && (
-              <span className="flex items-center gap-1 px-1.5 py-0.2 rounded bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
                 {errorCount} {errorCount === 1 ? 'error' : 'errors'}
               </span>
             )}
             {warningCount > 0 && (
-              <span className="flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-500/30">
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-500/30">
                 {warningCount} {warningCount === 1 ? 'warning' : 'warnings'}
               </span>
             )}
             {infoCount > 0 && (
-              <span className="flex items-center gap-1 px-1.5 py-0.2 rounded bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-500/30">
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-500/30">
                 {infoCount} info
               </span>
             )}

@@ -175,7 +175,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                             <div className="flex items-center gap-1.5">
                               <span>{p.name}</span>
                               {p.required && (
-                                <span className="text-[9px] px-1 py-0.2 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
+                                <span className="text-[9px] px-1 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
                                   req
                                 </span>
                               )}
@@ -215,7 +215,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                   <FileCode className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                   <span>Request Body</span>
                   {endpoint.requestBody.required && (
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold ml-1 border border-red-200 dark:border-red-500/30">
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold ml-1 border border-red-200 dark:border-red-500/30">
                       Required
                     </span>
                   )}

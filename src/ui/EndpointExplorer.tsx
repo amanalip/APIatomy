@@ -198,7 +198,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                               {ep.path}
                             </span>
                             {ep.deprecated && (
-                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
                                 dep
                               </span>
                             )}

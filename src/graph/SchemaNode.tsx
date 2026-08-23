@@ -52,7 +52,7 @@ export const SchemaNode: React.FC<NodeProps<any>> = memo(({ data, selected }) =>
         {nodeData.isCircular && (
           <span
             title="Contains circular reference"
-            className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.2 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/40"
+            className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/40"
           >
             <AlertCircle className="w-3 h-3" />
             Loop

@@ -104,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">APIatomy</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded font-mono font-medium bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
                 v{spec.version}
               </span>
             </div>

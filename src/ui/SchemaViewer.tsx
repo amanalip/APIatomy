@@ -97,7 +97,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                   </div>
 
                   {s.isCircular && (
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-amber-100 dark:bg-amber-500/30 text-amber-700 dark:text-amber-300 font-sans border border-amber-200 dark:border-amber-500/40">
+                    <span className="text-[9px] px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-500/30 text-amber-700 dark:text-amber-300 font-sans border border-amber-200 dark:border-amber-500/40">
                       loop
                     </span>
                   )}
@@ -289,7 +289,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                   )}
                   <span className="font-semibold text-slate-800 dark:text-slate-200">{propName}</span>
                   {isRequired && (
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
+                    <span className="text-[9px] px-1 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
                       required
                     </span>
                   )}

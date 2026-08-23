@@ -116,3 +116,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Shared URL links containing extra hash fragments, raw LZ-compressed tokens, or encoded prefixes could fail extraction in certain browser environments.
 - **Root Cause**: Strict regex dependency on `#spec=` without fallback for stripped or prefixed hashes.
 - **Resolution**: Enhanced `decompressSpecFromHash` in `src/share/urlHash.ts` to handle direct, query-param, and raw hash string variations gracefully.
+
+### Fix 21: Tailwind CSS Badge Padding Utilities Normalization
+- **Issue**: Micro-badges across nodes, drawers, and headers used an unrendered utility token `py-0.2`, resulting in zero vertical padding on badges.
+- **Root Cause**: Typo in utility class naming.
+- **Resolution**: Standardized all micro-badges across `SchemaNode.tsx`, `DiagnosticsBar.tsx`, `EndpointDetails.tsx`, `EndpointExplorer.tsx`, `Header.tsx`, and `SchemaViewer.tsx` to `py-0.5`.
