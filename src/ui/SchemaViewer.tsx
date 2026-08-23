@@ -232,151 +232,152 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
     setCollapsedProperties((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  // Composition: allOf, oneOf, anyOf
-  if (schema.allOf || schema.oneOf || schema.anyOf) {
-    const compType = schema.allOf ? 'allOf (All Required)' : schema.oneOf ? 'oneOf (One Required)' : 'anyOf (Any Allowed)';
-    const list = schema.allOf || schema.oneOf || schema.anyOf || [];
+  const hasComposition = Boolean(schema.allOf || schema.oneOf || schema.anyOf);
+  const hasProperties = Boolean(schema.properties && Object.keys(schema.properties).length > 0);
+  const hasItems = Boolean(schema.items);
 
+  if (!hasComposition && !hasProperties && !hasItems) {
     return (
-      <div className="space-y-3">
-        <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
-          Composition: {compType}
-        </div>
-        <div className="pl-3 border-l-2 border-indigo-500/40 space-y-3">
-          {list.map((sub, idx) => (
-            <div key={idx} className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mb-1.5">Branch #{idx + 1}</div>
-              <TreeNodeRenderer
-                schema={sub}
-                schemas={schemas}
-                onNavigateRef={onNavigateRef}
-                level={level + 1}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Object with properties
-  if (schema.properties && Object.keys(schema.properties).length > 0) {
-    return (
-      <div className="space-y-2">
-        {Object.entries(schema.properties).map(([propName, propSchema]) => {
-          const isRequired = schema.required?.includes(propName);
-          const hasChildren = propSchema.properties || propSchema.items || propSchema.allOf || propSchema.oneOf;
-          const isCollapsed = collapsedProperties[propName] ?? false;
-
-          return (
-            <div
-              key={propName}
-              className="rounded-lg border border-slate-200 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-2.5 space-y-1.5"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 font-mono text-xs">
-                  {hasChildren && (
-                    <button
-                      onClick={() => toggleProperty(propName)}
-                      className="p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                    >
-                      {isCollapsed ? (
-                        <ChevronRight className="w-3 h-3" />
-                      ) : (
-                        <ChevronDown className="w-3 h-3" />
-                      )}
-                    </button>
-                  )}
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{propName}</span>
-                  {isRequired && (
-                    <span className="text-[9px] px-1 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
-                      required
-                    </span>
-                  )}
-                  <span className="text-slate-400 dark:text-slate-500">:</span>
-                  <span className="text-blue-600 dark:text-blue-400 text-[11px]">
-                    {String(propSchema.type || 'object')}
-                    {propSchema.format ? ` <${propSchema.format}>` : ''}
-                  </span>
-
-                  {propSchema.refTarget && (
-                    <button
-                      onClick={() => onNavigateRef(propSchema.refTarget!)}
-                      className="text-indigo-600 dark:text-indigo-400 hover:underline text-[11px] font-semibold"
-                    >
-                      → {propSchema.refTarget}
-                    </button>
-                  )}
-                </div>
-
-                {propSchema.enum && (
-                  <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                    <span>enum:</span>
-                    <span className="font-mono text-slate-700 dark:text-slate-400">[{propSchema.enum.join(', ')}]</span>
-                  </div>
-                )}
-              </div>
-
-              {propSchema.description && (
-                <div className="text-[11px] text-slate-600 dark:text-slate-400 pl-4">{propSchema.description}</div>
-              )}
-
-              {/* Nested properties expansion */}
-              {hasChildren && !isCollapsed && (
-                <div className="pl-4 pt-2 border-l border-slate-200 dark:border-slate-800/80 mt-1">
-                  <TreeNodeRenderer
-                    schema={propSchema.items || propSchema}
-                    schemas={schemas}
-                    onNavigateRef={onNavigateRef}
-                    level={level + 1}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // Array items
-  if (schema.items) {
-    return (
-      <div className="text-xs text-slate-700 dark:text-slate-300 space-y-2">
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-500 dark:text-slate-400">Array of</span>
-          <span className="text-blue-600 dark:text-blue-400 font-mono font-semibold">
-            {String(schema.items.type || 'object')}
-          </span>
-          {schema.items.refTarget && (
-            <button
-              onClick={() => onNavigateRef(schema.items!.refTarget!)}
-              className="text-indigo-600 dark:text-indigo-400 hover:underline font-mono"
-            >
-              ({schema.items.refTarget})
-            </button>
-          )}
-        </div>
-
-        {schema.items.properties && (
-          <div className="pl-3 border-l border-slate-200 dark:border-slate-800">
-            <TreeNodeRenderer
-              schema={schema.items}
-              schemas={schemas}
-              onNavigateRef={onNavigateRef}
-              level={level + 1}
-            />
-          </div>
+      <div className="text-xs font-mono text-slate-600 dark:text-slate-400">
+        Type: <span className="text-blue-600 dark:text-blue-400">{String(schema.type || 'any')}</span>
+        {schema.default !== undefined && (
+          <span className="ml-3 text-slate-400 dark:text-slate-500">Default: {String(schema.default)}</span>
         )}
       </div>
     );
   }
 
   return (
-    <div className="text-xs font-mono text-slate-600 dark:text-slate-400">
-      Type: <span className="text-blue-600 dark:text-blue-400">{String(schema.type || 'any')}</span>
-      {schema.default !== undefined && (
-        <span className="ml-3 text-slate-400 dark:text-slate-500">Default: {String(schema.default)}</span>
+    <div className="space-y-3">
+      {/* Composition: allOf, oneOf, anyOf */}
+      {hasComposition && (
+        <div className="space-y-3">
+          <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
+            Composition: {schema.allOf ? 'allOf (All Required)' : schema.oneOf ? 'oneOf (One Required)' : 'anyOf (Any Allowed)'}
+          </div>
+          <div className="pl-3 border-l-2 border-indigo-500/40 space-y-3">
+            {(schema.allOf || schema.oneOf || schema.anyOf || []).map((sub, idx) => (
+              <div key={idx} className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800">
+                <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mb-1.5">Branch #{idx + 1}</div>
+                <TreeNodeRenderer
+                  schema={sub}
+                  schemas={schemas}
+                  onNavigateRef={onNavigateRef}
+                  level={level + 1}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Object with properties */}
+      {hasProperties && (
+        <div className="space-y-2">
+          {Object.entries(schema.properties!).map(([propName, propSchema]) => {
+            const isRequired = schema.required?.includes(propName);
+            const hasChildren = propSchema.properties || propSchema.items || propSchema.allOf || propSchema.oneOf;
+            const isCollapsed = collapsedProperties[propName] ?? false;
+
+            return (
+              <div
+                key={propName}
+                className="rounded-lg border border-slate-200 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-950/40 p-2.5 space-y-1.5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 font-mono text-xs">
+                    {hasChildren && (
+                      <button
+                        onClick={() => toggleProperty(propName)}
+                        className="p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                      >
+                        {isCollapsed ? (
+                          <ChevronRight className="w-3 h-3" />
+                        ) : (
+                          <ChevronDown className="w-3 h-3" />
+                        )}
+                      </button>
+                    )}
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">{propName}</span>
+                    {isRequired && (
+                      <span className="text-[9px] px-1 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
+                        required
+                      </span>
+                    )}
+                    <span className="text-slate-400 dark:text-slate-500">:</span>
+                    <span className="text-blue-600 dark:text-blue-400 text-[11px]">
+                      {String(propSchema.type || 'object')}
+                      {propSchema.format ? ` <${propSchema.format}>` : ''}
+                    </span>
+
+                    {propSchema.refTarget && (
+                      <button
+                        onClick={() => onNavigateRef(propSchema.refTarget!)}
+                        className="text-indigo-600 dark:text-indigo-400 hover:underline text-[11px] font-semibold"
+                      >
+                        → {propSchema.refTarget}
+                      </button>
+                    )}
+                  </div>
+
+                  {propSchema.enum && (
+                    <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                      <span>enum:</span>
+                      <span className="font-mono text-slate-700 dark:text-slate-400">[{propSchema.enum.join(', ')}]</span>
+                    </div>
+                  )}
+                </div>
+
+                {propSchema.description && (
+                  <div className="text-[11px] text-slate-600 dark:text-slate-400 pl-4">{propSchema.description}</div>
+                )}
+
+                {/* Nested properties expansion */}
+                {hasChildren && !isCollapsed && (
+                  <div className="pl-4 pt-2 border-l border-slate-200 dark:border-slate-800/80 mt-1">
+                    <TreeNodeRenderer
+                      schema={propSchema.items || propSchema}
+                      schemas={schemas}
+                      onNavigateRef={onNavigateRef}
+                      level={level + 1}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Array items */}
+      {hasItems && !hasProperties && (
+        <div className="text-xs text-slate-700 dark:text-slate-300 space-y-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-500 dark:text-slate-400">Array of</span>
+            <span className="text-blue-600 dark:text-blue-400 font-mono font-semibold">
+              {String(schema.items?.type || 'object')}
+            </span>
+            {schema.items?.refTarget && (
+              <button
+                onClick={() => onNavigateRef(schema.items!.refTarget!)}
+                className="text-indigo-600 dark:text-indigo-400 hover:underline font-mono"
+              >
+                ({schema.items.refTarget})
+              </button>
+            )}
+          </div>
+
+          {schema.items?.properties && (
+            <div className="pl-3 border-l border-slate-200 dark:border-slate-800">
+              <TreeNodeRenderer
+                schema={schema.items}
+                schemas={schemas}
+                onNavigateRef={onNavigateRef}
+                level={level + 1}
+              />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

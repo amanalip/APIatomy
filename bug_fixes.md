@@ -131,3 +131,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Endpoints expecting top-level array bodies or arrays with nested items rendered empty JSON `{}` in generated cURL snippets.
 - **Root Cause**: Schema mocking generator in `src/ui/CurlGenerator.tsx` only handled top-level object schemas.
 - **Resolution**: Added array item and primitive type traversal to produce realistic sample array payloads.
+
+### Fix 24: Combined Composition and Property Rendering in Schema Tree View
+- **Issue**: Schemas combining inheritance or polymorphic composition (`allOf`, `oneOf`, `anyOf`) with direct properties hid the direct properties from view in the schema tree inspector.
+- **Root Cause**: Early return statement in `TreeNodeRenderer` within `src/ui/SchemaViewer.tsx` when composition keywords were present.
+- **Resolution**: Refactored `TreeNodeRenderer` to render both composition branch nodes and direct property trees in unified hierarchy.
