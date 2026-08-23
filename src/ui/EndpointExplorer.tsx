@@ -213,8 +213,20 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
       {/* Endpoint Cards Grouped by Tag */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {filteredEndpoints.length === 0 ? (
-          <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-xs">
-            No endpoints found matching your filter criteria.
+          <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-xs space-y-2">
+            <div>No endpoints found matching your filter criteria.</div>
+            {(searchQuery || selectedMethod !== 'all' || selectedTag !== 'all') && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedMethod('all');
+                  setSelectedTag('all');
+                }}
+                className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         ) : (
           Object.entries(groupedEndpoints).map(([tag, eps]) => {

@@ -619,3 +619,26 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 
 ### Fix 123: Comprehensive Built-in Sample Specifications Unit Test Suite
 - **Improvement**: Added dedicated test suite in `tests/sampleSpecs.test.ts` verifying parsing, error free processing, polymorphic schema resolution, and diagnostics generation across Petstore, GitHub, Stripe, Minimal, and Broken sample specifications.
+
+### Fix 124: Comprehensive HTTP Methods and Status Categories Test Suite
+- **Improvement**: Added dedicated test suite in `tests/httpMethods.test.ts` testing method configurations, color tokens, and status code categorizations.
+
+### Fix 125: Wildcard and Case-Insensitive Status Code Categorization
+- **Issue**: Status strings such as `2XX`, `2xx`, `4XX`, and `4xx` in `getStatusCategory` fell back to default status formatting.
+- **Root Cause**: Strict numeric parsing without wildcard mapping in `src/model/httpMethods.ts`.
+- **Resolution**: Added pattern matching mapping wildcard status tokens to their respective categories.
+
+### Fix 126: Info License Object Name Validation
+- **Issue**: Info license objects lacking the required `name` property were not flagged.
+- **Root Cause**: Missing license validation check in `src/parser/validator.ts`.
+- **Resolution**: Added validation requiring `info.license.name` to be a non-empty string.
+
+### Fix 127: License URL Protocol Validation
+- **Issue**: License URLs with non-HTTP protocols or invalid URL schemes were accepted without linter feedback.
+- **Root Cause**: Missing protocol check in `src/parser/validator.ts`.
+- **Resolution**: Added validation checking that `info.license.url` uses valid `http://` or `https://` protocols.
+
+### Fix 128: Clear All Filters Button in Explorer Empty State
+- **Issue**: When search or tag filters yielded 0 results, users had to manually reset each individual filter.
+- **Root Cause**: Lack of batch filter reset action in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Added a one-click `Clear all filters` button in the empty search view.

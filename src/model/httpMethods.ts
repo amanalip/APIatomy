@@ -85,13 +85,41 @@ export const HTTP_METHODS: Record<HttpMethod, MethodConfig> = {
   },
 };
 
+export function getMethodConfig(method: string): MethodConfig {
+  const m = (method || '').toLowerCase() as HttpMethod;
+  if (HTTP_METHODS[m]) {
+    return HTTP_METHODS[m];
+  }
+  return {
+    label: (method || 'UNKNOWN').toUpperCase(),
+    bg: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30',
+    text: 'text-slate-600 dark:text-slate-400',
+    border: 'border-slate-500',
+    badgeBg: 'bg-slate-500 text-white',
+    darkBg: 'bg-slate-950/40 text-slate-300 border-slate-800/60',
+    accent: '#64748b',
+  };
+}
+
 export function getStatusCategory(code: string | number): {
   color: string;
   bg: string;
   border: string;
   label: string;
 } {
-  const codeNum = typeof code === 'number' ? code : parseInt(code, 10);
+  let codeNum: number;
+  if (typeof code === 'number') {
+    codeNum = code;
+  } else {
+    const s = String(code).trim().toLowerCase();
+    if (s === '2xx') codeNum = 200;
+    else if (s === '3xx') codeNum = 300;
+    else if (s === '4xx') codeNum = 400;
+    else if (s === '5xx') codeNum = 500;
+    else if (s === '1xx') codeNum = 100;
+    else codeNum = parseInt(s, 10);
+  }
+
   if (isNaN(codeNum)) {
     return {
       color: 'text-slate-600 dark:text-slate-400',

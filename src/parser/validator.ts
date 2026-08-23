@@ -63,6 +63,31 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
         }
       }
     }
+    if (typeof info.license === 'object' && info.license !== null) {
+      const license = info.license as Record<string, unknown>;
+      if (!license.name || typeof license.name !== 'string' || !license.name.trim()) {
+        diagnostics.push({
+          id: 'missing-license-name',
+          severity: 'warning',
+          message: 'The license object must define a non-empty "name" string.',
+          path: '/info/license/name',
+          line: findLineForPattern(rawText, 'license:') || findLineForPattern(rawText, 'info:') || 1,
+          source: 'schema',
+        });
+      }
+      if (typeof license.url === 'string' && license.url.trim()) {
+        if (!/^https?:\/\//i.test(license.url.trim())) {
+          diagnostics.push({
+            id: 'invalid-license-url',
+            severity: 'info',
+            message: `License URL "${license.url}" should be an absolute HTTP/HTTPS URL.`,
+            path: '/info/license/url',
+            line: findLineForPattern(rawText, 'url:') || findLineForPattern(rawText, 'license:') || 1,
+            source: 'schema',
+          });
+        }
+      }
+    }
   }
 
   // Check paths mapping in rawDoc

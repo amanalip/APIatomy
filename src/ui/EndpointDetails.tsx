@@ -371,7 +371,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                             {resp.statusCode}
                           </span>
                           <span className="text-xs text-slate-800 dark:text-slate-300 truncate font-medium">
-                            {resp.description || statusInfo.label}
+                            {resp.description || (resp.statusCode.toLowerCase() === 'default' ? 'Default Response' : `${statusInfo.label} Response`)}
                           </span>
                         </div>
 
