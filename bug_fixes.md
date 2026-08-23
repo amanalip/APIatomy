@@ -178,7 +178,7 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Resolution**: Normalized URL paths and incorporated schema default value lookups across query, header, and path parameters.
 
 ### Fix 33: Edge Visibility Synchronization in Canvas Node Filtering
-- **Issue**: When filtering the topology graph by node type (`endpoints` or `schemas`), connecting edges remained rendered on the canvas across hidden nodes.
+- **Issue**: When filtering the topology graph by node type (`endpoints` vs `schemas`), connecting edges remained rendered on the canvas across hidden nodes.
 - **Root Cause**: Edge state was not synchronized with `hidden` node ID changes in `src/graph/TopologyGraph.tsx`.
 - **Resolution**: Added edge visibility synchronization to hide any edges whose source or target nodes are hidden by filter conditions.
 
@@ -456,3 +456,28 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: The `ALL` method filter pill in the Endpoint Explorer did not display the total number of operations.
 - **Root Cause**: Static button text in `src/ui/EndpointExplorer.tsx`.
 - **Resolution**: Displayed `ALL (${endpoints.length})` on the all-methods filter pill.
+
+### Fix 89: Duplicate Root Tag Declarations Validation in Linter
+- **Issue**: Tag definitions duplicated multiple times in the root `tags` array were not flagged by the linter.
+- **Root Cause**: Missing duplicate detection in `src/parser/validator.ts`.
+- **Resolution**: Added a warning diagnostic rule detecting duplicate tag definitions in the root tags list.
+
+### Fix 90: One-Click Copy Endpoint Path Action
+- **Issue**: Users reviewing endpoints had no quick way to copy only the endpoint path string to clipboard.
+- **Root Cause**: Lack of copy path action button in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Added a copy path button with temporary success feedback next to the path header.
+
+### Fix 91: ReadOnly and WriteOnly Schema Property Badges
+- **Issue**: Properties marked with `readOnly: true` or `writeOnly: true` omitted their access modifiers in the Schema Structure Tree.
+- **Root Cause**: Missing modifier badge rendering in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Added `readOnly` and `writeOnly` tags in schema property rows.
+
+### Fix 92: SpaceDelimited and PipeDelimited Query Parameter Serialization in cURL
+- **Issue**: Unexploded array query parameters were always formatted with comma delimiters regardless of `style: spaceDelimited` or `style: pipeDelimited` configurations.
+- **Root Cause**: Hardcoded comma join in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Applied space (`%20`) and pipe (`|`) delimiters when specified by parameter serialization styles.
+
+### Fix 93: Clean Success State Message in Diagnostics Drawer
+- **Issue**: When an API specification had 0 errors, warnings, or info diagnostics, opening the diagnostics drawer presented a blank area without positive confirmation.
+- **Root Cause**: Missing 0-diagnostics empty state check in `src/ui/DiagnosticsBar.tsx`.
+- **Resolution**: Displayed an explicit green checkmark and "All checks passed!" message when the spec has 0 issues.

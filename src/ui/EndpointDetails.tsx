@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { EndpointModel, ServerModel, SchemaModel, SecuritySchemeModel } from '../model';
 import { HTTP_METHODS, getStatusCategory } from '../model/httpMethods';
 import { CurlGenerator } from './CurlGenerator';
-import { X, Shield, ArrowRight, FileCode, CheckCircle2, ChevronRight, ChevronDown, AlertCircle } from 'lucide-react';
+import { X, Shield, ArrowRight, FileCode, CheckCircle2, ChevronRight, ChevronDown, AlertCircle, Copy, Check } from 'lucide-react';
 
 interface EndpointDetailsProps {
   endpoint: EndpointModel;
@@ -22,10 +22,17 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
   onSelectSchema,
 }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'curl'>('details');
+  const [copiedPath, setCopiedPath] = useState(false);
   const [expandedResponses, setExpandedResponses] = useState<Record<string, boolean>>({
     '200': true,
     '201': true,
   });
+
+  const handleCopyPath = () => {
+    navigator.clipboard.writeText(endpoint.path);
+    setCopiedPath(true);
+    setTimeout(() => setCopiedPath(false), 2000);
+  };
 
   const methodConfig = HTTP_METHODS[endpoint.method] || HTTP_METHODS.get;
 
@@ -47,6 +54,17 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
             <span className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-200 break-all">
               {endpoint.path}
             </span>
+            <button
+              onClick={handleCopyPath}
+              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+              title="Copy endpoint path"
+            >
+              {copiedPath ? (
+                <Check className="w-3.5 h-3.5 text-emerald-500" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
+            </button>
             {endpoint.deprecated && (
               <span className="px-2 py-0.5 text-[10px] font-medium rounded bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/40">
                 Deprecated

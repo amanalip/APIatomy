@@ -58,7 +58,10 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
               qParts.push(`${p.name}=${encodeURIComponent(String(item))}`);
             }
           } else {
-            const joined = arrVal.map(String).join(',');
+            let delimiter = ',';
+            if (p.style === 'spaceDelimited') delimiter = ' ';
+            else if (p.style === 'pipeDelimited') delimiter = '|';
+            const joined = arrVal.map(String).join(delimiter);
             qParts.push(`${p.name}=${encodeURIComponent(joined)}`);
           }
         } else {

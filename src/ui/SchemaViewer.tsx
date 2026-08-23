@@ -367,6 +367,16 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                         deprecated
                       </span>
                     )}
+                    {propSchema.readOnly && (
+                      <span className="text-[9px] px-1 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 font-medium border border-blue-200 dark:border-blue-500/30">
+                        readOnly
+                      </span>
+                    )}
+                    {propSchema.writeOnly && (
+                      <span className="text-[9px] px-1 py-0.5 rounded bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 font-medium border border-purple-200 dark:border-purple-500/30">
+                        writeOnly
+                      </span>
+                    )}
                     <span className="text-slate-400 dark:text-slate-500">:</span>
                     <span className="text-blue-600 dark:text-blue-400 text-[11px]">
                       {String(propSchema.type || 'object')}

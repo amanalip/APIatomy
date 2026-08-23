@@ -310,15 +310,30 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     }
   }
 
-  // Rule: Unused tags defined in root tags list
+  // Rule: Unused tags and duplicate tag definitions in root tags list
   if (Array.isArray(rawDoc.tags)) {
     const usedTags = new Set<string>();
+    const seenRootTags = new Set<string>();
     for (const ep of endpoints) {
       for (const t of ep.tags) usedTags.add(t);
     }
     for (const tagItem of rawDoc.tags) {
       if (typeof tagItem === 'object' && tagItem !== null && typeof (tagItem as any).name === 'string') {
         const tagName = (tagItem as any).name;
+        if (seenRootTags.has(tagName)) {
+          const line = findLineForPattern(rawText, tagName);
+          diagnostics.push({
+            id: `duplicate-tag-${tagName}`,
+            severity: 'warning',
+            message: `Tag "${tagName}" is declared more than once in the root tags list.`,
+            path: `/tags`,
+            line,
+            source: 'linter',
+          });
+        } else {
+          seenRootTags.add(tagName);
+        }
+
         if (!usedTags.has(tagName)) {
           const line = findLineForPattern(rawText, tagName);
           diagnostics.push({

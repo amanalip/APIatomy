@@ -334,6 +334,31 @@ paths:
     expect(unusedTagDiag?.severity).toBe('info');
   });
 
+  it('detects duplicate root tag definitions with warning diagnostics', () => {
+    const duplicateRootTagSpec = `
+openapi: 3.0.0
+info:
+  title: Duplicate Root Tag Spec
+  version: 1.0.0
+tags:
+  - name: users
+  - name: users
+paths:
+  /users:
+    get:
+      tags:
+        - users
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(duplicateRootTagSpec);
+    const dupTagDiag = parsed.diagnostics.find((d) => d.id === 'duplicate-tag-users');
+    expect(dupTagDiag).toBeDefined();
+    expect(dupTagDiag?.severity).toBe('warning');
+  });
+
   it('recognizes 2XX wildcard responses as valid success definitions', () => {
     const wildcardSpec = `
 openapi: 3.0.0

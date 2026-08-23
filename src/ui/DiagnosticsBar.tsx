@@ -123,8 +123,15 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
       {isOpen && (
         <div className="max-h-48 overflow-y-auto divide-y divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/95 font-mono text-xs">
           {filteredDiagnostics.length === 0 ? (
-            <div className="p-3 text-center text-slate-500 font-sans">
-              No diagnostic entries match the selected filter.
+            <div className="p-4 text-center text-slate-500 dark:text-slate-400 font-sans flex items-center justify-center gap-2">
+              {diagnostics.length === 0 ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>All checks passed! No issues detected in this API specification.</span>
+                </>
+              ) : (
+                <span>No diagnostic entries match the selected filter.</span>
+              )}
             </div>
           ) : (
             filteredDiagnostics.map((diag, index) => {
