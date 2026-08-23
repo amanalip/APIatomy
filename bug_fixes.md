@@ -151,3 +151,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Endpoint explorer filter pill bar omitted `OPTIONS` and `HEAD` methods, preventing users from filtering specifically for those operation types.
 - **Root Cause**: Truncated methods array constant in `src/ui/EndpointExplorer.tsx`.
 - **Resolution**: Added `options` and `head` to the method filter array with corresponding color tokens and badges.
+
+### Fix 28: Dangling Ghost Edge Prevention in Topology Graph Layout
+- **Issue**: Specs with broken schema references created ghost edges in dagre to nonexistent nodes, causing layout positioning distortion.
+- **Root Cause**: Missing schema existence validation before creating dagre edges in `src/layout/graphLayout.ts`.
+- **Resolution**: Guarded all schema edge creation against `spec.schemas[targetRef]` existence.

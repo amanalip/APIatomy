@@ -31,10 +31,14 @@ export function computeApiTopologyGraph(
   const schemaReuseCount: Record<string, number> = {};
   for (const ep of spec.endpoints) {
     for (const ref of ep.consumedSchemaRefs) {
-      schemaReuseCount[ref] = (schemaReuseCount[ref] || 0) + 1;
+      if (spec.schemas[ref]) {
+        schemaReuseCount[ref] = (schemaReuseCount[ref] || 0) + 1;
+      }
     }
     for (const ref of ep.producedSchemaRefs) {
-      schemaReuseCount[ref] = (schemaReuseCount[ref] || 0) + 1;
+      if (spec.schemas[ref]) {
+        schemaReuseCount[ref] = (schemaReuseCount[ref] || 0) + 1;
+      }
     }
   }
 
@@ -59,6 +63,7 @@ export function computeApiTopologyGraph(
 
     // Edges from Endpoint to Consumed Schemas (Request)
     for (const schemaName of ep.consumedSchemaRefs) {
+      if (!spec.schemas[schemaName]) continue; // Guard against broken/missing schema references
       const schemaNodeId = `schema_${schemaName}`;
       const edgeId = `${nodeId}->${schemaNodeId}:consumes`;
 
@@ -84,6 +89,7 @@ export function computeApiTopologyGraph(
 
     // Edges from Endpoint to Produced Schemas (Response)
     for (const schemaName of ep.producedSchemaRefs) {
+      if (!spec.schemas[schemaName]) continue; // Guard against broken/missing schema references
       const schemaNodeId = `schema_${schemaName}`;
       const edgeId = `${nodeId}->${schemaNodeId}:produces`;
 
@@ -134,7 +140,7 @@ export function computeApiTopologyGraph(
     collectChildSchemaNames(schemaObj, nestedRefs);
 
     for (const childRef of nestedRefs) {
-      if (childRef === schemaName) continue; // skip self loops in dagre
+      if (childRef === schemaName || !spec.schemas[childRef]) continue; // Guard against self loops and missing schemas
       const childNodeId = `schema_${childRef}`;
       const edgeId = `${nodeId}->${childNodeId}:ref`;
 
