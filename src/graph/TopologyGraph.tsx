@@ -191,9 +191,9 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-1.5 top-1 p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              title="Clear graph search"
-              aria-label="Clear search"
+              className="absolute right-1.5 top-1 p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 focus-visible:ring-1 focus-visible:ring-blue-500"
+              title="Clear graph search (Esc)"
+              aria-label="Clear graph search"
             >
               <Search className="w-3 h-3 rotate-45 opacity-0" />
               <span className="absolute inset-0 flex items-center justify-center text-[10px]">✕</span>

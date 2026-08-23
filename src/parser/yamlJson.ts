@@ -9,7 +9,8 @@ export interface ParseResult {
 
 export function parseRawText(raw: string): ParseResult {
   const diagnostics: DiagnosticItem[] = [];
-  const trimmed = raw.trim();
+  const withoutBom = raw.replace(/^\uFEFF/, '');
+  const trimmed = withoutBom.trim();
 
   if (!trimmed) {
     return {
@@ -33,7 +34,7 @@ export function parseRawText(raw: string): ParseResult {
 
   if (looksLikeJson) {
     try {
-      const data = JSON.parse(raw);
+      const data = JSON.parse(withoutBom);
       if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
         return { data: data as Record<string, unknown>, format: 'json', diagnostics: [] };
       }
@@ -58,7 +59,7 @@ export function parseRawText(raw: string): ParseResult {
 
   // Try YAML parser (YAML is a superset of JSON and handles relaxed JSON syntax)
   try {
-    const doc = YAML.parseDocument(raw, { prettyErrors: true });
+    const doc = YAML.parseDocument(withoutBom, { prettyErrors: true });
 
     if (doc.errors && doc.errors.length > 0) {
       for (const err of doc.errors) {

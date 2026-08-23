@@ -1,4 +1,11 @@
 import { SchemaModel } from './index';
+import { MAX_MOCK_ARRAY_ITEMS, MAX_MOCK_DEPTH } from '../utils/schemaRefs';
+
+/**
+ * Generate deterministic mock data for a SchemaModel, respecting enum/default/example
+ * and composition (allOf/oneOf/anyOf). Depth-limited to prevent infinite recursion
+ * on circular references. Uses distinct object clones for array items.
+ */
 
 export function generateMockData(
   schema: SchemaModel,
@@ -9,19 +16,17 @@ export function generateMockData(
   const normalizeType = (t: unknown): string | undefined => Array.isArray(t) ? (t as string[]).find((v) => v !== 'null') : t as string | undefined;
   const normType = normalizeType(schema.type);
 
-  if (depth > 4) {
+  // Prioritize explicit values even at recursion depth limit
+  if (schema.example !== undefined) return schema.example;
+  if (schema.default !== undefined) return schema.default;
+  if (schema.enum && schema.enum.length > 0) return schema.enum[0];
+
+  if (depth > MAX_MOCK_DEPTH) {
     if (normType === 'object' || schema.properties) return {};
     if (normType === 'array' || schema.items) return [];
     if (normType === 'integer' || normType === 'number') return 0;
     if (normType === 'boolean') return false;
     return '...';
-  }
-
-  if (schema.example !== undefined) return schema.example;
-  if (schema.default !== undefined) return schema.default;
-
-  if (schema.enum && schema.enum.length > 0) {
-    return schema.enum[0];
   }
 
   if (schema.refTarget && allSchemas[schema.refTarget]) {
@@ -98,7 +103,7 @@ export function generateMockData(
   }
 
   if (normType === 'array' || schema.items) {
-    const count = typeof schema.minItems === 'number' && schema.minItems > 0 ? Math.min(schema.minItems, 5) : 1;
+    const count = typeof schema.minItems === 'number' && schema.minItems > 0 ? Math.min(schema.minItems, MAX_MOCK_ARRAY_ITEMS) : 1;
     // Generate distinct object per index to avoid shared reference mutation
     return Array.from({ length: count }, () => {
       const item = schema.items ? generateMockData(schema.items, allSchemas, depth + 1) : 'item';

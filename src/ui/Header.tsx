@@ -309,20 +309,22 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="hidden md:inline">{copiedJson ? 'Copied' : 'JSON'}</span>
         </button>
 
-        {/* Share Link */}
+        {/* Share Link - live region announces copy success */}
         <button
           onClick={handleShare}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 transition"
+          aria-live="polite"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 transition focus-visible:ring-2 focus-visible:ring-white"
           title="Create shareable compressed link (encoded in URL hash with zero backend)"
         >
           {copiedShare ? (
             <>
-              <Check className="w-3.5 h-3.5 text-white" />
+              <Check className="w-3.5 h-3.5 text-white" aria-hidden="true" />
               <span className="hidden xs:inline">Link Copied</span>
+              <span className="sr-only">Link copied to clipboard</span>
             </>
           ) : (
             <>
-              <Share2 className="w-3.5 h-3.5 text-white" />
+              <Share2 className="w-3.5 h-3.5 text-white" aria-hidden="true" />
               <span className="hidden xs:inline">Share</span>
             </>
           )}

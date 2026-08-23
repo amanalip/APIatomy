@@ -128,8 +128,8 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-2 px-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40">
+      {/* Tabs - sticky for scrollable content */}
+      <div className="sticky top-0 z-10 flex items-center gap-2 px-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/95 dark:bg-slate-950/90 backdrop-blur supports-[backdrop-filter]:bg-slate-50/80">
         <button
           onClick={() => setActiveTab('details')}
           className={`py-2 text-xs font-medium border-b-2 transition ${

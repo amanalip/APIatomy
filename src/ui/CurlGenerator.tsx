@@ -11,6 +11,7 @@ interface CurlGeneratorProps {
 
 export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers }) => {
   const [copied, setCopied] = useState(false);
+  const [wrap, setWrap] = useState(false);
   const [selectedServerUrl, setSelectedServerUrl] = useState<string>(
     servers[0]?.url || 'https://api.example.com'
   );
@@ -64,6 +65,14 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
           )}
 
           <button
+            onClick={() => setWrap((v) => !v)}
+            className="text-[11px] px-2 py-0.5 rounded bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition"
+            title="Toggle line wrapping for long commands"
+            aria-pressed={wrap}
+          >
+            {wrap ? 'No wrap' : 'Wrap'}
+          </button>
+          <button
             onClick={handleCopy}
             className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition shadow-sm"
             title="Copy curl command to clipboard"
@@ -83,7 +92,7 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
         </div>
       </div>
 
-      <pre className="p-3 rounded-lg bg-slate-900 text-slate-200 text-xs font-mono overflow-x-auto whitespace-pre leading-relaxed border border-slate-800 shadow-inner">
+      <pre className={`p-3 rounded-lg bg-slate-900 text-slate-200 text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800 shadow-inner ${wrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'}`}>
         <code>{curlCommand}</code>
       </pre>
     </div>
@@ -100,9 +109,14 @@ export function buildCurlCommand(
   if (activeServer?.variables) {
     for (const [varName, varDef] of Object.entries(activeServer.variables)) {
       const defVal = (varDef as any)?.default;
-      let replacement = defVal !== undefined && String(defVal).trim() !== '' ? String(defVal) : (varDef as any)?.enum?.[0] ?? 'default';
-      // Sanitize to prevent breaking out of double-quoted URL in shell
-      replacement = String(replacement).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
+      let replacementRaw = defVal !== undefined && String(defVal).trim() !== '' ? String(defVal) : (varDef as any)?.enum?.[0] ?? 'default';
+      // Sanitize shell specials then URL-encode spaces and unsafe characters while preserving shell escapes
+      let replacement = String(replacementRaw).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
+      // Encode spaces and encode remaining unsafe URL characters except already escaped sequences
+      // For URL correctness, encode spaces; other characters keep shell-escaped form for curl double-quoted string
+      replacement = replacement.replace(/ /g, '%20');
+      // Additionally encode raw unsafe that would break URL but not already escaped
+      try { replacement = replacement.replace(/(?<!\\)%20/g, '%20'); } catch { /* ignore lookbehind unsupported */ }
       rawUrl = rawUrl.split(`{${varName}}`).join(replacement);
     }
   }

@@ -23,3 +23,5 @@ export function collectSchemaRefs(schema: SchemaModel | null | undefined, target
 
 export const VALID_HTTP_METHODS = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head', 'trace'] as const;
 export const MAX_UPLOAD_SIZE = 5 * 1024 * 1024;
+export const MAX_MOCK_DEPTH = 4;
+export const MAX_MOCK_ARRAY_ITEMS = 5;

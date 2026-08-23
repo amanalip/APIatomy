@@ -13,7 +13,7 @@ export interface SampleSpecOption {
   spec: string;
 }
 
-export const SAMPLE_SPECS: SampleSpecOption[] = [
+export const SAMPLE_SPECS: readonly SampleSpecOption[] = [
   {
     id: 'petstore',
     name: 'Petstore (OpenAPI 3.0)',

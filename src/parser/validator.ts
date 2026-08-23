@@ -304,14 +304,27 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       const checkParams = (params: unknown[], source: string) => {
         for (const p of params) {
           if (typeof p === 'object' && p !== null) {
-            const pObj = p as Record<string, unknown>;
-            const key = `${pObj.in || 'query'}:${pObj.name}`;
+            let pObj = p as Record<string, unknown>;
+            // Resolve $ref parameter chases to get true identity
+            if (typeof pObj.$ref === 'string') {
+              const resolved = resolveJsonPointer(rawDoc as Record<string, unknown>, pObj.$ref);
+              if (resolved && typeof resolved === 'object' && !Array.isArray(resolved)) {
+                pObj = resolved as Record<string, unknown>;
+              } else {
+                // Unresolvable $ref is handled elsewhere; skip duplicate check for this entry
+                continue;
+              }
+            }
+            const paramName = typeof pObj.name === 'string' ? pObj.name : '';
+            const paramIn = typeof pObj.in === 'string' ? pObj.in : 'query';
+            if (!paramName) continue;
+            const key = `${paramIn}:${paramName}`;
             if (rawSeen.has(key)) {
-              const line = findLineForPattern(rawText, String(pObj.name));
+              const line = findLineForPattern(rawText, String(paramName));
               diagnostics.push({
                 id: `duplicate-param-${ep.id}-${key}`,
                 severity: 'warning',
-                message: `Duplicate parameter "${pObj.name}" in "${pObj.in || 'query'}" declared in ${ep.method.toUpperCase()} ${ep.path}${source ? ` (duplicate across ${source})` : ''}.`,
+                message: `Duplicate parameter "${paramName}" in "${paramIn}" declared in ${ep.method.toUpperCase()} ${ep.path}${source ? ` (duplicate across ${source})` : ''}.`,
                 path: `/paths${ep.path}/${ep.method}/parameters`,
                 line,
                 source: 'linter',
@@ -489,13 +502,16 @@ function findBrokenRefsInDoc(
   rootDoc: Record<string, unknown>,
   rawText: string,
   diagnostics: DiagnosticItem[],
-  currentPath = ''
+  currentPath = '',
+  seen = new WeakSet<object>()
 ): void {
   if (typeof doc !== 'object' || doc === null) return;
+  if (seen.has(doc as object)) return;
+  seen.add(doc as object);
 
   if (Array.isArray(doc)) {
     doc.forEach((item, idx) =>
-      findBrokenRefsInDoc(item, rootDoc, rawText, diagnostics, `${currentPath}/${idx}`)
+      findBrokenRefsInDoc(item, rootDoc, rawText, diagnostics, `${currentPath}/${idx}`, seen)
     );
     return;
   }
@@ -521,7 +537,7 @@ function findBrokenRefsInDoc(
   }
 
   for (const [key, value] of Object.entries(obj)) {
-    findBrokenRefsInDoc(value, rootDoc, rawText, diagnostics, `${currentPath}/${key}`);
+    findBrokenRefsInDoc(value, rootDoc, rawText, diagnostics, `${currentPath}/${key}`, seen);
   }
 }
 

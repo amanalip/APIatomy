@@ -222,7 +222,7 @@ export function App() {
               />
             </div>
 
-            {/* Resizer Handle */}
+            {/* Resizer Handle - enlarged hit area with visual grab dots */}
             <div
               onMouseDown={handleMouseDownResize}
               role="separator"
@@ -240,9 +240,11 @@ export function App() {
                 else if (e.key === 'End') setEditorWidth(Math.max(280, window.innerWidth - 360));
                 else if (e.key === 'Enter') setEditorWidth(420);
               }}
-              className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-blue-500/50 active:bg-blue-500 transition z-20 focus-visible:ring-1 focus-visible:ring-blue-500 outline-none"
-              title="Drag to resize editor pane (or use Arrow keys when focused)"
-            />
+              className="absolute top-0 right-0 w-2.5 h-full cursor-col-resize hover:bg-blue-500/50 active:bg-blue-500 transition z-20 focus-visible:ring-2 focus-visible:ring-blue-500 outline-none flex items-center justify-center group"
+              title="Drag to resize editor pane (or use Arrow keys when focused, Home/End for min/max, Enter to reset)"
+            >
+              <span className="w-0.5 h-6 rounded-full bg-slate-300 dark:bg-slate-600 group-hover:bg-blue-500 transition" />
+            </div>
           </div>
         )}
 

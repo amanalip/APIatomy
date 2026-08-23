@@ -1257,6 +1257,121 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 ### Fix 276: Tests - New Batch Verification Suite
 - **Improvement**: 15 additional tests raise suite to 159 passing, covering security inheritance, contact array rejection, multigraph edges, sanitization, constants, hash bomb, binary mocks.
 
+### Fix 277: BOM Handling in YAML/JSON Parser
+- **Issue**: `parseRawText` used `raw.trim()` without stripping leading UTF-8 BOM `U+FEFF`, causing JSON specs prefixed with BOM to fail fast-path detection and YAML specs to emit spurious syntax errors.
+- **Root Cause**: Missing `replace(/^\\uFEFF/, '')` before trim and parse in `src/parser/yamlJson.ts`.
+- **Resolution**: Strip BOM into `withoutBom` variable, use for `trimmed` detection, `JSON.parse`, and `YAML.parseDocument`.
+
+### Fix 278: SchemaViewer Property Tree Expand Toggle Missing anyOf/not/additionalProperties
+- **Issue**: Tree rows for properties whose schema used `anyOf`, `not`, or `additionalProperties` showed no expand chevron and children were not rendered, hiding nested structure.
+- **Root Cause**: `hasChildren` in `src/ui/SchemaViewer.tsx` checked only `properties || items || allOf || oneOf`.
+- **Resolution**: Extended to `Boolean(properties || items || allOf || oneOf || anyOf || not || additionalProperties)`.
+
+### Fix 279: Mock Generator Depth Priority Inversion for Example/Default/Enum
+- **Issue**: Schemas nested beyond `depth > 4` returned generic `...` or `{}` even when explicit `example`, `default`, or `enum` was defined, producing incorrect mock payloads for deep compositions.
+- **Root Cause**: Depth guard evaluated before explicit value branches in `src/model/mockGenerator.ts`.
+- **Resolution**: Moved `example`, `default`, `enum` checks before `depth > MAX_MOCK_DEPTH` guard, preserving explicit values at any depth.
+
+### Fix 280: Validator Duplicate Parameter Misdetection for $ref Inputs
+- **Issue**: Duplicate parameter check built key `${pObj.in}:${pObj.name}` without resolving `$ref` parameters, resulting in keys like `query:undefined` and missed detection when one param was a `$ref` to `q` and the other was inline `q`.
+- **Root Cause**: No `$ref` resolution and no guard for missing `name` in `src/parser/validator.ts`.
+- **Resolution**: Resolve `$ref` via `resolveJsonPointer` before key computation, skip nameless entries, use typed `paramName`/`paramIn` for diagnostics.
+
+### Fix 281: Validator Broken Ref Traversal Stack Overflow on Circular YAML Anchors
+- **Issue**: `findBrokenRefsInDoc` recursed without visited set, causing `RangeError: Maximum call stack` on specs with YAML anchors that create object cycles.
+- **Root Cause**: Missing `WeakSet` cycle guard in `src/parser/validator.ts`.
+- **Resolution**: Added `seen = new WeakSet<object>()` param, check `seen.has(doc)` before traversal and pass through recursion.
+
+### Fix 282: Graph Layout Reuse Count Inflated by Self References
+- **Issue**: Schema `Node` referencing itself via `properties.child.$ref` incremented `reuseCount` for `Node`, showing `1x` even though no other schema reused it.
+- **Root Cause**: `collectSchemaRefs` loop in `src/layout/graphLayout.ts` counted all nested refs including `ref === ownerName`.
+- **Resolution**: Iterate `Object.entries(schemas)` and `if (ref === ownerName) continue` before counting.
+
+### Fix 283: EditorPane Shared Theme Compartment and Format Recreation
+- **Issue**: `themeCompartment` was a module singleton shared across potential multiple panes, causing cross-instance reconfigure interference; format changes destroyed and recreated the editor losing undo history.
+- **Root Cause**: Global `Compartment` instance and `useEffect` dep on `format` with full teardown in `src/ui/EditorPane.tsx`.
+- **Resolution**: Created per-instance `themeCompartmentRef` and `languageCompartmentRef` via `useRef(new Compartment())`, initialize once with both compartments, add separate `useEffect` to reconfigure language via `json()`/`yaml()` without teardown.
+
+### Fix 284: cURL Server Variable Space Encoding
+- **Issue**: Server variables like `https://{env}.example.com` with `default: "my env"` produced unencoded space in curl URL `https://my env.example.com` which fails shell execution.
+- **Root Cause**: Replacement joined raw default without URL encoding in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: After shell sanitization, replace spaces with `%20` to produce `my%20env`; enum fallback also encoded.
+
+### Fix 285: Code Quality - Centralized Mock Depth Constants
+- **Improvement**: Added `MAX_MOCK_DEPTH=4` and `MAX_MOCK_ARRAY_ITEMS=5` to `src/utils/schemaRefs.ts` and consumed in `src/model/mockGenerator.ts`, removing magic numbers and enabling single-site tuning.
+
+### Fix 286: Code Quality - Normalizer Single Source VALID_HTTP_METHODS
+- **Improvement**: Removed duplicated `validMethods` array in `src/parser/normalizer.ts` and imported `VALID_HTTP_METHODS` from `utils/schemaRefs` as readonly, ensuring method list parity with validator and explorer.
+
+### Fix 287: Code Quality - Normalizer isRecord Guard
+- **Improvement**: Replaced manual `typeof doc.info === 'object' && doc.info !== null` with `isRecord(doc.info)` from `utils/typeGuards`, improving strictness and readability.
+
+### Fix 288: Code Quality - Parser Entry JSDoc and Explicit Typing
+- **Improvement**: Added JSDoc to `parseApiSpec` in `src/parser/index.ts` documenting syntax diagnostics delegation and swagger conversion, with explicit `ApiSpecModel` return type.
+
+### Fix 289: Code Quality - useCopy Hook Cleanup and Typing
+- **Improvement**: Enhanced `src/utils/useCopy.ts` with `timerRef`, `useEffect` cleanup on unmount, `clearTimeout` on re-copy, and explicit return type `{copied, copy, setCopied}`, preventing timer leaks when components unmount mid-feedback.
+
+### Fix 290: Code Quality - DiagnosticsBar useCopy Integration
+- **Improvement**: Refactored `src/ui/DiagnosticsBar.tsx` to use `useCopy` hook instead of manual `copiedDiagnostics` state and `setTimeout`, removing duplicated clipboard logic and leveraging centralized cleanup.
+
+### Fix 291: Code Quality - typeGuards Extended with assertRecord
+- **Improvement**: Added `assertRecord` guard in `src/utils/typeGuards.ts` for future parser hardening, documenting plain object assertion with typed error.
+
+### Fix 292: Code Quality - urlHash JSDoc and Secure Context Guard
+- **Improvement**: Added JSDoc to `compressSpecToHash` and `copyTextToClipboard` in `src/share/urlHash.ts`, tightened secure context check to `typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext`, preventing ReferenceError in non-browser tests.
+
+### Fix 293: Code Quality - Samples Readonly Array
+- **Improvement**: Changed `SAMPLE_SPECS` to `readonly SampleSpecOption[]` in `src/samples/index.ts`, preventing accidental mutation of registry.
+
+### Fix 294: Code Quality - MockGenerator JSDoc and Deterministic Constants
+- **Improvement**: Added module JSDoc to `src/model/mockGenerator.ts` describing depth-limited deterministic generation and distinct array clones, referencing centralized constants.
+
+### Fix 295: Code Quality - Header Clipboard Consistency Preserved
+- **Improvement**: Verified `Header.tsx` already uses `copyTextToClipboard` via `useCopy` pattern where needed; no duplicate timer leaks after `useCopy` improvement.
+
+### Fix 296: Code Quality - Validator Duplicate Check Type Safety
+- **Improvement**: Tightened `checkParams` to resolve `$ref` and validate `name`/`in` types before key formation, eliminating `query:undefined` false positives.
+
+### Fix 297: Code Quality - EditorPane Compartment Isolation Documentation
+- **Improvement**: Documented per-instance compartments in `EditorPane.tsx` comments, explaining avoidance of singleton interference and language reconfigure without teardown.
+
+### Fix 298: Code Quality - GraphLayout Owner-Aware Counting Comment
+- **Improvement**: Added comment explaining self-reference skip in reuse counting, documenting why `ref === ownerName` is excluded.
+
+### Fix 299: UX/UI - App Resizer Enlarged Hit Area and Visual Grip
+- **Improvement**: Changed resizer from `w-1.5` to `w-2.5` with `flex items-center justify-center group` and inner `w-0.5 h-6` dot, `focus-visible:ring-2`, and title includes `Home/End/Enter` hints, improving discoverability and hit area for pointer and keyboard users.
+
+### Fix 300: UX/UI - DiagnosticsBar Live Region
+- **Improvement**: Added `aria-live="polite" aria-atomic="false"` to drawer content in `src/ui/DiagnosticsBar.tsx`, announcing filter changes and new diagnostics to screen readers.
+
+### Fix 301: UX/UI - EndpointDetails Sticky Tabs
+- **Improvement**: Made tabs `sticky top-0 z-10` with `backdrop-blur` and semi-transparent `bg-slate-50/95`, keeping Request/Responses vs cURL switcher visible while scrolling long parameter tables.
+
+### Fix 302: UX/UI - CurlGenerator Wrap Toggle
+- **Improvement**: Added `wrap` state and button `Wrap/No wrap` with `aria-pressed`, toggling `<pre>` between `whitespace-pre` and `whitespace-pre-wrap break-all`, enabling readable long curl lines without horizontal scroll.
+
+### Fix 303: UX/UI - EditorPane Drag Overlay High Contrast
+- **Improvement**: Overlay now `bg-blue-600/20 border-2 border-blue-500 border-dashed m-2 rounded-xl` with `press Esc to cancel` hint, improving contrast in light mode and keyboard affordance.
+
+### Fix 304: UX/UI - SchemaViewer Empty State Guidance
+- **Improvement**: Expanded empty state to show `No schemas match your search` vs `No schemas defined` with descriptive subtext and styled `Clear search` bordered button, reducing dead-end.
+
+### Fix 305: UX/UI - Header Share Live Announcement
+- **Improvement**: Share button now has `aria-live="polite"`, `focus-visible:ring-2`, and `sr-only` announcement `Link copied to clipboard`, with `aria-hidden` on icons for screen reader clarity.
+
+### Fix 306: UX/UI - EndpointExplorer Clear Search A11y
+- **Improvement**: Clear button now has `aria-label="Clear endpoint search"`, `rounded hover:bg-slate-100 focus-visible:ring-1`, and title `Clear search (Esc)` matching Escape handler.
+
+### Fix 307: UX/UI - SchemaViewer Clear Search A11y
+- **Improvement**: Mirrored Explorer improvement for schema search clear button with `aria-label="Clear schema search"` and focus ring, ensuring consistency.
+
+### Fix 308: UX/UI - TopologyGraph Search Clear Focus Ring
+- **Improvement**: Graph search clear button now has `hover:bg-slate-100 focus-visible:ring-1` and title `Clear graph search (Esc)`, fixing missing keyboard focus indicator.
+
+### Fix 309: Tests - New Quality Batch 6 Suite (15 Tests)
+- **Improvement**: Added `tests/newQualityBatch6.test.ts` with 15 tests verifying BOM stripping for JSON/YAML, mock depth example priority, self-reference reuse count 0, validator circular safe traversal, validator $ref duplicate detection, curl variable space encoding, urlHash roundtrip, array `MAX_MOCK_ARRAY_ITEMS` cap, and parseRawText array root error; suite raises total from 159 to 174 passing.
+
 
 
 

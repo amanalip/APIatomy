@@ -137,8 +137,9 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
-                title="Clear search"
+                aria-label="Clear schema search"
+                className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-1 focus-visible:ring-blue-500"
+                title="Clear search (Esc)"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -148,12 +149,13 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {schemaNames.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs space-y-2">
+            <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs space-y-2 px-2">
               <div className="mx-auto w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
                 <Box className="w-4 h-4 text-slate-400" />
               </div>
-              <div>No schemas found</div>
-              {searchQuery && (<button onClick={() => setSearchQuery('')} className="text-blue-600 dark:text-blue-400 hover:underline text-[11px]">Clear search</button>)}
+              <div className="font-medium text-slate-600 dark:text-slate-400">{searchQuery ? 'No schemas match your search' : 'No schemas defined'}</div>
+              <div className="text-[11px] leading-relaxed">{searchQuery ? 'Try a different search term or clear the filter.' : 'This specification has no component schemas. Add schemas in the editor or load a sample spec.'}</div>
+              {searchQuery && (<button onClick={() => setSearchQuery('')} className="text-blue-600 dark:text-blue-400 hover:underline text-[11px] px-2 py-1 rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40">Clear search</button>)}
             </div>
           ) : (
             schemaNames.map((name) => {
@@ -428,7 +430,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
         <div className="space-y-2">
           {Object.entries(schema.properties!).map(([propName, propSchema]) => {
             const isRequired = schema.required?.includes(propName);
-            const hasChildren = propSchema.properties || propSchema.items || propSchema.allOf || propSchema.oneOf;
+            const hasChildren = Boolean(propSchema.properties || propSchema.items || propSchema.allOf || propSchema.oneOf || propSchema.anyOf || (propSchema as any).not || propSchema.additionalProperties);
             const isCollapsed = collapsedProperties[propName] ?? false;
 
             return (

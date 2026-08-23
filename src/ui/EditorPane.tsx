@@ -20,13 +20,13 @@ interface EditorPaneProps {
   format?: 'yaml' | 'json';
 }
 
-const themeCompartment = new Compartment();
-
 export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
   ({ value, onChange, format = 'yaml' }, ref) => {
     const { theme } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const editorViewRef = useRef<EditorView | null>(null);
+    const themeCompartmentRef = useRef<Compartment>(new Compartment());
+    const languageCompartmentRef = useRef<Compartment>(new Compartment());
     const [isDragging, setIsDragging] = useState(false);
     const debounceTimerRef = useRef<number | null>(null);
     const onChangeRef = useRef(onChange);
@@ -60,7 +60,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
       },
     }));
 
-    // Initialize CodeMirror 6 Editor
+    // Initialize CodeMirror 6 Editor (language via compartment to avoid teardown on format switch)
     useEffect(() => {
       if (!containerRef.current) return;
 
@@ -99,8 +99,8 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
           highlightActiveLine(),
           history(),
           keymap.of([...defaultKeymap, ...historyKeymap]),
-          langExtension,
-          themeCompartment.of(editorTheme),
+          languageCompartmentRef.current.of(langExtension),
+          themeCompartmentRef.current.of(editorTheme),
           baseTheme,
           updateListener,
         ],
@@ -121,16 +121,25 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
         view.destroy();
         if (editorViewRef.current === view) editorViewRef.current = null;
       };
-    }, [format]);
+    }, []);
 
-    // Update theme dynamically
+    // Update theme dynamically (per-instance compartment)
     useEffect(() => {
       if (editorViewRef.current) {
         editorViewRef.current.dispatch({
-          effects: themeCompartment.reconfigure(theme === 'dark' ? oneDark : []),
+          effects: themeCompartmentRef.current.reconfigure(theme === 'dark' ? oneDark : []),
         });
       }
     }, [theme]);
+
+    // Update language dynamically without recreating editor
+    useEffect(() => {
+      if (editorViewRef.current) {
+        editorViewRef.current.dispatch({
+          effects: languageCompartmentRef.current.reconfigure(format === 'json' ? json() : yaml()),
+        });
+      }
+    }, [format]);
 
     // Sync external value changes (annotated to suppress onChange echo)
     useEffect(() => {
@@ -198,12 +207,12 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
         {/* Editor Container */}
         <div ref={containerRef} className="flex-1 w-full h-full overflow-hidden" />
 
-        {/* Drag Overlay */}
+        {/* Drag Overlay - high contrast with keyboard hint */}
         {isDragging && (
-          <div className="absolute inset-0 bg-blue-900/40 dark:bg-blue-950/80 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-none z-30">
-            <Upload className="w-12 h-12 text-blue-500 dark:text-blue-400 mb-2 animate-bounce" />
+          <div className="absolute inset-0 bg-blue-600/20 dark:bg-blue-900/60 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-none z-30 border-2 border-blue-500 border-dashed m-2 rounded-xl">
+            <Upload className="w-12 h-12 text-blue-600 dark:text-blue-400 mb-2 animate-bounce" />
             <p className="text-sm font-semibold text-slate-900 dark:text-white">Drop your OpenAPI or Swagger spec file here</p>
-            <p className="text-xs text-blue-600 dark:text-blue-300">Accepts .yaml, .yml, .json</p>
+            <p className="text-xs text-slate-700 dark:text-blue-200">Accepts .yaml, .yml, .json - max 5 MB - press Esc to cancel</p>
           </div>
         )}
       </div>

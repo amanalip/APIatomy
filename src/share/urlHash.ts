@@ -1,5 +1,9 @@
 import LZString from 'lz-string';
 
+/**
+ * Compress spec text into a shareable URL hash fragment.
+ * Returns empty string for empty input; LZString ensures URL-safe encoding.
+ */
 export function compressSpecToHash(specText: string): string {
   if (!specText) return '';
   const compressed = LZString.compressToEncodedURIComponent(specText);
@@ -85,8 +89,12 @@ export function decompressSpecFromHash(hashString: string): string | null {
   return null;
 }
 
+/**
+ * Clipboard helper with secure-context fast path and legacy textarea fallback.
+ * Never throws; resolves to true on success, false otherwise.
+ */
 export function copyTextToClipboard(text: string): Promise<boolean> {
-  if (navigator.clipboard && window.isSecureContext) {
+  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof window !== 'undefined' && (window as unknown as { isSecureContext?: boolean }).isSecureContext) {
     return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
   }
 

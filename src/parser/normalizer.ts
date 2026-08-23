@@ -16,7 +16,8 @@ import {
 import { extractRefTargetName, RefResolutionContext, resolveJsonPointer, resolveSchema } from './refResolver';
 import { isSwagger2, convertSwagger2ToOpenApi3 } from './swaggerConverter';
 import { validateSpec, findLineForPattern } from './validator';
-import { collectSchemaRefs } from '../utils/schemaRefs';
+import { collectSchemaRefs, VALID_HTTP_METHODS } from '../utils/schemaRefs';
+import { isRecord } from '../utils/typeGuards';
 
 export function normalizeSpec(
   rawDoc: Record<string, unknown>,
@@ -48,8 +49,8 @@ export function normalizeSpec(
     visitingPath: new Set<string>(),
   };
 
-  // 1. Info block
-  const info = (typeof doc.info === 'object' && doc.info !== null ? doc.info : {}) as Record<string, unknown>;
+  // 1. Info block (guarded via isRecord for stricter typing)
+  const info = isRecord(doc.info) ? doc.info : {};
   const title = typeof info.title === 'string' ? info.title : 'Untitled API';
   const version = typeof info.version === 'string' ? info.version : '1.0.0';
   const description = typeof info.description === 'string' ? info.description : undefined;
@@ -140,7 +141,7 @@ export function normalizeSpec(
   const endpoints: EndpointModel[] = [];
   const rawPaths = (typeof doc.paths === 'object' && doc.paths !== null ? doc.paths : {}) as Record<string, unknown>;
 
-  const validMethods: HttpMethod[] = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head', 'trace'];
+  const validMethods: readonly HttpMethod[] = VALID_HTTP_METHODS as unknown as HttpMethod[];
 
   for (const [pathKey, pathItem] of Object.entries(rawPaths)) {
     if (typeof pathItem !== 'object' || pathItem === null) continue;

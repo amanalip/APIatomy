@@ -28,3 +28,8 @@ export function asNumber(value: unknown, fallback?: number): number | undefined 
 export function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
+
+/** Assert a value is a plain record (non-array object). */
+export function assertRecord(value: unknown, label = 'value'): asserts value is Record<string, unknown> {
+  if (!isRecord(value)) throw new TypeError(`${label} must be a plain object`);
+}

@@ -43,10 +43,11 @@ export function computeApiTopologyGraph(
     }
   }
   // Include indirect references via schema composition (unified util)
-  for (const schema of Object.values(spec.schemas)) {
+  for (const [ownerName, schema] of Object.entries(spec.schemas)) {
     const nested = new Set<string>();
     collectSchemaRefs(schema, nested);
     for (const ref of nested) {
+      if (ref === ownerName) continue;
       if (spec.schemas[ref]) {
         schemaReuseCount[ref] = (schemaReuseCount[ref] || 0) + 1;
       }

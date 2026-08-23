@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DiagnosticItem } from '../model';
-import { copyTextToClipboard } from '../share/urlHash';
+import { useCopy } from '../utils/useCopy';
 import { AlertTriangle, XCircle, Info, ChevronUp, ChevronDown, CheckCircle2, Copy, Check } from 'lucide-react';
 
 interface DiagnosticsBarProps {
@@ -14,7 +14,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'error' | 'warning' | 'info'>('all');
-  const [copiedDiagnostics, setCopiedDiagnostics] = useState(false);
+  const { copied: copiedDiagnostics, copy: copyDiagnostics } = useCopy(2000);
 
   const errorCount = diagnostics.filter((d) => d.severity === 'error').length;
   const warningCount = diagnostics.filter((d) => d.severity === 'warning').length;
@@ -25,7 +25,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
     return d.severity === activeFilter;
   });
 
-  const handleCopyDiagnostics = async () => {
+  const handleCopyDiagnostics = async (): Promise<void> => {
     if (filteredDiagnostics.length === 0) return;
     const text = filteredDiagnostics
       .map(
@@ -33,11 +33,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
           `[${d.severity.toUpperCase()}] ${d.message}${d.line ? ` (Line ${d.line}${d.column ? `:${d.column}` : ''})` : ''}`
       )
       .join('\n');
-    const success = await copyTextToClipboard(text);
-    if (success) {
-      setCopiedDiagnostics(true);
-      setTimeout(() => setCopiedDiagnostics(false), 2000);
-    }
+    await copyDiagnostics(text);
   };
 
   React.useEffect(() => {
@@ -179,9 +175,9 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
         </div>
       </div>
 
-      {/* Expandable Drawer Content */}
+      {/* Expandable Drawer Content - live region for screen readers */}
       {isOpen && (
-        <div className="max-h-48 overflow-y-auto divide-y divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/95 font-mono text-xs">
+        <div aria-live="polite" aria-atomic="false" className="max-h-48 overflow-y-auto divide-y divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/95 font-mono text-xs">
           {filteredDiagnostics.length === 0 ? (
             <div className="p-4 text-center text-slate-500 dark:text-slate-400 font-sans flex items-center justify-center gap-2">
               {diagnostics.length === 0 ? (
