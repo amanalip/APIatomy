@@ -400,6 +400,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                                       <span className="text-slate-800 dark:text-slate-200 font-semibold">{hKey}</span>
                                       <span className="text-blue-600 dark:text-blue-400 text-[10px]">
                                         {hVal.schema?.type || (typeof hVal.type === 'string' ? hVal.type : 'string')}
+                                        {hVal.schema?.format ? ` <${hVal.schema.format}>` : hVal.format ? ` <${hVal.format}>` : ''}
                                       </span>
                                     </div>
                                     {hVal.description && (

@@ -578,3 +578,21 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 
 ### Fix 114: Comprehensive OpenAPI Validator Unit Test Suite
 - **Improvement**: Added dedicated test suite in `tests/validator.test.ts` testing path query string checks, missing paths objects, missing info objects, empty parameter brackets, and invalid HTTP verbs.
+
+### Fix 115: Duplicate Path Parameter Placeholder Linter Validation
+- **Issue**: Path strings containing repeated identical parameter placeholders like `/users/{id}/friends/{id}` were not flagged.
+- **Root Cause**: Missing duplicate parameter check within path template strings in `src/parser/validator.ts`.
+- **Resolution**: Added a validation rule detecting duplicate placeholder names and emitting warning diagnostics.
+
+### Fix 116: Response Header Schema Format Badges in Endpoint Inspector
+- **Issue**: Response header rows in the Endpoint Inspector displayed schema types but omitted schema format specifiers (e.g. `date-time`, `uuid`).
+- **Root Cause**: Lack of format rendering in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Displayed format tags `<format>` alongside header types.
+
+### Fix 117: Structured Details for Empty Schema Objects
+- **Issue**: Schema definitions with no explicit properties or composition branches rendered an empty unstyled box.
+- **Root Cause**: Minimal fallback branch in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Added a styled container displaying type, format, descriptions, defaults, and examples for leaf schemas.
+
+### Fix 118: Comprehensive YAML / JSON Parser Engine Unit Test Suite
+- **Improvement**: Added dedicated test suite in `tests/yamlJson.test.ts` testing JSON object parsing, root array rejection, YAML parsing, syntax error positions, and empty document handling.

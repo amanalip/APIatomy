@@ -94,6 +94,25 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
           source: 'schema',
         });
       }
+      const templateParams = pKey.match(/\{([^}]+)\}/g);
+      if (templateParams) {
+        const seenInPath = new Set<string>();
+        for (const rawP of templateParams) {
+          const pName = rawP.replace(/[{}]/g, '').trim();
+          if (seenInPath.has(pName)) {
+            const line = findLineForPattern(rawText, pKey);
+            diagnostics.push({
+              id: `duplicate-path-param-${pKey}-${pName}`,
+              severity: 'warning',
+              message: `Path "${pKey}" contains duplicate path parameter placeholder "{${pName}}". Parameter names must be unique within a path template.`,
+              path: `/paths/${pKey}`,
+              line,
+              source: 'schema',
+            });
+          }
+          seenInPath.add(pName);
+        }
+      }
     }
 
     const VALID_HTTP_METHODS = new Set(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);

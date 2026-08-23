@@ -322,12 +322,21 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
   const hasProperties = Boolean(schema.properties && Object.keys(schema.properties).length > 0);
   const hasItems = Boolean(schema.items);
 
-  if (!hasComposition && !hasProperties && !hasItems) {
+  if (!hasComposition && !hasProperties && !hasItems && !schema.additionalProperties) {
     return (
-      <div className="text-xs font-mono text-slate-600 dark:text-slate-400">
-        Type: <span className="text-blue-600 dark:text-blue-400">{String(schema.type || 'any')}</span>
+      <div className="text-xs font-mono text-slate-600 dark:text-slate-400 space-y-1.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+        <div>
+          Type: <span className="text-blue-600 dark:text-blue-400 font-semibold">{String(schema.type || 'object / any')}</span>
+          {schema.format && <span className="text-slate-400 dark:text-slate-500 ml-2">&lt;{schema.format}&gt;</span>}
+        </div>
+        {schema.description && (
+          <div className="text-slate-500 dark:text-slate-400 font-sans text-[11px]">{schema.description}</div>
+        )}
         {schema.default !== undefined && (
-          <span className="ml-3 text-slate-400 dark:text-slate-500">Default: {String(schema.default)}</span>
+          <div className="text-slate-500 dark:text-slate-400">Default: {JSON.stringify(schema.default)}</div>
+        )}
+        {schema.example !== undefined && (
+          <div className="text-emerald-600 dark:text-emerald-400">Example: {JSON.stringify(schema.example)}</div>
         )}
       </div>
     );
