@@ -137,6 +137,31 @@ function generateSampleJsonFromSchema(schema?: any): string {
   if (!schema) return '{}';
   if (schema.example) return JSON.stringify(schema.example, null, 2);
 
+  if (schema.type === 'array') {
+    if (schema.items) {
+      if (schema.items.example) {
+        return JSON.stringify([schema.items.example], null, 2);
+      }
+      if (schema.items.type === 'string') {
+        return JSON.stringify(['string'], null, 2);
+      }
+      if (schema.items.type === 'number' || schema.items.type === 'integer') {
+        return JSON.stringify([0], null, 2);
+      }
+      if (schema.items.type === 'boolean') {
+        return JSON.stringify([true], null, 2);
+      }
+      if (schema.items.properties) {
+        const itemObj: Record<string, unknown> = {};
+        for (const [key, prop] of Object.entries(schema.items.properties as Record<string, any>)) {
+          itemObj[key] = prop.example !== undefined ? prop.example : prop.type === 'number' ? 0 : 'string';
+        }
+        return JSON.stringify([itemObj], null, 2);
+      }
+    }
+    return '[]';
+  }
+
   const obj: Record<string, unknown> = {};
   if (schema.properties) {
     for (const [key, prop] of Object.entries(schema.properties as Record<string, any>)) {
@@ -149,7 +174,7 @@ function generateSampleJsonFromSchema(schema?: any): string {
       } else if (prop.type === 'boolean') {
         obj[key] = true;
       } else if (prop.type === 'array') {
-        obj[key] = [];
+        obj[key] = prop.items?.example ? [prop.items.example] : [];
       } else if (prop.type === 'object') {
         obj[key] = {};
       }

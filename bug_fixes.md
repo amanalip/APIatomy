@@ -126,3 +126,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Exporting the topology diagram to PNG captured floating canvas UI controls including the search input box and filter buttons.
 - **Root Cause**: PNG exporter captured all DOM children of the canvas container.
 - **Resolution**: Tagged overlay toolbars with `data-export-ignore="true"` and configured the `html-to-image` node filter in `src/graph/exportPng.ts` to omit them from snapshots.
+
+### Fix 23: Structured Array and Complex Schema Body Mocking in cURL Generator
+- **Issue**: Endpoints expecting top-level array bodies or arrays with nested items rendered empty JSON `{}` in generated cURL snippets.
+- **Root Cause**: Schema mocking generator in `src/ui/CurlGenerator.tsx` only handled top-level object schemas.
+- **Resolution**: Added array item and primitive type traversal to produce realistic sample array payloads.
