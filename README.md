@@ -144,4 +144,4 @@ The production static files will be placed into the `dist/` directory, ready to 
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+See [LICENSE](LICENSE) for details.
