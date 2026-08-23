@@ -30,9 +30,14 @@ export function App() {
 
   const editorPaneRef = useRef<EditorPaneRef>(null);
 
-  // Parse OpenAPI spec from text
+  // Parse OpenAPI spec from text with error boundary
   const spec: ApiSpecModel = useMemo(() => {
-    return parseApiSpec(rawText);
+    try {
+      return parseApiSpec(rawText);
+    } catch (err) {
+      console.error('parseApiSpec crashed', err);
+      return parseApiSpec('openapi: 3.0.0\ninfo:\n  title: Parse Error\n  version: 0.0.0\npaths: {}');
+    }
   }, [rawText]);
 
   // Keep selected endpoint in sync when spec changes
@@ -63,7 +68,7 @@ export function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Split-pane resizing logic
+  // Split-pane resizing logic with unmount cleanup
   const handleMouseDownResize = (e: React.MouseEvent) => {
     e.preventDefault();
     isResizingRef.current = true;
@@ -83,6 +88,12 @@ export function App() {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
   };
+
+  useEffect(() => {
+    return () => {
+      isResizingRef.current = false;
+    };
+  }, []);
 
   const handleSelectSample = (sample: SampleSpecOption) => {
     setRawText(sample.spec);
@@ -111,7 +122,7 @@ export function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans select-none transition-colors duration-150">
+    <div className="flex flex-col h-screen w-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-150">
       {/* Header Navigation */}
       <Header
         spec={spec}

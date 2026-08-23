@@ -232,8 +232,8 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                      {sortedParameters.map((p) => (
-                        <tr key={`${p.in}-${p.name}`} className="hover:bg-slate-100/60 dark:hover:bg-slate-900/40">
+                      {sortedParameters.map((p, idx) => (
+                        <tr key={`${p.in}-${p.name}-${idx}`} className="hover:bg-slate-100/60 dark:hover:bg-slate-900/40">
                           <td className="py-2.5 px-3 font-mono font-medium text-slate-800 dark:text-slate-200">
                             <div className="flex items-center gap-1.5">
                               <span>{p.name}</span>
@@ -357,12 +357,14 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
               <div className="space-y-2">
                 {[...endpoint.responses]
                   .sort((a, b) => {
-                    const aNum = parseInt(a.statusCode, 10);
-                    const bNum = parseInt(b.statusCode, 10);
-                    if (isNaN(aNum) && isNaN(bNum)) return a.statusCode.localeCompare(b.statusCode);
-                    if (isNaN(aNum)) return 1;
-                    if (isNaN(bNum)) return -1;
-                    return aNum - bNum;
+                    const norm = (code: string) => {
+                      const lower = code.toLowerCase();
+                      if (lower === '2xx') return 200;
+                      if (lower === 'default') return 9999;
+                      const n = parseInt(lower, 10);
+                      return isNaN(n) ? 9998 : n;
+                    };
+                    return norm(a.statusCode) - norm(b.statusCode);
                   })
                   .map((resp) => {
                     const statusInfo = getStatusCategory(resp.statusCode);

@@ -265,7 +265,11 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                         <div
                           key={ep.id}
                           ref={isSelected ? activeEndpointRef : undefined}
+                          role="button"
+                          tabIndex={0}
                           onClick={() => onSelectEndpoint(ep)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectEndpoint(ep); } }}
+                          aria-selected={isSelected}
                           className={`group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 ${
                             isSelected
                               ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/50 shadow-md'

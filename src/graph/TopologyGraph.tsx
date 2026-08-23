@@ -74,13 +74,14 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // Synchronize when spec or layout direction changes
+  // Synchronize when spec or layout direction changes with cleanup
   useEffect(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
-    setTimeout(() => {
+    const t = setTimeout(() => {
       fitView({ padding: 0.2, duration: 400 });
     }, 50);
+    return () => clearTimeout(t);
   }, [initialNodes, initialEdges, fitView]);
 
   // Apply filtering and search highlighting — deterministic hidden set prevents stale closure race
@@ -179,6 +180,7 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
         <div className="relative">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2 pointer-events-none" />
           <input
+            aria-label="Search graph nodes"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -239,6 +241,7 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
 
         {/* Reset / Fit View */}
         <button
+          aria-label="Fit view to all visible nodes"
           onClick={() => fitView({ padding: 0.2, duration: 400 })}
           title="Fit view to all visible nodes"
           className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition"
@@ -249,6 +252,8 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
 
         {/* Layout Switcher */}
         <button
+          aria-label="Switch layout direction"
+          aria-pressed={direction === 'TB'}
           onClick={toggleDirection}
           title={`Switch layout to ${direction === 'LR' ? 'Vertical (Top-to-Bottom)' : 'Horizontal (Left-to-Right)'}`}
           className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition"
@@ -259,6 +264,7 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
 
         {/* Export PNG */}
         <button
+          aria-label="Export topology diagram as PNG"
           onClick={handleExportPng}
           disabled={isExporting || nodes.length === 0}
           className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition disabled:opacity-50"

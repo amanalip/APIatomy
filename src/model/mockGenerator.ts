@@ -5,12 +5,15 @@ export function generateMockData(
   allSchemas: Record<string, SchemaModel> = {},
   depth = 0
 ): unknown {
+  // Normalize type checks for OpenAPI 3.1 array types (e.g. ['string','null'])
+  const normalizeType = (t: unknown): string | undefined => Array.isArray(t) ? (t as string[]).find((v) => v !== 'null') : t as string | undefined;
+  const normType = normalizeType(schema.type);
+
   if (depth > 4) {
-    // Return type-aware placeholder instead of generic string to avoid type mismatch
-    if (schema.type === 'object' || schema.properties) return {};
-    if (schema.type === 'array' || schema.items) return [];
-    if (schema.type === 'integer' || schema.type === 'number') return 0;
-    if (schema.type === 'boolean') return false;
+    if (normType === 'object' || schema.properties) return {};
+    if (normType === 'array' || schema.items) return [];
+    if (normType === 'integer' || normType === 'number') return 0;
+    if (normType === 'boolean') return false;
     return '...';
   }
 
@@ -50,7 +53,7 @@ export function generateMockData(
     return generateMockData(schema.anyOf[0], allSchemas, depth + 1);
   }
 
-  if (schema.type === 'string') {
+  if (normType === 'string') {
     if (schema.format === 'email') return 'alex@example.com';
     if (schema.format === 'date-time') return new Date().toISOString();
     if (schema.format === 'date') return '2026-08-23';
@@ -65,28 +68,31 @@ export function generateMockData(
     return schema.name || 'string_value';
   }
 
-  if (schema.type === 'integer') {
+  if (normType === 'integer') {
     if (schema.minimum !== undefined) return schema.minimum;
     if (schema.maximum !== undefined && schema.maximum < 1) return schema.maximum;
     return 1;
   }
 
-  if (schema.type === 'number') {
+  if (normType === 'number') {
     if (schema.minimum !== undefined) return schema.minimum;
     if (schema.maximum !== undefined && schema.maximum < 1) return schema.maximum;
     return 19.99;
   }
 
-  if (schema.type === 'boolean') {
+  if (normType === 'boolean') {
     return true;
   }
 
-  if (schema.type === 'array' || schema.items) {
+  if (normType === 'array' || schema.items) {
     const count = typeof schema.minItems === 'number' && schema.minItems > 0 ? Math.min(schema.minItems, 5) : 1;
-    const itemData = schema.items
-      ? generateMockData(schema.items, allSchemas, depth + 1)
-      : 'item';
-    return Array.from({ length: count }, () => itemData);
+    // Generate distinct object per index to avoid shared reference mutation
+    return Array.from({ length: count }, () => {
+      const item = schema.items ? generateMockData(schema.items, allSchemas, depth + 1) : 'item';
+      // clone objects/arrays per element
+      if (typeof item === 'object' && item !== null) return JSON.parse(JSON.stringify(item));
+      return item;
+    });
   }
 
   if (schema.properties) {

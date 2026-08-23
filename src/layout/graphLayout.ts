@@ -13,7 +13,7 @@ export function computeApiTopologyGraph(
   spec: ApiSpecModel,
   options: LayoutOptions = { direction: 'LR', nodeWidth: 260, nodeHeight: 90 }
 ): { nodes: Node[]; edges: Edge[] } {
-  const dagreGraph = new dagre.graphlib.Graph();
+  const dagreGraph = new dagre.graphlib.Graph({ multigraph: true, compound: false });
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
   dagreGraph.setGraph({
@@ -168,8 +168,12 @@ export function computeApiTopologyGraph(
     }
   }
 
-  // Run Dagre Layout
-  dagre.layout(dagreGraph);
+  // Run Dagre Layout (guard circular)
+  try {
+    dagre.layout(dagreGraph);
+  } catch (e) {
+    console.warn('Dagre layout failed, falling back to unpositioned nodes', e);
+  }
 
   // Apply positions back to nodes
   const layoutedNodes = nodes.map((node) => {

@@ -90,11 +90,10 @@ export function normalizeSpec(
   const rawSchemas = (typeof components.schemas === 'object' && components.schemas !== null ? components.schemas : {}) as Record<string, unknown>;
 
   for (const [schemaName, rawSchema] of Object.entries(rawSchemas)) {
+    const canonicalRef = `#/components/schemas/${schemaName}`;
+    context.visitingPath.add(canonicalRef);
     try {
-      const canonicalRef = `#/components/schemas/${schemaName}`;
-      context.visitingPath.add(canonicalRef);
       schemas[schemaName] = resolveSchema(rawSchema, context, schemaName);
-      context.visitingPath.delete(canonicalRef);
     } catch (schemaErr: unknown) {
       diagnostics.push({
         id: `schema-err-${schemaName}`,
@@ -109,6 +108,8 @@ export function normalizeSpec(
         type: 'object',
         description: 'Failed to parse schema',
       };
+    } finally {
+      context.visitingPath.delete(canonicalRef);
     }
   }
 
@@ -412,6 +413,9 @@ function collectRefsFromSchema(schema: SchemaModel, targetSet: Set<string>): voi
   if (schema.items) {
     collectRefsFromSchema(schema.items, targetSet);
   }
+  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+    collectRefsFromSchema(schema.additionalProperties as SchemaModel, targetSet);
+  }
   if (schema.allOf) {
     for (const sub of schema.allOf) collectRefsFromSchema(sub, targetSet);
   }
@@ -420,5 +424,8 @@ function collectRefsFromSchema(schema: SchemaModel, targetSet: Set<string>): voi
   }
   if (schema.anyOf) {
     for (const sub of schema.anyOf) collectRefsFromSchema(sub, targetSet);
+  }
+  if ((schema as any).not) {
+    collectRefsFromSchema((schema as any).not, targetSet);
   }
 }

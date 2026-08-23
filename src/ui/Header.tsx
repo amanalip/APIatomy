@@ -301,7 +301,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* GitHub Link */}
         <a
-          href="https://github.com/amanalip/APIatomy"
+          href="https://github.com/anomalyco/APIatomy"
           target="_blank"
           rel="noreferrer"
           className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition hidden sm:flex items-center justify-center"

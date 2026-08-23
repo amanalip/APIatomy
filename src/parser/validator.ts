@@ -162,6 +162,7 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     for (const [pKey, pathObj] of Object.entries(rawDoc.paths as Record<string, unknown>)) {
       if (typeof pathObj === 'object' && pathObj !== null) {
         for (const opKey of Object.keys(pathObj as Record<string, unknown>)) {
+          if (opKey.startsWith('x-')) continue;
           if (!PATH_LEVEL_KEYS.has(opKey) && !VALID_HTTP_METHODS.has(opKey.toLowerCase())) {
             const line = findLineForPattern(rawText, opKey);
             diagnostics.push({
@@ -260,10 +261,10 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       }
     }
 
-    // Rule: Missing 2xx success response
+    // Rule: Missing 2xx success response (default not counted as success)
     const hasSuccessResponse = ep.responses.some((r) => {
       const code = r.statusCode.toLowerCase();
-      if (code === '2xx' || code === 'default') return true;
+      if (code === '2xx') return true;
       const num = parseInt(code, 10);
       return !isNaN(num) && num >= 200 && num < 300;
     });
@@ -369,9 +370,11 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     const hasProps = schemaObj.properties && Object.keys(schemaObj.properties).length > 0;
     const hasComposition = schemaObj.allOf || schemaObj.oneOf || schemaObj.anyOf;
     const hasItems = schemaObj.items;
-    const isPrimitive = ['string', 'number', 'integer', 'boolean'].includes(String(schemaObj.type));
+    const prim = Array.isArray(schemaObj.type) ? (schemaObj.type as unknown as string[]).join(',') : String(schemaObj.type);
+    const isPrimitive = ['string', 'number', 'integer', 'boolean'].some((t) => prim.includes(t));
+    const hasRef = !!(schemaObj.$ref || schemaObj.refTarget);
 
-    if (!hasProps && !hasComposition && !hasItems && !isPrimitive && !schemaObj.$ref) {
+    if (!hasProps && !hasComposition && !hasItems && !isPrimitive && !hasRef) {
       const line = findLineForPattern(rawText, schemaName);
       diagnostics.push({
         id: `empty-schema-${schemaName}`,

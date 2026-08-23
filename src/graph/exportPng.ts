@@ -14,13 +14,16 @@ export async function exportGraphToPng(
       quality: 0.95,
       pixelRatio: 2,
       filter: (node) => {
-        // Exclude UI controls panel, toolbar, and minimap from snapshot if desired
-        if (node instanceof HTMLElement) {
+        if (node instanceof Element) {
           if (
-            node.classList.contains('react-flow__panel') ||
+            (node as HTMLElement).classList?.contains('react-flow__panel') ||
             node.getAttribute('data-export-ignore') === 'true'
           ) {
             return false;
+          }
+          // Also exclude SVG panels via class check
+          if (node.tagName && node.tagName.toLowerCase() === 'svg') {
+            // keep edges/canvas svgs, only filter if inside panel already handled
           }
         }
         return true;

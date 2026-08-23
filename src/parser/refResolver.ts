@@ -64,8 +64,10 @@ export function resolveSchema(
     const ref = s.$ref;
     const targetName = extractRefTargetName(ref);
 
-    // Circular reference check
-    if (context.visitingPath.has(ref) || (targetName && context.visitingPath.has(`#/components/schemas/${targetName}`))) {
+    // Circular reference check — normalize encoded ref for comparison
+    const canonicalPath = `#/components/schemas/${targetName}`;
+    const normalizedRef = (() => { try { return decodeURIComponent(ref); } catch { return ref; } })();
+    if (context.visitingPath.has(ref) || context.visitingPath.has(normalizedRef) || (targetName && context.visitingPath.has(canonicalPath))) {
       return {
         $ref: ref,
         refTarget: targetName,
@@ -76,11 +78,14 @@ export function resolveSchema(
       };
     }
 
-    // Cache lookup
+    // Cache lookup — deep clone shallow shared structures via spread + clone properties
     if (context.resolvedCache.has(ref)) {
       const cached = context.resolvedCache.get(ref)!;
       return {
         ...cached,
+        // clone nested map refs to avoid shallow mutation leaking into cache
+        properties: cached.properties ? { ...cached.properties } : undefined,
+        items: cached.items ? { ...cached.items } : undefined,
         $ref: ref,
         refTarget: targetName,
         name: schemaName || targetName,

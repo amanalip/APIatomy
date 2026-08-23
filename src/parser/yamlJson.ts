@@ -90,9 +90,11 @@ export function parseRawText(raw: string): ParseResult {
 
     const data = doc.toJS();
     if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+      // If we fell through JSON strict parse, the content is YAML even if it looked like JSON
+      // Preserve 'json' only when JSON.parse succeeded earlier; here always yaml
       return {
         data: data as Record<string, unknown>,
-        format: looksLikeJson ? 'json' : 'yaml',
+        format: 'yaml',
         diagnostics,
       };
     }
@@ -110,7 +112,7 @@ export function parseRawText(raw: string): ParseResult {
 
     return {
       data: null,
-      format: looksLikeJson ? 'json' : 'yaml',
+      format: 'yaml',
       diagnostics,
     };
   } catch (yamlErr: unknown) {

@@ -176,7 +176,7 @@ export function buildCurlCommand(
       else if (header.schema?.type === 'boolean') val = 'true';
       else val = 'string';
     }
-    const sanitizedVal = String(val).replace(/"/g, '\\"');
+    const sanitizedVal = String(val).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
     lines.push(`  -H "${header.name}: ${sanitizedVal}"`);
   }
 
@@ -189,26 +189,32 @@ export function buildCurlCommand(
           : c.schema?.default !== undefined
             ? c.schema.default
             : 'value';
-        return `${c.name}=${val}`;
+        return `${encodeURIComponent(c.name)}=${encodeURIComponent(String(val))}`;
       })
       .join('; ');
     lines.push(`  -b "${cookieStr}"`);
   }
 
   if (endpoint.security.length > 0 && !hasExplicitAuthHeader) {
-    const firstSec = endpoint.security[0];
-    const secNameLower = firstSec.name.toLowerCase();
-    if (secNameLower.includes('apikey') || secNameLower.includes('key')) {
-      lines.push(`  -H "X-API-Key: YOUR_API_KEY"`);
-    } else if (secNameLower.includes('basic')) {
-      lines.push(`  -u "username:password"`);
-    } else {
-      lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
+    // Support multiple security schemes (include all, dedup)
+    const seen = new Set<string>();
+    for (const sec of endpoint.security) {
+      if (seen.has(sec.name)) continue;
+      seen.add(sec.name);
+      const secNameLower = sec.name.toLowerCase();
+      if (secNameLower.includes('apikey') || secNameLower.includes('key')) {
+        lines.push(`  -H "X-API-Key: YOUR_API_KEY"`);
+      } else if (secNameLower.includes('basic')) {
+        lines.push(`  -u "username:password"`);
+      } else {
+        lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
+      }
     }
   }
 
   if (endpoint.requestBody && endpoint.requestBody.content.length > 0) {
-    const primaryMedia = endpoint.requestBody.content[0];
+    // Prefer JSON if available, otherwise first content type
+    const primaryMedia = endpoint.requestBody.content.find((c) => c.contentType.includes('json')) || endpoint.requestBody.content[0];
     const isMultipart = primaryMedia.contentType.includes('multipart/form-data');
     const isFormUrlEncoded = primaryMedia.contentType.includes('application/x-www-form-urlencoded');
     if (isMultipart) {

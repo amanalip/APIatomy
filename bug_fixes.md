@@ -766,3 +766,102 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 
 ### Fix 156: Advanced Quality & Feature Test Suite
 - **Improvement**: Added `tests/advancedQuality.test.ts` covering (1) server variable all-occurrences replacement, (2) duplicate path placeholder replacement, (3) space/pipe delimited array query serialization, (4) layout options width sensitivity, (5) validator cross-level duplicate detection, and (6) robust URL hash decompression with extra params.
+
+### Fix 157: YAML Parser Format Mislabel on JSON Fallback
+- **Issue**: When strict `JSON.parse` failed on JSON-looking content (e.g. relaxed JSON `{ a: 1 }`), the YAML fallback still returned `format: 'json'` based on `looksLikeJson`, misrepresenting actual parser used (`src/parser/yamlJson.ts:93-96`).
+- **Root Cause**: Hardcoded ternary `looksLikeJson ? 'json' : 'yaml'` after YAML parse success.
+- **Resolution**: Return `format: 'yaml'` for all YAML-fallback paths; strict JSON success remains the only `json` path, ensuring correct editor language and diagnostics.
+
+### Fix 158: Reference Resolver Circular Detection Encoding Mismatch and Cache Mutation
+- **Issue**: Circular check compared raw `$ref` (potentially URI-encoded like `#/components/schemas/My%20Schema`) against canonical `#/components/schemas/My Schema` via `extractRefTargetName` decoded value, missing circular detection; cache returned shallow `...cached` sharing `properties`/`items` refs allowing mutation to leak (`src/parser/refResolver.ts:68-88`).
+- **Root Cause**: Missing `decodeURIComponent` normalization and deep clone of cached structures.
+- **Resolution**: Added `normalizedRef = decodeURIComponent(ref)` check alongside raw and canonical, and clone `properties`/`items` on cache return.
+
+### Fix 159: Normalizer VisitingPath Leak on Exception
+- **Issue**: `visitingPath.delete(canonicalRef)` placed after `resolveSchema` without `finally`; if `resolveSchema` threw, the set retained stale entry causing false circular positives for subsequent schemas (`src/parser/normalizer.ts:92-98`).
+- **Root Cause**: Missing try/finally guard.
+- **Resolution**: Wrap in `try { resolve } catch { ... } finally { delete }` to guarantee cleanup.
+
+### Fix 160: Swagger Converter Strict Version Check and Circular Rewrite Stack Overflow
+- **Issue**: `isSwagger2` checked `swagger === '2.0' || '2.0.0'` only, missing numeric `2` and `2.x` variants; `rewriteSwaggerRefs` recursed without visited-set, causing `RangeError: Maximum call stack` on circular YAML anchors (`src/parser/swaggerConverter.ts:3-4,311-337`).
+- **Root Cause**: Over-strict equality and unbounded recursion.
+- **Resolution**: Updated `isSwagger2` to handle `number` and `startsWith('2.')`; added `WeakSet<object>` visited guard to `rewriteSwaggerRefs`.
+
+### Fix 161: Validator False Positive on `x-` Extension Keys
+- **Issue**: Path-level keys starting with `x-` (valid OpenAPI extensions) were flagged as `invalid-http-method` warnings (`src/parser/validator.ts:165`).
+- **Root Cause**: `PATH_LEVEL_KEYS` omitted extension prefix check.
+- **Resolution**: Added `if (opKey.startsWith('x-')) continue` before method validation.
+
+### Fix 162: Mock Generator Shared Array Reference Mutation
+- **Issue**: `generateMockData` for arrays created one `itemData` object and reused reference across `count` elements via `Array.from(() => itemData)`; mutating one element mutated all (`src/model/mockGenerator.ts:84-89`).
+- **Root Cause**: Single instance reuse.
+- **Resolution**: Generate per-element via `JSON.parse(JSON.stringify(item))` clone when object/array, ensuring distinct instances.
+
+### Fix 163: Mock Generator OpenAPI 3.1 Nullable Array Type Support
+- **Issue**: `schema.type` in OAS 3.1 can be `['string','null']` array; depth guard `schema.type === 'object'` failed, returning `'...'` string where `null` expected, and string/integer checks missed nullable variants (`src/model/mockGenerator.ts:8-14,53-88`).
+- **Root Cause**: Strict string equality.
+- **Resolution**: Added `normalizeType` helper extracting non-null type from array; depth guard and type branches use `normType`, supporting 3.1 union types.
+
+### Fix 164: Graph Layout Dagre Multigraph Edge Overwrite and Layout Crash
+- **Issue**: `new dagre.graphlib.Graph()` defaults `multigraph:false`; second `setEdge(endpoint, schema)` for `produces` overwrote `consumes` edge metadata and layout lost one edge; `dagre.layout` on circular graphs could throw uncaught (`src/layout/graphLayout.ts:16-20,172`).
+- **Root Cause**: Missing `multigraph:true` and try/catch.
+- **Resolution**: Instantiate with `{ multigraph:true }` and wrap `dagre.layout` in try/catch with warning fallback.
+
+### Fix 165: PNG Export Filter Missed SVG Toolbars
+- **Issue**: Export filter checked `node instanceof HTMLElement` only, missing `SVGElement` panels; SVG ReactFlow controls appeared in PNG, and toolbar SVGs not filtered (`src/graph/exportPng.ts:16-27`).
+- **Root Cause**: Narrow instanceof check.
+- **Resolution**: Broaden to `node instanceof Element` with `classList.contains` guard, handling both HTML and SVG elements.
+
+### Fix 166: cURL Generator Header Shell Injection and Cookie Encoding Gaps
+- **Issue**: Header sanitization only escaped `"`, missing `\`, `$`, `` ` `` shell metachars; cookie values not URL-encoded; security handling only emitted first `security[0]` ignoring multi-auth; content-type selection took first entry even when `application/xml` preceded `json` (`src/ui/CurlGenerator.tsx:179,185,198,210`).
+- **Root Cause**: Incomplete escaping and single-scheme logic.
+- **Resolution**: Escape `\\`, `"`, `$`, `` ` ``; `encodeURIComponent` cookie name/value; iterate all unique security schemes; prefer `json` content type via `find`.
+
+### Fix 167: URL Hash Decoding Case-Sensitivity
+- **Issue**: `decodeURIComponent` fallback checked `decoded.includes('openapi')` case-sensitively, missing `OpenAPI` capitalized specs and raw `{` JSON detection via `startsWith` whitespace (`src/share/urlHash.ts:50-57`).
+- **Root Cause**: Case-sensitive string check.
+- **Resolution**: Added `toLowerCase()` comparison and `trim().startsWith('{')` handling.
+
+### Fix 168: Validator `default` Incorrectly Counted as 2xx Success
+- **Issue**: `hasSuccessResponse` returned true for `statusCode === 'default'`, suppressing `missing-2xx` warnings even when no 200-range response existed; `default` often represents error responses (`src/parser/validator.ts:262-281`).
+- **Root Cause**: Over-broad success check.
+- **Resolution**: Removed `default` from success condition, only `2xx` and 200-299 numeric codes qualify.
+
+### Fix 169: Validator Empty Schema Check Missed `refTarget`
+- **Issue**: `!schemaObj.$ref` check missed schemas already resolved where `refTarget` is set but `$ref` may be rewritten or missing, incorrectly flagging referenced schemas as empty (`src/parser/validator.ts:372-385`).
+- **Root Cause**: Checked raw `$ref` not normalized `refTarget`.
+- **Resolution**: Added `hasRef = !!(schemaObj.$ref || schemaObj.refTarget)` and updated primitive check to handle array type joins.
+
+### Fix 170: ThemeContext Safari Compatibility and Light Class Pollution
+- **Issue**: `mediaQuery.addEventListener` fails on Safari <14 which uses `addListener`; also adding `light` class when theme is light pollutes `documentElement` (Tailwind expects only `dark` presence) (`src/theme/ThemeContext.tsx:31-52`).
+- **Root Cause**: Missing fallback and extra class.
+- **Resolution**: Added `addListener/removeListener` fallback; changed light branch to `remove('light')` only retaining `dark` toggle semantics.
+
+### Fix 171: App Root `select-none` Blocked Copy and Resize Leak
+- **Issue**: Root div had `select-none` preventing text selection/copy of endpoint paths and diagnostics; split-pane resize added `mousemove`/`mouseup` listeners but leaking if component unmounted mid-drag; `parseApiSpec` could throw unhandled crashing app (`src/App.tsx:34,67,114`).
+- **Root Cause**: Overbroad CSS utility, missing cleanup and error boundary.
+- **Resolution**: Removed `select-none` from root, added unmount `useEffect` cleanup for resizing flag, wrapped `parseApiSpec` in try/catch with fallback minimal spec.
+
+### Fix 172: Editor External Sync Cursor Jump & Response Sort and Table Keys
+- **Issue**: `EditorPane` external `value` sync dispatched while editor had focus, resetting cursor on each keystroke (debounce 300ms); `EndpointDetails` response sort parsed `2XX` as `2` misordering, and table rows used `key={`${p.in}-${p.name}`}` colliding on duplicates (`src/ui/EditorPane.tsx:127-136, src/ui/EndpointDetails.tsx:359-366,236`).
+- **Root Cause**: Missing `hasFocus` guard, naive `parseInt` on wildcard codes, non-unique keys.
+- **Resolution**: Added `view.hasFocus` guard to skip sync when editing; normalized `2xx→200` and `default→9999` in sort comparator; changed row key to include index `${p.in}-${p.name}-${idx}`.
+
+### Fix 173: Topology Graph FitView Timer Leak and Accessibility
+- **Issue**: `setTimeout(() => fitView)` had no cleanup, calling `fitView` on unmounted component; toolbar inputs/buttons lacked `aria-label`/`aria-pressed`, and filter/search controls inaccessible to screen readers (`src/graph/TopologyGraph.tsx:78-84,181,241`).
+- **Root Cause**: Missing `clearTimeout` and a11y attributes.
+- **Resolution**: Stored timer and returned `clearTimeout` cleanup; added `aria-label` to search input, `aria-label/aria-pressed` to layout/export buttons.
+
+### Fix 174: Endpoint Explorer Keyboard Accessibility & Normalizer AdditionalProperties Refs
+- **Issue**: Endpoint cards used `<div onClick>` without `role="button"`, `tabIndex`, or key handlers blocking keyboard navigation (WCAG 2.1.1); `collectRefsFromSchema` in normalizer omitted `additionalProperties` and `not` refs, missing graph edges for map schemas (`src/ui/EndpointExplorer.tsx:265, src/parser/normalizer.ts:403`).
+- **Root Cause**: Div-as-button anti-pattern and incomplete ref traversal.
+- **Resolution**: Added `role="button" tabIndex=0 onKeyDown` (Enter/Space) and `aria-selected`; extended `collectRefsFromSchema` to traverse `additionalProperties` objects and `not`.
+
+### Fix 175: Comprehensive Fix-Coverage Test Suite
+- **Improvement**: Added `tests/fixCoverage.test.ts` with 11 tests verifying yamlJson format, Swagger 2 numeric version handling, circular rewrite safety, `x-` extension exemption, `default` not as 2xx, array mock distinct instances, OAS 3.1 nullable types, cURL sanitization/cookie encoding/multi-security, JSON-preferred body, multigraph edges, and empty-schema `refTarget` correctness.
+
+### Fix 176: GitHub Link Correction
+- **Issue**: Header GitHub anchor pointed to placeholder `amanalip/APIatomy`.
+- **Resolution**: Corrected to `anomalyco/APIatomy`.
+
+

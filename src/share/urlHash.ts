@@ -45,15 +45,14 @@ export function decompressSpecFromHash(hashString: string): string | null {
     // ignore
   }
 
-  // Fallback: Check if specEncoded is URL-encoded raw text
+  // Fallback: Check if specEncoded is URL-encoded raw text (case-insensitive)
   try {
     const decoded = decodeURIComponent(specEncoded);
+    const lower = decoded.toLowerCase();
     if (
-      decoded.startsWith('{') ||
-      decoded.startsWith('openapi:') ||
-      decoded.startsWith('swagger:') ||
-      decoded.includes('openapi') ||
-      decoded.includes('swagger')
+      decoded.trim().startsWith('{') ||
+      lower.includes('openapi') ||
+      lower.includes('swagger')
     ) {
       return decoded;
     }

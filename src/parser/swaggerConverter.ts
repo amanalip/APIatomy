@@ -1,7 +1,10 @@
 // Convert Swagger 2.0 specifications to OpenAPI 3.0.x format
 
 export function isSwagger2(doc: Record<string, unknown>): boolean {
-  return doc.swagger === '2.0' || doc.swagger === '2.0.0';
+  const v = doc.swagger;
+  if (typeof v === 'number') return v === 2 || v === 2.0;
+  if (typeof v === 'string') return v.trim().startsWith('2.');
+  return false;
 }
 
 export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Record<string, unknown> {
@@ -308,7 +311,7 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
 }
 
 // Rewrite Swagger `#/definitions/Name` to `#/components/schemas/Name`
-function rewriteSwaggerRefs(obj: unknown): unknown {
+function rewriteSwaggerRefs(obj: unknown, seen = new WeakSet<object>()): unknown {
   if (typeof obj === 'string') {
     if (obj.startsWith('#/definitions/')) {
       return obj.replace('#/definitions/', '#/components/schemas/');
@@ -323,13 +326,17 @@ function rewriteSwaggerRefs(obj: unknown): unknown {
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(rewriteSwaggerRefs);
+    if (seen.has(obj as object)) return obj;
+    seen.add(obj as object);
+    return (obj as unknown[]).map((item) => rewriteSwaggerRefs(item, seen));
   }
 
   if (typeof obj === 'object' && obj !== null) {
+    if (seen.has(obj as object)) return obj;
+    seen.add(obj as object);
     const result: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(obj)) {
-      result[k] = rewriteSwaggerRefs(v);
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      result[k] = rewriteSwaggerRefs(v, seen);
     }
     return result;
   }
