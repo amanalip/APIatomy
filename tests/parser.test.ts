@@ -65,6 +65,59 @@ describe('OpenAPI Parser', () => {
     // Should detect empty responses
     const emptyRespDiag = spec.diagnostics.find((d) => d.id.startsWith('empty-responses-'));
     expect(emptyRespDiag).toBeDefined();
+
+    // Should detect broken references
+    const brokenRefDiag = spec.diagnostics.find((d) => d.id.startsWith('broken-ref-'));
+    expect(brokenRefDiag).toBeDefined();
+  });
+
+  it('resolves component parameter and response references', () => {
+    const specWithComponentRefs = `
+openapi: 3.0.0
+info:
+  title: Component Ref Test
+  version: 1.0.0
+paths:
+  /items/{id}:
+    get:
+      summary: Get item
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          $ref: '#/components/responses/ItemSuccess'
+components:
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    ItemSuccess:
+      description: Successful item response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+`;
+
+    const parsed = parseApiSpec(specWithComponentRefs);
+    expect(parsed.endpoints.length).toBe(1);
+    const ep = parsed.endpoints[0];
+    expect(ep.parameters.length).toBe(1);
+    expect(ep.parameters[0].name).toBe('id');
+    expect(ep.parameters[0].in).toBe('path');
+    expect(ep.parameters[0].required).toBe(true);
+
+    expect(ep.responses.length).toBe(1);
+    expect(ep.responses[0].statusCode).toBe('200');
+    expect(ep.responses[0].description).toBe('Successful item response');
+    expect(ep.responses[0].content[0].contentType).toBe('application/json');
   });
 
   it('handles minimal spec cleanly', () => {
