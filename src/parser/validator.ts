@@ -73,8 +73,10 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
 
     // Rule: Missing 2xx success response
     const hasSuccessResponse = ep.responses.some((r) => {
-      const num = parseInt(r.statusCode, 10);
-      return (num >= 200 && num < 300) || r.statusCode === 'default';
+      const code = r.statusCode.toLowerCase();
+      if (code === '2xx' || code === 'default') return true;
+      const num = parseInt(code, 10);
+      return !isNaN(num) && num >= 200 && num < 300;
     });
 
     if (!hasSuccessResponse && ep.responses.length > 0) {

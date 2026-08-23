@@ -29,10 +29,28 @@ export function decompressSpecFromHash(hashString: string): string | null {
 
   try {
     const decompressed = LZString.decompressFromEncodedURIComponent(specEncoded);
-    return decompressed || null;
+    if (decompressed) return decompressed;
   } catch {
-    return null;
+    // ignore
   }
+
+  // Fallback: Check if specEncoded is URL-encoded raw text
+  try {
+    const decoded = decodeURIComponent(specEncoded);
+    if (
+      decoded.startsWith('{') ||
+      decoded.startsWith('openapi:') ||
+      decoded.startsWith('swagger:') ||
+      decoded.includes('openapi') ||
+      decoded.includes('swagger')
+    ) {
+      return decoded;
+    }
+  } catch {
+    // ignore
+  }
+
+  return null;
 }
 
 export function copyTextToClipboard(text: string): Promise<boolean> {

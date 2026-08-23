@@ -196,6 +196,26 @@ paths:
     expect(dupDiag?.message).toContain('getResource');
   });
 
+  it('recognizes 2XX wildcard responses as valid success definitions', () => {
+    const wildcardSpec = `
+openapi: 3.0.0
+info:
+  title: Wildcard Spec
+  version: 1.0.0
+paths:
+  /events:
+    get:
+      summary: Get events
+      responses:
+        '2XX':
+          description: Success
+`;
+
+    const parsed = parseApiSpec(wildcardSpec);
+    const missing2xx = parsed.diagnostics.find((d) => d.id.startsWith('missing-2xx-'));
+    expect(missing2xx).toBeUndefined();
+  });
+
   it('inherits root-level security requirements in operations', () => {
     const rootSecSpec = `
 openapi: 3.0.0

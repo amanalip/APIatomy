@@ -256,3 +256,28 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: The topology canvas only supported filtering by node type (`endpoints` vs `schemas`), without the ability to isolate specific feature tags.
 - **Root Cause**: Missing tag selector and node filtering predicate in `src/graph/TopologyGraph.tsx`.
 - **Resolution**: Added an interactive tag dropdown filter in the canvas toolbar to display only nodes belonging to selected subsystem tags.
+
+### Fix 49: Wildcard and Case-Insensitive Success Status Code Validation
+- **Issue**: Endpoints defining `2XX`, `2xx`, or `default` responses triggered false-positive `missing-2xx` diagnostic warnings.
+- **Root Cause**: Strict numeric parsing without case-insensitive range checks in `src/parser/validator.ts`.
+- **Resolution**: Updated validation logic to recognize `2xx`, `2XX`, and valid 200-299 HTTP response status strings.
+
+### Fix 50: Raw Text and URL-Encoded Fallback in Spec URL Decompression
+- **Issue**: Shared URLs containing plain-text or URL-encoded OpenAPI specs instead of LZ-compressed strings failed to decompress.
+- **Root Cause**: Direct reliance on `LZString.decompressFromEncodedURIComponent` without text fallback in `src/share/urlHash.ts`.
+- **Resolution**: Added fallback to parse and decode uncompressed or URI-encoded specification strings.
+
+### Fix 51: Parameter Serialization Style and AllowReserved Metadata Display
+- **Issue**: Parameter serialization configurations (`style`, `explode`, `allowReserved`) were omitted from the parameter table in the Endpoint Inspector.
+- **Root Cause**: Lack of rendering elements in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Added metadata badges displaying parameter `style: <type> (explode)` and `allowReserved` flags.
+
+### Fix 52: Numeric Range, Length, and Regex Pattern Badges in Schema Inspector
+- **Issue**: Numeric range limits (`minimum`, `maximum`), length bounds (`minLength`, `maxLength`), and regex patterns (`pattern`) were not shown in schema tree rows.
+- **Root Cause**: Tree node renderer in `src/ui/SchemaViewer.tsx` only rendered property type and enums.
+- **Resolution**: Added constraint tags for minimum, maximum, length limits, and regex patterns in property rows.
+
+### Fix 53: Cookie Parameter Support in cURL Command Generator
+- **Issue**: Endpoints declaring cookie parameters (`in: 'cookie'`) omitted cookie flags in generated cURL commands.
+- **Root Cause**: Parameter iteration in `src/ui/CurlGenerator.tsx` only checked `path`, `query`, and `header`.
+- **Resolution**: Added cookie parameter processing to generate `-b "cookie1=val; cookie2=val"` flags.

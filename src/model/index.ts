@@ -8,6 +8,9 @@ export interface ParameterModel {
   description?: string;
   schema?: SchemaModel;
   example?: unknown;
+  style?: string;
+  explode?: boolean;
+  allowReserved?: boolean;
 }
 
 export interface MediaTypeModel {

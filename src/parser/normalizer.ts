@@ -385,6 +385,9 @@ function parseParameter(p: unknown, context: RefResolutionContext): ParameterMod
     deprecated,
     schema,
     example: param.example,
+    style: typeof param.style === 'string' ? param.style : undefined,
+    explode: typeof param.explode === 'boolean' ? param.explode : undefined,
+    allowReserved: typeof param.allowReserved === 'boolean' ? param.allowReserved : undefined,
   };
 }
 

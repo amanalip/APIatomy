@@ -11,6 +11,12 @@ describe('URL Hash Codec', () => {
     expect(recovered).toBe(MINIMAL_SPEC);
   });
 
+  it('decompresses URI-encoded plain text fallback', () => {
+    const encoded = `#spec=${encodeURIComponent(MINIMAL_SPEC)}`;
+    const recovered = decompressSpecFromHash(encoded);
+    expect(recovered).toBe(MINIMAL_SPEC);
+  });
+
   it('handles invalid hash gracefully', () => {
     expect(decompressSpecFromHash('')).toBeNull();
     expect(decompressSpecFromHash('#unknown=123')).toBeNull();

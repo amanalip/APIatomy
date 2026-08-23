@@ -201,6 +201,16 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                                 enum: [{p.schema.enum.join(', ')}]
                               </div>
                             )}
+                            {p.style && (
+                              <div className="text-[10px] text-slate-500 font-sans mt-0.5">
+                                style: {p.style}{p.explode ? ' (explode)' : ''}
+                              </div>
+                            )}
+                            {p.allowReserved && (
+                              <div className="text-[10px] text-purple-600 dark:text-purple-400 font-sans mt-0.5">
+                                allowReserved
+                              </div>
+                            )}
                           </td>
                           <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 text-[11px]">
                             {p.description || <span className="italic text-slate-400 dark:text-slate-600">No description</span>}

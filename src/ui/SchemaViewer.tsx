@@ -319,6 +319,24 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                       {propSchema.format ? ` <${propSchema.format}>` : ''}
                     </span>
 
+                    {propSchema.minimum !== undefined && (
+                      <span className="text-[10px] text-slate-500 font-mono">≥ {propSchema.minimum}</span>
+                    )}
+                    {propSchema.maximum !== undefined && (
+                      <span className="text-[10px] text-slate-500 font-mono">≤ {propSchema.maximum}</span>
+                    )}
+                    {propSchema.minLength !== undefined && (
+                      <span className="text-[10px] text-slate-500 font-mono">minLen: {propSchema.minLength}</span>
+                    )}
+                    {propSchema.maxLength !== undefined && (
+                      <span className="text-[10px] text-slate-500 font-mono">maxLen: {propSchema.maxLength}</span>
+                    )}
+                    {propSchema.pattern && (
+                      <span className="text-[10px] text-slate-500 font-mono" title={`Pattern: ${propSchema.pattern}`}>
+                        /{propSchema.pattern}/
+                      </span>
+                    )}
+
                     {propSchema.refTarget && (
                       <button
                         onClick={() => onNavigateRef(propSchema.refTarget!)}

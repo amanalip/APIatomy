@@ -76,6 +76,22 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
       lines.push(`  -H "${header.name}: ${val}"`);
     }
 
+    // Cookie parameters
+    const cookieParams = endpoint.parameters.filter((p) => p.in === 'cookie');
+    if (cookieParams.length > 0) {
+      const cookieStr = cookieParams
+        .map((c) => {
+          const val = c.example !== undefined
+            ? c.example
+            : c.schema?.default !== undefined
+              ? c.schema.default
+              : 'value';
+          return `${c.name}=${val}`;
+        })
+        .join('; ');
+      lines.push(`  -b "${cookieStr}"`);
+    }
+
     // Security header defaults (only if not already provided as explicit header param)
     if (endpoint.security.length > 0 && !hasExplicitAuthHeader) {
       lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
