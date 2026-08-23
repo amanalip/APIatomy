@@ -224,7 +224,9 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Toggle Editor */}
         <button
           onClick={() => setIsEditorOpen(!isEditorOpen)}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition ${
+          aria-pressed={isEditorOpen}
+          aria-label={`${isEditorOpen ? 'Hide' : 'Show'} editor pane`}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none ${
             isEditorOpen
               ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700/60 font-semibold'
               : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800'

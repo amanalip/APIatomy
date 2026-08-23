@@ -323,7 +323,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                     </button>
                   </div>
 
-                  <pre className="p-4 rounded-xl bg-slate-900 text-slate-100 border border-slate-800 text-xs font-mono overflow-x-auto whitespace-pre leading-relaxed shadow-sm">
+                  <pre tabIndex={0} role="region" aria-label={`Mock data preview in ${mockFormat.toUpperCase()} format`} className="p-4 rounded-xl bg-slate-900 text-slate-100 border border-slate-800 text-xs font-mono overflow-x-auto whitespace-pre leading-relaxed shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-500 outline-none">
                     <code>{generatedMockText}</code>
                   </pre>
                 </div>
@@ -359,7 +359,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
     setCollapsedProperties((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  const hasComposition = Boolean(schema.allOf || schema.oneOf || schema.anyOf || (schema as any).not);
+  const hasComposition = Boolean(schema.allOf || schema.oneOf || schema.anyOf || schema.not);
   const hasProperties = Boolean(schema.properties && Object.keys(schema.properties).length > 0);
   const hasItems = Boolean(schema.items);
 
@@ -410,11 +410,11 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                 />
               </div>
             ))}
-            {(schema as any).not && (
+            {schema.not && (
               <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60">
                 <div className="text-[11px] font-mono text-rose-600 dark:text-rose-400 mb-1.5">Not - must NOT match</div>
                 <TreeNodeRenderer
-                  schema={(schema as any).not}
+                  schema={schema.not}
                   schemas={schemas}
                   onNavigateRef={onNavigateRef}
                   level={level + 1}
@@ -430,7 +430,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
         <div className="space-y-2">
           {Object.entries(schema.properties!).map(([propName, propSchema]) => {
             const isRequired = schema.required?.includes(propName);
-            const hasChildren = Boolean(propSchema.properties || propSchema.items || propSchema.allOf || propSchema.oneOf || propSchema.anyOf || (propSchema as any).not || propSchema.additionalProperties);
+            const hasChildren = Boolean(propSchema.properties || propSchema.items || propSchema.allOf || propSchema.oneOf || propSchema.anyOf || propSchema.not || propSchema.additionalProperties);
             const isCollapsed = collapsedProperties[propName] ?? false;
 
             return (
@@ -581,22 +581,28 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
         </div>
       )}
 
-      {/* Additional properties dictionary map */}
-      {schema.additionalProperties && (
+      {/* Additional properties dictionary map - handles boolean true/false and object */}
+      {schema.additionalProperties !== undefined && (
         <div className="pt-2 text-xs font-mono text-slate-600 dark:text-slate-400 flex items-center gap-1.5 pl-3 border-l border-dashed border-slate-200 dark:border-slate-800">
           <span className="text-slate-500">[key: string]:</span>
-          <span className="text-blue-600 dark:text-blue-400 font-semibold">
-            {typeof schema.additionalProperties === 'object'
-              ? String((schema.additionalProperties as any).type || (schema.additionalProperties as any).refTarget || 'any')
-              : 'any'}
-          </span>
-          {typeof schema.additionalProperties === 'object' && (schema.additionalProperties as any).refTarget && (
-            <button
-              onClick={() => onNavigateRef((schema.additionalProperties as any).refTarget!)}
-              className="text-indigo-600 dark:text-indigo-400 hover:underline font-mono"
-            >
-              → {(schema.additionalProperties as any).refTarget}
-            </button>
+          {schema.additionalProperties === true ? (
+            <span className="text-blue-600 dark:text-blue-400 font-semibold">any (free-form)</span>
+          ) : schema.additionalProperties === false ? (
+            <span className="text-slate-400">false (no extra)</span>
+          ) : (
+            <>
+              <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                {String((schema.additionalProperties as any).type || (schema.additionalProperties as any).refTarget || 'any')}
+              </span>
+              {(schema.additionalProperties as any).refTarget && (
+                <button
+                  onClick={() => onNavigateRef((schema.additionalProperties as any).refTarget!)}
+                  className="text-indigo-600 dark:text-indigo-400 hover:underline font-mono"
+                >
+                  → {(schema.additionalProperties as any).refTarget}
+                </button>
+              )}
+            </>
           )}
         </div>
       )}

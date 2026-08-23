@@ -3,6 +3,7 @@ import { EndpointModel, ServerModel, SchemaModel } from '../model';
 import { generateMockData } from '../model/mockGenerator';
 import { Copy, Check, Terminal } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
+import { joinUrl, normalizeServerUrl, sanitizeHeaderValue } from '../utils/serverUrl';
 
 interface CurlGeneratorProps {
   endpoint: EndpointModel;
@@ -92,7 +93,7 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
         </div>
       </div>
 
-      <pre className={`p-3 rounded-lg bg-slate-900 text-slate-200 text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800 shadow-inner ${wrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'}`}>
+      <pre tabIndex={0} role="region" aria-label="Generated cURL command preview" className={`p-3 rounded-lg bg-slate-900 text-slate-200 text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800 shadow-inner focus-visible:ring-2 focus-visible:ring-blue-500 outline-none ${wrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'}`}>
         <code>{curlCommand}</code>
       </pre>
     </div>
@@ -104,14 +105,14 @@ export function buildCurlCommand(
   selectedServerUrl: string,
   activeServer?: ServerModel
 ): string {
-  let rawUrl = (selectedServerUrl || 'https://api.example.com').replace(/\/+$/, '');
+  let rawUrl = normalizeServerUrl(selectedServerUrl);
 
   if (activeServer?.variables) {
     for (const [varName, varDef] of Object.entries(activeServer.variables)) {
       const defVal = (varDef as any)?.default;
       let replacementRaw = defVal !== undefined && String(defVal).trim() !== '' ? String(defVal) : (varDef as any)?.enum?.[0] ?? 'default';
       // Sanitize shell specials then URL-encode spaces and unsafe characters while preserving shell escapes
-      let replacement = String(replacementRaw).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
+      let replacement = sanitizeHeaderValue(String(replacementRaw));
       // Encode spaces and encode remaining unsafe URL characters except already escaped sequences
       // For URL correctness, encode spaces; other characters keep shell-escaped form for curl double-quoted string
       replacement = replacement.replace(/ /g, '%20');
@@ -121,8 +122,9 @@ export function buildCurlCommand(
     }
   }
 
+  // joinUrl ensures correct slash handling even with multiple trailing slashes
   let normalizedPath = endpoint.path.startsWith('/') ? endpoint.path : `/${endpoint.path}`;
-  let url = rawUrl.replace(/\/+$/, '') + normalizedPath;
+  let url = joinUrl(rawUrl, normalizedPath);
 
   for (const param of endpoint.parameters.filter((p) => p.in === 'path')) {
     const val = param.example !== undefined
@@ -196,7 +198,7 @@ export function buildCurlCommand(
       else if (header.schema?.type === 'boolean') val = 'true';
       else val = 'string';
     }
-    const sanitizedVal = String(val).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
+    const sanitizedVal = sanitizeHeaderValue(String(val));
     lines.push(`  -H "${header.name}: ${sanitizedVal}"`);
   }
 
@@ -234,10 +236,11 @@ export function buildCurlCommand(
   }
 
   if (endpoint.requestBody && endpoint.requestBody.content.length > 0) {
-    // Prefer JSON if available, otherwise first content type
-    const primaryMedia = endpoint.requestBody.content.find((c) => c.contentType.includes('json')) || endpoint.requestBody.content[0];
-    const isMultipart = primaryMedia.contentType.includes('multipart/form-data');
-    const isFormUrlEncoded = primaryMedia.contentType.includes('application/x-www-form-urlencoded');
+    // Prefer JSON if available, otherwise first content type (case-insensitive per RFC 7231)
+    const primaryMedia = endpoint.requestBody.content.find((c) => c.contentType.toLowerCase().includes('json')) || endpoint.requestBody.content[0];
+    const lowerType = primaryMedia.contentType.toLowerCase();
+    const isMultipart = lowerType.includes('multipart/form-data');
+    const isFormUrlEncoded = lowerType.includes('application/x-www-form-urlencoded');
     if (isMultipart) {
       if (primaryMedia.schema?.properties) {
         for (const [propKey, propVal] of Object.entries(primaryMedia.schema.properties)) {
@@ -251,7 +254,7 @@ export function buildCurlCommand(
       if (!hasExplicitContentTypeHeader) {
         lines.push(`  -H "Content-Type: ${primaryMedia.contentType}"`);
       }
-      if (primaryMedia.contentType.includes('json')) {
+      if (lowerType.includes('json')) {
         const rawBody = primaryMedia.example
           ? JSON.stringify(primaryMedia.example, null, 2)
           : generateSampleJsonFromSchema(primaryMedia.schema);

@@ -541,15 +541,16 @@ function findBrokenRefsInDoc(
   }
 }
 
-export function findLineForPattern(text: string, pattern: string): number {
-  if (!pattern || !text) return 1;
+export function findLineForPattern(text: string, pattern: string): number | undefined {
+  if (!pattern || !text) return undefined;
   const lines = text.split('\n');
   const cleanPat = pattern.trim().toLowerCase();
+  if (!cleanPat) return undefined;
 
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].toLowerCase().includes(cleanPat)) {
       return i + 1;
     }
   }
-  return 1;
+  return undefined;
 }

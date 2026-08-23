@@ -349,7 +349,7 @@ function rewriteSwaggerRefs(obj: unknown, seen = new WeakSet<object>(), parentKe
   if (Array.isArray(obj)) {
     if (seen.has(obj as object)) return obj;
     seen.add(obj as object);
-    return (obj as unknown[]).map((item) => rewriteSwaggerRefs(item, seen, parentKey));
+    return (obj as unknown[]).map((item) => rewriteSwaggerRefs(item, seen, undefined));
   }
 
   if (typeof obj === 'object' && obj !== null) {

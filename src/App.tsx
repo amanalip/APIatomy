@@ -164,9 +164,16 @@ export function App() {
     setIsEditorOpen(true);
     const targetLine = diag.line ?? 1;
     if (diagTimerRef.current) window.clearTimeout(diagTimerRef.current);
+    // 150ms + retry ensures editor has mounted after isEditorOpen toggle (React async render)
     diagTimerRef.current = window.setTimeout(() => {
-      editorPaneRef.current?.jumpToLine(targetLine);
-    }, 50);
+      if (editorPaneRef.current) {
+        editorPaneRef.current.jumpToLine(targetLine);
+      } else {
+        const retry = window.setTimeout(() => editorPaneRef.current?.jumpToLine(targetLine), 150);
+        // allow outer cleanup to clear retry if unmounted quickly
+        diagTimerRef.current = retry;
+      }
+    }, 150);
   };
   useEffect(() => {
     return () => {
@@ -213,8 +220,8 @@ export function App() {
                 value={rawText}
                 onChange={(newText) => setRawText(newText)}
                 format={(() => {
-                  // Strip BOM (\uFEFF) before detection
-                  const t = rawText.replace(/^\uFEFF/, '').trim();
+                  // Strip BOM(s) before detection (handles concatenated files)
+                  const t = rawText.replace(/^\uFEFF+/, '').trim();
                   const isJson = t.startsWith('{') || t.startsWith('[');
                   if (isJson) return 'json';
                   return 'yaml';

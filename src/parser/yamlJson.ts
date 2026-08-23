@@ -9,7 +9,7 @@ export interface ParseResult {
 
 export function parseRawText(raw: string): ParseResult {
   const diagnostics: DiagnosticItem[] = [];
-  const withoutBom = raw.replace(/^\uFEFF/, '');
+  const withoutBom = raw.replace(/^\uFEFF+/, '');
   const trimmed = withoutBom.trim();
 
   if (!trimmed) {

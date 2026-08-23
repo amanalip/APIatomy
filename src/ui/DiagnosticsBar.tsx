@@ -149,7 +149,8 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
           {isOpen && filteredDiagnostics.length > 0 && (
             <button
               onClick={handleCopyDiagnostics}
-              className="flex items-center gap-1 px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800/80 hover:bg-slate-300 dark:hover:bg-slate-700 text-[11px] text-slate-700 dark:text-slate-300 transition"
+              aria-label="Copy filtered diagnostics to clipboard"
+              className="flex items-center gap-1 px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800/80 hover:bg-slate-300 dark:hover:bg-slate-700 text-[11px] text-slate-700 dark:text-slate-300 transition focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:outline-none"
               title="Copy diagnostics list to clipboard"
             >
               {copiedDiagnostics ? (

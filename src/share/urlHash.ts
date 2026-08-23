@@ -98,8 +98,11 @@ export function copyTextToClipboard(text: string): Promise<boolean> {
     return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
   }
 
-  // Fallback for older environments
+  // Fallback for older environments (handles missing document.body in SSR/tests)
   try {
+    if (typeof document === 'undefined' || !document.body || typeof document.createElement !== 'function') {
+      return Promise.resolve(false);
+    }
     const textArea = document.createElement('textarea');
     textArea.value = text;
     textArea.style.position = 'fixed';
