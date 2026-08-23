@@ -104,12 +104,14 @@ export const Header: React.FC<HeaderProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">APIatomy</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
-                v{spec.version}
-              </span>
+              {spec.version && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
+                  v{spec.version}
+                </span>
+              )}
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[160px] sm:max-w-[200px]" title={spec.title}>
-              {spec.title}
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[160px] sm:max-w-[200px]" title={spec.title || 'Untitled API'}>
+              {spec.title || 'Untitled API'}
             </div>
           </div>
         </div>

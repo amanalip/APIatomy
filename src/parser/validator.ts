@@ -63,6 +63,17 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
           source: 'schema',
         });
       }
+      if (/\{[ \t]*\}/.test(pKey)) {
+        const line = findLineForPattern(rawText, pKey);
+        diagnostics.push({
+          id: `empty-path-param-${pKey}`,
+          severity: 'error',
+          message: `Path "${pKey}" contains empty parameter brackets "{}" without a parameter name.`,
+          path: `/paths/${pKey}`,
+          line,
+          source: 'schema',
+        });
+      }
     }
   }
 

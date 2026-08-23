@@ -62,11 +62,21 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
             qParts.push(`${p.name}=${encodeURIComponent(joined)}`);
           }
         } else {
-          const val = p.example !== undefined
+          let val = p.example !== undefined
             ? p.example
             : p.schema?.default !== undefined
               ? p.schema.default
-              : 'value';
+              : undefined;
+
+          if (val === undefined) {
+            if (p.schema?.type === 'boolean') {
+              val = 'true';
+            } else if (p.schema?.type === 'integer' || p.schema?.type === 'number') {
+              val = p.schema.minimum !== undefined ? String(p.schema.minimum) : '1';
+            } else {
+              val = 'value';
+            }
+          }
           qParts.push(`${p.name}=${encodeURIComponent(String(val))}`);
         }
       }

@@ -190,7 +190,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  Mock JSON
+                  Mock Data
                 </button>
               </div>
             </div>

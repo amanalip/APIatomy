@@ -141,6 +141,27 @@ paths:
     expect(pathDiag?.severity).toBe('warning');
   });
 
+  it('flags empty path parameter brackets with error diagnostic', () => {
+    const emptyPathParamSpec = `
+openapi: 3.0.0
+info:
+  title: Empty Path Param Spec
+  version: 1.0.0
+paths:
+  /users/{}/posts:
+    get:
+      summary: Get posts
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(emptyPathParamSpec);
+    const emptyDiag = parsed.diagnostics.find((d) => d.id.startsWith('empty-path-param-'));
+    expect(emptyDiag).toBeDefined();
+    expect(emptyDiag?.severity).toBe('error');
+  });
+
   it('flags missing path parameter definitions for path templates', () => {
     const missingPathParamSpec = `
 openapi: 3.0.0

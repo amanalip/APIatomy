@@ -320,7 +320,7 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 ### Fix 61: Schema Inspector AdditionalProperties Map Rendering
 - **Issue**: Schemas declaring `additionalProperties` (dynamic key-value maps/dictionaries) omitted the map signature from the tree view.
 - **Root Cause**: Tree node renderer in `src/ui/SchemaViewer.tsx` only evaluated named properties.
-- **Resolution**: Added `[key: string]: <type>` rendering row for schemas defining `additionalProperties`.
+- **Resolution**: Added a `[key: string]: <type>` rendering row for schemas defining `additionalProperties`.
 
 ### Fix 62: Array Query Parameter Explode Formatting in cURL Snippets
 - **Issue**: Array query parameters were serialized as single string values regardless of `explode` configuration.
@@ -406,3 +406,28 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Operations defining an optional request body had no visual badge distinguishing them from operations without specified bodies.
 - **Root Cause**: Conditional rendering in `src/ui/EndpointDetails.tsx` only handled `required: true`.
 - **Resolution**: Added an `Optional` status pill for request bodies when `required: false`.
+
+### Fix 79: Empty Path Parameter Brackets Validation in Linter
+- **Issue**: Malformed path strings containing empty parameter brackets like `/users/{}/items` were not flagged as invalid path syntax.
+- **Root Cause**: Missing empty bracket regex matching in `src/parser/validator.ts`.
+- **Resolution**: Added an error diagnostic rule flagging empty parameter brackets in paths.
+
+### Fix 80: Active Tag Filter Reset Button in Endpoint Explorer
+- **Issue**: When a tag filter was selected in the explorer, users had to reopen the dropdown and scroll to "All Tags" to reset the filter.
+- **Root Cause**: Lack of dedicated reset control in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Added a one-click `Reset` button next to the tag selector when a tag filter is active.
+
+### Fix 81: Renamed Mock Data View Mode Tab in Schema Inspector
+- **Issue**: The inspector tab button was labeled "Mock JSON" despite supporting both JSON and YAML output formats.
+- **Root Cause**: Legacy button label in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Renamed view mode button to "Mock Data".
+
+### Fix 82: Type-Aware Query Parameter Value Defaults in cURL Generator
+- **Issue**: Boolean and integer query parameters without explicit default values were populated with the string `'value'`.
+- **Root Cause**: Generic string fallback in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Generated `true` for boolean parameters and `1` (or minimum constraint) for numeric parameters.
+
+### Fix 83: Conditional Version Badge in Header
+- **Issue**: Specs with undefined or missing versions rendered an empty or invalid `vundefined` badge in the application header.
+- **Root Cause**: Unconditional `v{spec.version}` rendering in `src/ui/Header.tsx`.
+- **Resolution**: Guarded version badge rendering behind `spec.version` existence.

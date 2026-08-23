@@ -163,6 +163,15 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                 </option>
               ))}
             </select>
+            {selectedTag !== 'all' && (
+              <button
+                onClick={() => setSelectedTag('all')}
+                className="px-2 py-1 bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 rounded-lg text-[10px] font-medium whitespace-nowrap"
+                title="Reset tag filter to all tags"
+              >
+                Reset
+              </button>
+            )}
             <button
               onClick={handleToggleAllTags}
               className="px-2 py-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 rounded-lg text-[10px] font-medium whitespace-nowrap"
