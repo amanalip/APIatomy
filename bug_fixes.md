@@ -161,3 +161,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Generating mock sample JSON for schemas using `allOf`, `oneOf`, or `anyOf` compositions or declaring schema-level `default` values resulted in incomplete or fallback sample payloads.
 - **Root Cause**: `generateMockData` in `src/ui/SchemaViewer.tsx` lacked composition merging branches and default property evaluations.
 - **Resolution**: Enhanced `generateMockData` to merge `allOf` properties, evaluate `oneOf`/`anyOf` targets, and prioritize schema `default` values.
+
+### Fix 30: Diagnostics Navigation Fallback for Root-Level Syntax Errors
+- **Issue**: Clicking general root-level diagnostics (e.g. document empty or root non-object) that lacked line numbers had no effect when the editor pane was closed.
+- **Root Cause**: Diagnostic click handler required `diag.line` to be defined before opening the editor.
+- **Resolution**: Updated `handleSelectDiagnostic` in `src/App.tsx` to unconditionally open the editor and navigate to line 1 as a fallback.

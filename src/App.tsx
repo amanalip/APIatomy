@@ -94,12 +94,11 @@ export function App() {
   };
 
   const handleSelectDiagnostic = (diag: DiagnosticItem) => {
-    if (diag.line) {
-      setIsEditorOpen(true);
-      setTimeout(() => {
-        editorPaneRef.current?.jumpToLine(diag.line!);
-      }, 50);
-    }
+    setIsEditorOpen(true);
+    const targetLine = diag.line ?? 1;
+    setTimeout(() => {
+      editorPaneRef.current?.jumpToLine(targetLine);
+    }, 50);
   };
 
   const handleNavigateToSchema = (schemaName: string, _schema: SchemaModel) => {
