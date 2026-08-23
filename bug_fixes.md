@@ -101,3 +101,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: References to reusable components outside schemas (e.g. `#/components/parameters/...`, `#/components/responses/...`, or `#/components/requestBodies/...`) were rendered as raw references without expanding their schema and properties.
 - **Root Cause**: Parameter, request body, and response AST parsers in `src/parser/normalizer.ts` only handled schema-level pointers.
 - **Resolution**: Added pointer traversal and full model resolution for component parameter, request body, and response references.
+
+### Fix 18: False Syntax Diagnostic Prevention on YAML Superset Parsing
+- **Issue**: Specifications starting with curly braces that used relaxed YAML formatting were flagged with premature JSON parsing syntax errors even when successfully parsed by the YAML engine.
+- **Root Cause**: Fast-path JSON check in `src/parser/yamlJson.ts` pushed errors to the diagnostic list before attempting YAML fallback.
+- **Resolution**: Cleaned diagnostics during YAML parser fallback to ensure valid documents remain error-free.

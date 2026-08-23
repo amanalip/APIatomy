@@ -28,7 +28,7 @@ export function parseRawText(raw: string): ParseResult {
     };
   }
 
-  // Fast-path JSON detection
+  // Fast-path strict JSON detection
   const looksLikeJson = trimmed.startsWith('{') || trimmed.startsWith('[');
 
   if (looksLikeJson) {
@@ -51,34 +51,12 @@ export function parseRawText(raw: string): ParseResult {
           },
         ],
       };
-    } catch (jsonErr: unknown) {
-      // If looks like JSON but failed JSON.parse, try extracting line/column
-      const errorMsg = jsonErr instanceof Error ? jsonErr.message : String(jsonErr);
-      const posMatch = errorMsg.match(/position\s+(\d+)/i);
-      let line = 1;
-      let column = 1;
-
-      if (posMatch && posMatch[1]) {
-        const charIndex = parseInt(posMatch[1], 10);
-        const linesUpToError = raw.slice(0, charIndex).split('\n');
-        line = linesUpToError.length;
-        column = linesUpToError[linesUpToError.length - 1].length + 1;
-      }
-
-      diagnostics.push({
-        id: 'json-syntax-error',
-        severity: 'error',
-        message: `JSON Syntax Error: ${errorMsg}`,
-        line,
-        column,
-        source: 'syntax',
-      });
-
-      // Try fallback to YAML parser in case it was YAML with leading brace
+    } catch {
+      // If looks like JSON but failed strict JSON.parse, fall through to YAML parser
     }
   }
 
-  // Try YAML parser
+  // Try YAML parser (YAML is a superset of JSON and handles relaxed JSON syntax)
   try {
     const doc = YAML.parseDocument(raw, { prettyErrors: true });
 
