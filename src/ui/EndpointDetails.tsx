@@ -285,9 +285,18 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
               </div>
 
               <div className="space-y-2">
-                {endpoint.responses.map((resp) => {
-                  const statusInfo = getStatusCategory(resp.statusCode);
-                  const isExpanded = expandedResponses[resp.statusCode] ?? false;
+                {[...endpoint.responses]
+                  .sort((a, b) => {
+                    const aNum = parseInt(a.statusCode, 10);
+                    const bNum = parseInt(b.statusCode, 10);
+                    if (isNaN(aNum) && isNaN(bNum)) return a.statusCode.localeCompare(b.statusCode);
+                    if (isNaN(aNum)) return 1;
+                    if (isNaN(bNum)) return -1;
+                    return aNum - bNum;
+                  })
+                  .map((resp) => {
+                    const statusInfo = getStatusCategory(resp.statusCode);
+                    const isExpanded = expandedResponses[resp.statusCode] ?? false;
 
                   return (
                     <div

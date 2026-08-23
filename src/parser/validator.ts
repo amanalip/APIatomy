@@ -175,6 +175,39 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     }
   }
 
+  // Rule: Unused security schemes
+  const rawSecSchemes = (typeof rawDoc.components === 'object' && rawDoc.components !== null
+    ? (rawDoc.components as Record<string, unknown>).securitySchemes
+    : rawDoc.securityDefinitions) as Record<string, unknown> | undefined;
+
+  if (rawSecSchemes && typeof rawSecSchemes === 'object') {
+    const referencedSecSchemes = new Set<string>();
+    if (Array.isArray(rawDoc.security)) {
+      for (const secReq of rawDoc.security) {
+        if (typeof secReq === 'object' && secReq !== null) {
+          for (const k of Object.keys(secReq)) referencedSecSchemes.add(k);
+        }
+      }
+    }
+    for (const ep of endpoints) {
+      for (const sec of ep.security) referencedSecSchemes.add(sec.name);
+    }
+
+    for (const secName of Object.keys(rawSecSchemes)) {
+      if (!referencedSecSchemes.has(secName)) {
+        const line = findLineForPattern(rawText, secName);
+        diagnostics.push({
+          id: `unused-security-scheme-${secName}`,
+          severity: 'info',
+          message: `Security scheme "${secName}" is defined but never referenced in global or endpoint security requirements.`,
+          path: `/components/securitySchemes/${secName}`,
+          line,
+          source: 'linter',
+        });
+      }
+    }
+  }
+
   // Rule: Check for broken refs in rawDoc
   findBrokenRefsInDoc(rawDoc, rawDoc, rawText, diagnostics);
 

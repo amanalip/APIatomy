@@ -100,17 +100,40 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
     // Request Body
     if (endpoint.requestBody && endpoint.requestBody.content.length > 0) {
       const primaryMedia = endpoint.requestBody.content[0];
-      if (!hasExplicitContentTypeHeader) {
-        lines.push(`  -H "Content-Type: ${primaryMedia.contentType}"`);
-      }
+      const isMultipart = primaryMedia.contentType.includes('multipart/form-data');
+      const isFormUrlEncoded = primaryMedia.contentType.includes('application/x-www-form-urlencoded');
 
-      if (primaryMedia.contentType.includes('json')) {
-        const sampleBody = primaryMedia.example
-          ? JSON.stringify(primaryMedia.example, null, 2)
-          : generateSampleJsonFromSchema(primaryMedia.schema);
-        lines.push(`  -d '${sampleBody}'`);
+      if (isMultipart) {
+        if (primaryMedia.schema?.properties) {
+          for (const [propKey, propVal] of Object.entries(primaryMedia.schema.properties)) {
+            const isFile = propVal.format === 'binary' || (propVal.type as string) === 'file';
+            lines.push(`  -F "${propKey}=${isFile ? '@filename.ext' : 'value'}"`);
+          }
+        } else {
+          lines.push(`  -F "file=@filename.ext"`);
+        }
       } else {
-        lines.push(`  -d "field=value"`);
+        if (!hasExplicitContentTypeHeader) {
+          lines.push(`  -H "Content-Type: ${primaryMedia.contentType}"`);
+        }
+
+        if (primaryMedia.contentType.includes('json')) {
+          const sampleBody = primaryMedia.example
+            ? JSON.stringify(primaryMedia.example, null, 2)
+            : generateSampleJsonFromSchema(primaryMedia.schema);
+          lines.push(`  -d '${sampleBody}'`);
+        } else if (isFormUrlEncoded) {
+          if (primaryMedia.schema?.properties) {
+            const formFields = Object.keys(primaryMedia.schema.properties)
+              .map((k) => `${k}=value`)
+              .join('&');
+            lines.push(`  --data-urlencode "${formFields || 'field=value'}"`);
+          } else {
+            lines.push(`  -d "field=value"`);
+          }
+        } else {
+          lines.push(`  -d "field=value"`);
+        }
       }
     }
 

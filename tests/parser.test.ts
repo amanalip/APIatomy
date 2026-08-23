@@ -216,6 +216,32 @@ paths:
     expect(missing2xx).toBeUndefined();
   });
 
+  it('detects unused security schemes in components', () => {
+    const unusedSecSpec = `
+openapi: 3.0.0
+info:
+  title: Unused Sec Spec
+  version: 1.0.0
+paths:
+  /public:
+    get:
+      summary: Public endpoint
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    UnusedAuth:
+      type: http
+      scheme: bearer
+`;
+
+    const parsed = parseApiSpec(unusedSecSpec);
+    const unusedSecDiag = parsed.diagnostics.find((d) => d.id.startsWith('unused-security-scheme-UnusedAuth'));
+    expect(unusedSecDiag).toBeDefined();
+    expect(unusedSecDiag?.severity).toBe('info');
+  });
+
   it('inherits root-level security requirements in operations', () => {
     const rootSecSpec = `
 openapi: 3.0.0

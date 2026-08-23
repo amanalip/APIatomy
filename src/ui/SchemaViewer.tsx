@@ -452,6 +452,9 @@ function generateMockData(schema: SchemaModel, allSchemas: Record<string, Schema
   if (schema.type === 'string') {
     if (schema.format === 'email') return 'alex@example.com';
     if (schema.format === 'date-time') return new Date().toISOString();
+    if (schema.format === 'date') return '2026-08-23';
+    if (schema.format === 'ipv4') return '192.168.1.1';
+    if (schema.format === 'hostname') return 'api.example.com';
     if (schema.format === 'uuid') return 'a1b2c3d4-e5f6-7a8b-9c0d-ef1234567890';
     if (schema.format === 'uri') return 'https://api.example.com';
     return schema.name || 'string_value';

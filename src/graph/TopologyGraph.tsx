@@ -22,7 +22,7 @@ import { SchemaNode } from './SchemaNode';
 import { CustomEdge } from './CustomEdge';
 import { exportGraphToPng } from './exportPng';
 import { useTheme } from '../theme/ThemeContext';
-import { Download, LayoutGrid, Search, Network } from 'lucide-react';
+import { Download, LayoutGrid, Search, Network, Maximize2 } from 'lucide-react';
 
 const nodeTypes: NodeTypes = {
   endpointNode: EndpointNode as any,
@@ -241,6 +241,16 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
             ))}
           </select>
         )}
+
+        {/* Reset / Fit View */}
+        <button
+          onClick={() => fitView({ padding: 0.2, duration: 400 })}
+          title="Fit view to all visible nodes"
+          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition"
+        >
+          <Maximize2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+          <span>Fit View</span>
+        </button>
 
         {/* Layout Switcher */}
         <button

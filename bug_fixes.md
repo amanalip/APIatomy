@@ -281,3 +281,28 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Endpoints declaring cookie parameters (`in: 'cookie'`) omitted cookie flags in generated cURL commands.
 - **Root Cause**: Parameter iteration in `src/ui/CurlGenerator.tsx` only checked `path`, `query`, and `header`.
 - **Resolution**: Added cookie parameter processing to generate `-b "cookie1=val; cookie2=val"` flags.
+
+### Fix 54: Unreferenced Security Schemes Validation in Linter
+- **Issue**: Security schemes defined in components that were never referenced in root or operation security requirements were not surfaced to users.
+- **Root Cause**: Missing security scheme reference tracking in `src/parser/validator.ts`.
+- **Resolution**: Added a validation rule emitting informative diagnostics for unused security schemes.
+
+### Fix 55: Numerical Ordering of Endpoint Response Status Codes
+- **Issue**: Response status codes were presented in random object key order rather than structured ascending order.
+- **Root Cause**: Direct mapping of `endpoint.responses` in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Sorted response status codes numerically (200, 201, 400, 404, 500, default) for consistent display.
+
+### Fix 56: Comprehensive Mock String Format Generation
+- **Issue**: Schemas with `format: date`, `format: ipv4`, and `format: hostname` generated generic placeholder strings in mock JSON.
+- **Root Cause**: Incomplete format branching in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Added realistic mock format generators for `date`, `ipv4`, and `hostname`.
+
+### Fix 57: Multipart and URL-Encoded Body Generation in cURL Snippets
+- **Issue**: Endpoints expecting `multipart/form-data` or `application/x-www-form-urlencoded` payloads rendered invalid or raw JSON bodies in cURL.
+- **Root Cause**: Generic fallback body handler in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Implemented `-F "key=@path"` for multipart forms and `--data-urlencode` for urlencoded requests.
+
+### Fix 58: Viewport Centering and Fit View Canvas Toolbar Control
+- **Issue**: After panning or zooming far away in the topology graph, users had no quick way to re-center and fit the graph in view.
+- **Root Cause**: Missing fitView trigger button in `src/graph/TopologyGraph.tsx` toolbar.
+- **Resolution**: Added a dedicated `Fit View` action button in the floating toolbar.
