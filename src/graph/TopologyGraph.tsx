@@ -184,9 +184,21 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setSearchQuery(''); }}
             placeholder="Find in graph..."
-            className="pl-8 pr-2.5 py-1 text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 w-36 sm:w-44"
+            className="pl-8 pr-7 py-1 text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 w-36 sm:w-44"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-1.5 top-1 p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              title="Clear graph search"
+              aria-label="Clear search"
+            >
+              <Search className="w-3 h-3 rotate-45 opacity-0" />
+              <span className="absolute inset-0 flex items-center justify-center text-[10px]">✕</span>
+            </button>
+          )}
         </div>
 
         {/* Filter buttons */}

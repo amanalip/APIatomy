@@ -535,6 +535,25 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
             </div>
           );
         })}
+        {schema.additionalProperties && typeof schema.additionalProperties === 'object' && (
+          <div className="flex items-baseline gap-2 py-0.5 text-xs font-mono">
+            <span className="text-slate-500">[additionalProperties]:</span>
+            <span className="text-blue-600 dark:text-blue-400 text-[11px]">
+              {String((schema.additionalProperties as any).type || (schema.additionalProperties as any).refTarget || 'any')}
+            </span>
+            {(schema.additionalProperties as any).refTarget && (
+              <button
+                onClick={() => {
+                  const target = schemas[(schema.additionalProperties as any).refTarget!];
+                  if (target) onSelectSchema?.((schema.additionalProperties as any).refTarget!, target);
+                }}
+                className="text-indigo-600 dark:text-indigo-400 hover:underline text-[11px]"
+              >
+                → {(schema.additionalProperties as any).refTarget}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -559,9 +578,42 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
     );
   }
 
+  if ((schema as any).not) {
+    return (
+      <div className="text-xs text-slate-700 dark:text-slate-300 space-y-1">
+        <span className="text-rose-600 dark:text-rose-400 font-semibold">not:</span>
+        <div className="pl-3 border-l border-rose-200 dark:border-rose-800">
+          <SchemaPropertyTree schema={(schema as any).not} schemas={schemas} onSelectSchema={onSelectSchema} />
+        </div>
+      </div>
+    );
+  }
+
+  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+    return (
+      <div className="text-xs text-slate-700 dark:text-slate-300">
+        <span className="text-slate-500 dark:text-slate-400">[additionalProperties]: </span>
+        <span className="text-blue-600 dark:text-blue-400 font-mono">{String((schema.additionalProperties as any).type || (schema.additionalProperties as any).refTarget || 'any')}</span>
+        {(schema.additionalProperties as any).refTarget && (
+          <button
+            onClick={() => {
+              const target = schemas[(schema.additionalProperties as any).refTarget!];
+              if (target) onSelectSchema?.((schema.additionalProperties as any).refTarget!, target);
+            }}
+            className="text-indigo-600 dark:text-indigo-400 hover:underline ml-1 font-mono"
+          >
+            → {(schema.additionalProperties as any).refTarget}
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="text-xs text-slate-500 dark:text-slate-400">
       Type: <span className="text-blue-600 dark:text-blue-400">{String(schema.type || 'any')}</span>
+      {schema.format ? <span className="text-slate-400 dark:text-slate-500 ml-1">&lt;{schema.format}&gt;</span> : null}
+      {(schema as any).enum ? <span className="ml-2 text-slate-500">enum: [{(schema as any).enum.join(', ')}]</span> : null}
     </div>
   );
 };

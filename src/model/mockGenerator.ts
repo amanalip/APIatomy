@@ -53,6 +53,18 @@ export function generateMockData(
     return generateMockData(schema.anyOf[0], allSchemas, depth + 1);
   }
 
+  if ((schema as any).not) {
+    // For not schemas, generate a placeholder that intentionally violates the negated type
+    const notSchema = (schema as any).not as SchemaModel;
+    const notType = Array.isArray(notSchema.type) ? (notSchema.type as string[]).find((v) => v !== 'null') : (notSchema.type as string | undefined);
+    if (notType === 'string') return 12345;
+    if (notType === 'number' || notType === 'integer') return 'not-a-number';
+    if (notType === 'boolean') return 'not-boolean';
+    if (notType === 'array') return {};
+    if (notType === 'object') return [];
+    return 'not_excluded_value';
+  }
+
   if (normType === 'string') {
     if (schema.format === 'email') return 'alex@example.com';
     if (schema.format === 'date-time') return new Date().toISOString();

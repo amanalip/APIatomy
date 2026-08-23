@@ -19,6 +19,11 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
     openapi.security = swagger.security;
   }
 
+  // Preserve top-level externalDocs override if present (already set) else ensure defined
+  if (!openapi.externalDocs && swagger.externalDocs) {
+    openapi.externalDocs = swagger.externalDocs;
+  }
+
   // Convert host, basePath, schemes to servers
   const servers: Array<{ url: string; description?: string }> = [];
   const host = typeof swagger.host === 'string' ? swagger.host : '';

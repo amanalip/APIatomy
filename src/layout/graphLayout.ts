@@ -27,7 +27,7 @@ export function computeApiTopologyGraph(
   const edges: Edge[] = [];
   const edgeSet = new Set<string>();
 
-  // Track schema reuse frequency
+  // Track schema reuse frequency (endpoint refs + nested schema refs)
   const schemaReuseCount: Record<string, number> = {};
   for (const ep of spec.endpoints) {
     for (const ref of ep.consumedSchemaRefs) {
@@ -36,6 +36,16 @@ export function computeApiTopologyGraph(
       }
     }
     for (const ref of ep.producedSchemaRefs) {
+      if (spec.schemas[ref]) {
+        schemaReuseCount[ref] = (schemaReuseCount[ref] || 0) + 1;
+      }
+    }
+  }
+  // Include indirect references via schema composition (properties/items/additionalProperties/not/allOf/oneOf/anyOf)
+  for (const schema of Object.values(spec.schemas)) {
+    const nested = new Set<string>();
+    collectChildSchemaNames(schema, nested);
+    for (const ref of nested) {
       if (spec.schemas[ref]) {
         schemaReuseCount[ref] = (schemaReuseCount[ref] || 0) + 1;
       }

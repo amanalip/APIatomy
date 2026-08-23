@@ -918,4 +918,53 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 ### Fix 190: Comprehensive Quality Test Suite 2
 - **Improvement**: Added `tests/comprehensiveQuality2.test.ts` with 8 tests verifying: (1) TRACE endpoint parsing & filtering, (2) wildcard response sort order for 1xx/2xx/3xx/4xx/5xx/default, (3) `collectSchemaRefs` for additionalProperties/not, (4) swagger example string preservation vs `$ref` rewrite, (5) server variable enum fallback & mock additionalProperties generation, (6) validator not flagging map/not schemas as empty.
 
+### Fix 191: Validator `collectSubRefs` Missing `additionalProperties` and `not` Traversal (Unused Schema False Positives)
+- **Issue**: `src/parser/validator.ts:484-504` `collectSubRefs` only traversed `properties`, `items`, `allOf/oneOf/anyOf`, missing `additionalProperties` map refs and `not` negation refs. Schemas referenced solely via `additionalProperties: {$ref: '#/components/schemas/Inner'}` or `not: {$ref: '#/components/schemas/Forbidden'}` were incorrectly flagged as `unused-schema` info diagnostics (`src/parser/validator.ts:392`).
+- **Root Cause**: Incomplete recursion parity with `src/parser/refResolver.ts:217` and `src/layout/graphLayout.ts:213` which already handled those fields.
+- **Resolution**: Added `if (schema.additionalProperties && typeof schema.additionalProperties === 'object') collectSubRefs(...)` and `if ((schema as any).not) collectSubRefs(...)` branches, aligning validator unused detection with graph analytics. Verified via new tests in `tests/qualityImprovements3.test.ts`.
+
+### Fix 192: `getStatusCategory` Default Response Styled as Grey Instead of Success
+- **Issue**: `getStatusCategory('default')` parsed via `parseInt('default')=NaN` and returned grey `Default` badge (`bg-slate-100`), inconsistent with validator treating `default` as success (Fix 49) and obscuring success semantics in `src/ui/EndpointDetails.tsx:374`.
+- **Root Cause**: Missing explicit `default` handling in `src/model/httpMethods.ts:104`.
+- **Resolution**: Added early return for `s === 'default'` mapping to emerald success palette (`text-emerald-700 bg-emerald-50 border-emerald-200`) while preserving label `Default` for clarity and backward compatibility with `tests/httpMethods.test.ts:42`.
+
+### Fix 193: Schema Viewer Tree Missing `not` Composition Rendering
+- **Issue**: `TreeNodeRenderer` in `src/ui/SchemaViewer.tsx:350` computed `hasComposition` only from `allOf/oneOf/anyOf`, hiding `not` negation schemas entirely; leaf fallback rendered generic `object / any` box without indicating negation (`src/model/index.ts:106` defines `not` field).
+- **Root Cause**: Hardcoded composition check omitting `not`.
+- **Resolution**: Extended `hasComposition` to include `(schema as any).not`, added `not` branch rendering with rose-styled `Not — must NOT match` container and recursive `TreeNodeRenderer` call. Verified mock handles `not`.
+
+### Fix 194: EndpointDetails `SchemaPropertyTree` Missing `additionalProperties` and `not` Display
+- **Issue**: Inline property tree in `src/ui/EndpointDetails.tsx:500` rendered only `properties` and `items`, omitting `additionalProperties` map signatures and `not` negations for request/response body previews.
+- **Root Cause**: Single-path returns without dictionary/negation branches.
+- **Resolution**: Added `[additionalProperties]` rows in both properties and fallback branches, and `not:` recursive block with indented rose border, ensuring parity with full `SchemaViewer` tree.
+
+### Fix 195: Topology Graph Search Lacked Clear Action and Reuse Count Missed Nested Refs
+- **Issue**: Graph toolbar search input in `src/graph/TopologyGraph.tsx:180` had no clear `✕` button and no Escape handler, unlike Explorer/Viewer searches. Schema `reuseCount` in `src/layout/graphLayout.ts:31` counted only direct endpoint `consumed/produced` refs, missing schemas reused indirectly via `additionalProperties`/`not` nesting, showing `0x` for map-inner schemas.
+- **Root Cause**: Missing UX control and shallow counting logic.
+- **Resolution**: Added `onKeyDown Escape` and conditional clear button (`✕`) with `aria-label`; extended `schemaReuseCount` to iterate `Object.values(spec.schemas)` and `collectChildSchemaNames` to accumulate indirect refs.
+
+### Fix 196: Mock Generator Ignored `not` Composition for Sample Data
+- **Issue**: `generateMockData` in `src/model/mockGenerator.ts:48` handled `allOf/oneOf/anyOf` but returned generic `{}` for `not` schemas, producing invalid mock that could still match negated type (`not: {type: 'string'}` returned `{}` which is okay but `not: {type: 'array'}` edge unclear).
+- **Root Cause**: Missing `not` branch before string/number fallback.
+- **Resolution**: Added `not` handler generating intentionally violating mock: `string→12345`, `number→'not-a-number'`, `boolean→'not-boolean'`, `array→{}`, `object→[]`, fallback `'not_excluded_value'`.
+
+### Fix 197: DiagnosticsBar Filter Stale After Spec Reload and EditorPane Timer Leak
+- **Issue**: Diagnostics `activeFilter` remained on `error` after loading a clean spec with 0 errors, showing empty filtered view instead of `All checks passed`. EditorPane `useEffect` debounce timer lacked null guard and ref cleanup on unmount; rapid format toggles could leak timer or leave dangling `editorViewRef`.
+- **Root Cause**: Missing `useEffect` reacting to `diagnostics.length` and incomplete cleanup in `src/ui/DiagnosticsBar.tsx:43` and `src/ui/EditorPane.tsx:109`.
+- **Resolution**: Added `useEffect(() => { if (diagnostics.length===0) setActiveFilter('all') }, [diagnostics.length])` and improved `EditorPane` cleanup to `clearTimeout` + `debounceTimerRef.current=null` + `editorViewRef` null guard on matching view.
+
+### Fix 198: EndpointExplorer Tag Dropdown Count Visibility and Search Kbd Hint
+- **Issue**: Tag `<select>` in `src/ui/EndpointExplorer.tsx:184` showed bare tag names without usage counts; search inputs lacked `aria-label` and visual `/` kbd shortcut hint for discoverability.
+- **Root Cause**: Static option rendering and missing accessibility adornments.
+- **Resolution**: Mapped `allTags` to `count = endpoints.filter(e=>e.tags.includes(tag)).length` rendering `tag (count)`; added `aria-label` to both Explorer and SchemaViewer search inputs and visual `/` badge (`hidden sm:flex`) with `pr-16` padding.
+
+### Fix 199: Code Quality — Centralized Validator/RefResolver/GraphLayout Traversal Parity
+- **Improvement**: Aligned three traversal utilities (`validator.ts:collectSubRefs`, `refResolver.ts:collectSchemaRefs`, `graphLayout.ts:collectChildSchemaNames`) to identical field set (`properties`, `items`, `additionalProperties`, `not`, `allOf/oneOf/anyOf`), documented parity and added shared test `collectSchemaRefs additionalProperties/not parity` in `tests/qualityImprovements3.test.ts`.
+
+### Fix 200: Comprehensive Quality Improvements Test Suite 3
+- **Improvement**: Added `tests/qualityImprovements3.test.ts` with 8 tests: (1) validator additionalProperties/not unused false positives, (2) getStatusCategory default emerald mapping, (3) mockGenerator not handling (string/array), (4) graph layout indirect reuse count, (5) collectSchemaRefs parity (A/B/C/D).
+
+### Fix 201: UX/UI — Topology Graph Clear Search + Tag Count + Keyboard Hints
+- **Improvement**: TopologyGraph search now has Escape + ✕ clear, Explorer tag dropdown shows `(count)`, both main searches display `/` kbd badge with `aria-label`, improving discoverability (WCAG) and consistency with header `/` shortcut.
+
 

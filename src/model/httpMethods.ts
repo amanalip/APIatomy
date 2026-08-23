@@ -107,6 +107,15 @@ export function getStatusCategory(code: string | number): {
   border: string;
   label: string;
 } {
+  // 'default' should visually appear as success (green) but retain label 'Default' for clarity
+  if (typeof code === 'string' && String(code).trim().toLowerCase() === 'default') {
+    return {
+      color: 'text-emerald-700 dark:text-emerald-400',
+      bg: 'bg-emerald-50 dark:bg-emerald-950/40',
+      border: 'border-emerald-200 dark:border-emerald-800/60',
+      label: 'Default',
+    };
+  }
   let codeNum: number;
   if (typeof code === 'number') {
     codeNum = code;

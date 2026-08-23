@@ -109,8 +109,10 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
       return () => {
         if (debounceTimerRef.current) {
           window.clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = null;
         }
         view.destroy();
+        if (editorViewRef.current === view) editorViewRef.current = null;
       };
     }, [format]);
 

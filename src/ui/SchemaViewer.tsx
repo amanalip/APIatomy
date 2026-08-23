@@ -128,8 +128,12 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                 if (e.key === 'Escape') setSearchQuery('');
               }}
               placeholder="Search schemas... [/]"
-              className="w-full pl-8 pr-7 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              aria-label="Search schemas"
+              className="w-full pl-8 pr-14 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
+            <span className="absolute right-7 top-1.5 hidden sm:flex items-center text-[9px] font-mono px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 pointer-events-none">
+              /
+            </span>
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
@@ -347,7 +351,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
     setCollapsedProperties((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  const hasComposition = Boolean(schema.allOf || schema.oneOf || schema.anyOf);
+  const hasComposition = Boolean(schema.allOf || schema.oneOf || schema.anyOf || (schema as any).not);
   const hasProperties = Boolean(schema.properties && Object.keys(schema.properties).length > 0);
   const hasItems = Boolean(schema.items);
 
@@ -373,11 +377,18 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Composition: allOf, oneOf, anyOf */}
+      {/* Composition: allOf, oneOf, anyOf, not */}
       {hasComposition && (
         <div className="space-y-3">
           <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">
-            Composition: {schema.allOf ? 'allOf (All Required)' : schema.oneOf ? 'oneOf (One Required)' : 'anyOf (Any Allowed)'}
+            Composition:{' '}
+            {schema.allOf
+              ? 'allOf (All Required)'
+              : schema.oneOf
+              ? 'oneOf (One Required)'
+              : schema.anyOf
+              ? 'anyOf (Any Allowed)'
+              : 'not (Negation)'}
           </div>
           <div className="pl-3 border-l-2 border-indigo-500/40 space-y-3">
             {(schema.allOf || schema.oneOf || schema.anyOf || []).map((sub, idx) => (
@@ -391,6 +402,17 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                 />
               </div>
             ))}
+            {(schema as any).not && (
+              <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60">
+                <div className="text-[11px] font-mono text-rose-600 dark:text-rose-400 mb-1.5">Not — must NOT match</div>
+                <TreeNodeRenderer
+                  schema={(schema as any).not}
+                  schemas={schemas}
+                  onNavigateRef={onNavigateRef}
+                  level={level + 1}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

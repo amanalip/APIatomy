@@ -493,6 +493,12 @@ function collectSubRefs(schema: SchemaModel, referenced: Set<string>): void {
   if (schema.items) {
     collectSubRefs(schema.items, referenced);
   }
+  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+    collectSubRefs(schema.additionalProperties as SchemaModel, referenced);
+  }
+  if ((schema as any).not) {
+    collectSubRefs((schema as any).not, referenced);
+  }
   if (schema.allOf) {
     for (const s of schema.allOf) collectSubRefs(s, referenced);
   }

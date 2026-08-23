@@ -139,8 +139,12 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               if (e.key === 'Escape') setSearchQuery('');
             }}
             placeholder="Search endpoints by path, summary, or tag... [/]"
-            className="w-full pl-9 pr-8 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            aria-label="Search endpoints"
+            className="w-full pl-9 pr-16 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
+          <span className="absolute right-8 top-1.5 hidden sm:flex items-center text-[9px] font-mono px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 pointer-events-none">
+            /
+          </span>
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
@@ -187,11 +191,14 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-lg px-2.5 py-1 w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="all">All Tags ({endpoints.length})</option>
-              {allTags.map((tag) => (
-                <option key={tag} value={tag}>
-                  {tag}
-                </option>
-              ))}
+              {allTags.map((tag) => {
+                const count = endpoints.filter((e) => e.tags.includes(tag)).length;
+                return (
+                  <option key={tag} value={tag}>
+                    {tag} ({count})
+                  </option>
+                );
+              })}
             </select>
             {selectedTag !== 'all' && (
               <button
