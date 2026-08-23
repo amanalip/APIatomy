@@ -30,7 +30,18 @@ export async function exportGraphToPng(
     const link = document.createElement('a');
     link.download = filename;
     link.href = dataUrl;
+    // Append to DOM for Firefox/Safari compatibility
+    if (link.style) link.style.display = 'none';
+    try {
+      if (document.body && typeof document.body.appendChild === 'function') {
+        document.body.appendChild(link);
+      }
+    } catch { /* ignore append errors in test env */ }
     link.click();
+    // Cleanup after trigger
+    setTimeout(() => {
+      try { document.body?.removeChild(link); } catch { /* ignore */ }
+    }, 100);
     return true;
   } catch (err) {
     console.error('Failed to export graph image:', err);

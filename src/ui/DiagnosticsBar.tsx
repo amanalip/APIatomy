@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DiagnosticItem } from '../model';
+import { copyTextToClipboard } from '../share/urlHash';
 import { AlertTriangle, XCircle, Info, ChevronUp, ChevronDown, CheckCircle2, Copy, Check } from 'lucide-react';
 
 interface DiagnosticsBarProps {
@@ -24,7 +25,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
     return d.severity === activeFilter;
   });
 
-  const handleCopyDiagnostics = () => {
+  const handleCopyDiagnostics = async () => {
     if (filteredDiagnostics.length === 0) return;
     const text = filteredDiagnostics
       .map(
@@ -32,9 +33,11 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
           `[${d.severity.toUpperCase()}] ${d.message}${d.line ? ` (Line ${d.line}${d.column ? `:${d.column}` : ''})` : ''}`
       )
       .join('\n');
-    navigator.clipboard.writeText(text);
-    setCopiedDiagnostics(true);
-    setTimeout(() => setCopiedDiagnostics(false), 2000);
+    const success = await copyTextToClipboard(text);
+    if (success) {
+      setCopiedDiagnostics(true);
+      setTimeout(() => setCopiedDiagnostics(false), 2000);
+    }
   };
 
   React.useEffect(() => {

@@ -28,6 +28,8 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
     const editorViewRef = useRef<EditorView | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const debounceTimerRef = useRef<number | null>(null);
+    const onChangeRef = useRef(onChange);
+    useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
     // Expose jumpToLine and setContent methods via ref
     useImperativeHandle(ref, () => ({
@@ -70,7 +72,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
             window.clearTimeout(debounceTimerRef.current);
           }
           debounceTimerRef.current = window.setTimeout(() => {
-            onChange(docString);
+            onChangeRef.current(docString);
           }, 300);
         }
       });

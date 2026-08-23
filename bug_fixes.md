@@ -668,3 +668,65 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Schema definitions specifying formats `ipv6`, `time`, `byte`, or `binary` fell back to generic strings in generated mock payloads.
 - **Root Cause**: Missing format handlers in mock data generator.
 - **Resolution**: Added realistic mock payload values for `ipv6`, `time`, `byte`, and `binary` formats.
+
+### Fix 135: Alt+E Keyboard Shortcut Stale Closure in Header
+- **Issue**: After toggling the editor via click, pressing `Alt+E` would not correctly toggle because the handler closed over initial `isEditorOpen` value due to empty dependency array in `src/ui/Header.tsx:58-66`.
+- **Root Cause**: Handler used `setIsEditorOpen(!isEditorOpen)` with stale closure; effect had `[]` deps, never updating closure.
+- **Resolution**: Introduced `isEditorOpenRef` updated via effect and changed handler to `setIsEditorOpen(!isEditorOpenRef.current)` with `setIsEditorOpen` in deps.
+
+### Fix 136: cURL Generator Duplicate Placeholder Substitution for Repeated Path Params and Server Variables
+- **Issue**: Path templates like `/{id}/friends/{id}` and server URLs with repeated variables (e.g. `https://{env}.example.com/{env}`) only substituted the first occurrence using `String.replace` in `src/ui/CurlGenerator.tsx:22-27,41`.
+- **Root Cause**: `String.replace` replaces only first match without global flag.
+- **Resolution**: Replaced via `split('{var}').join(value)` (equivalent to `replaceAll`) for both server variables and path parameters, ensuring all occurrences are substituted.
+
+### Fix 137: HashChange Listener Stale RawText and Re-subscription in App
+- **Issue**: `App.tsx:46-60` subscribed to `hashchange` with `[rawText]` deps, recreating listener on every keystroke and holding stale `rawText` closure, causing race conditions when URL hash changed while typing.
+- **Root Cause**: Effect dependency on mutable `rawText` state.
+- **Resolution**: Added `rawTextRef` synced via `useEffect` and changed listener to compare `decompressed !== rawTextRef.current` with empty deps, preventing stale closure and excessive re-subscriptions.
+
+### Fix 138: Diagnostics Clipboard Fallback for Insecure Contexts
+- **Issue**: `src/ui/DiagnosticsBar.tsx:27-35` used `navigator.clipboard.writeText` directly without await/catch, silently failing on `http` (non-secure) contexts; `src/share/urlHash.ts` already had fallback via `execCommand`.
+- **Root Cause**: Inconsistent clipboard handling; no fallback to `copyTextToClipboard`.
+- **Resolution**: Imported `copyTextToClipboard` and made `handleCopyDiagnostics` async with success check and feedback.
+
+### Fix 139: PNG Export Anchor DOM Append for Firefox/Safari Compatibility
+- **Issue**: `src/graph/exportPng.ts:30-33` created an anchor and called `click()` without appending to DOM, failing on Safari/Firefox; also retained `quality:0.95` ignored for PNG and leaked unremoved elements.
+- **Root Cause**: Missing DOM append and cleanup guard.
+- **Resolution**: Added conditional `style.display='none'`, `document.body.appendChild(link)` guard, click, and timed `removeChild` cleanup with safe try/catch; made code resilient to test mocks missing `body`.
+
+### Fix 140: Topology Graph Supplemental References (`additionalProperties` and `not`) Missing in Dagre Edges
+- **Issue**: Schema-to-schema edges omitted `additionalProperties` map refs and `not` composition refs, e.g. `Outer` with `additionalProperties: {$ref: '#/components/schemas/Inner'}` produced no edge in `src/layout/graphLayout.ts:187-212`.
+- **Root Cause**: `collectChildSchemaNames` handled only `refTarget`, `properties`, `items`, `allOf/oneOf/anyOf`, missing `additionalProperties` and `not`.
+- **Resolution**: Added typed handling for `additionalProperties` (object) and `not`, plus improved signature `SchemaModel | null` instead of `any`, importing `SchemaModel`.
+
+### Fix 141: Mock Generator Depth Truncation Type Mismatch and Integer Max Bound
+- **Issue**: `src/model/mockGenerator.ts:8` returned string `'...'` for any deep schema (`depth>4`), causing type mismatch when callers expected `object`/`array`; integer generation ignored `maximum <1` constraint (e.g. `maximum: -5` still returned `1`).
+- **Root Cause**: Generic fallback without type awareness.
+- **Resolution**: Depth guard now returns type-aware placeholder (`{}` for object, `[]` for array, `0`/`false` for numeric/boolean, `'...'` only for string); integer/number branches now respect `maximum <1`.
+
+### Fix 142: ThemeContext Inconsistent Media Query Initialization
+- **Issue**: Initial theme probe used `window.matchMedia('(prefers-color-scheme: light)').matches` while listener used `'(prefers-color-scheme: dark)'`, risking divergent logic and double negation confusion in `src/theme/ThemeContext.tsx:14-31`.
+- **Root Cause**: Inconsistent query strings.
+- **Resolution**: Unified both to `'(prefers-color-scheme: dark)'` with ternary `matches ? 'dark' : 'light'`.
+
+### Fix 143: Vitest Environment Misconfigured as Node for DOM Tests
+- **Issue**: `vitest.config.ts:7` set `environment: 'node'`, requiring manual `vi.stubGlobal('document')` mocks in `exportPng.test.ts`; hides real DOM failures and prevents `jsdom` APIs.
+- **Root Cause**: Wrong environment for React/DOM project.
+- **Resolution**: Changed to `environment: 'jsdom'` and installed `jsdom` devDependency.
+
+### Fix 144: Header View Switcher Code Duplication (DRY Improvement)
+- **Improvement**: Refactored `src/ui/Header.tsx:133-222` desktop and mobile view switcher from triplicated button blocks to single DRY mapped config array `[{id,label,Icon}]`, eliminating duplication and easing future method additions.
+
+### Fix 145: Graph Layout Type Safety Improvement
+- **Improvement**: Updated `src/layout/graphLayout.ts` to import `SchemaModel` and type `collectChildSchemaNames(schema: SchemaModel | null)` instead of `any`, improving strictness.
+
+### Fix 146: Curl Sample JSON Generation DRY via MockGenerator Reuse
+- **Improvement**: Refactored `src/ui/CurlGenerator.tsx:259-308` to delegate `generateSampleJsonFromSchema` to central `generateMockData` engine, removing duplicated string/array/object branching and ensuring consistent mock payloads across curl and schema viewer.
+
+### Fix 147: EditorPane Debounce Stale onChange Closure
+- **Issue**: `src/ui/EditorPane.tsx:66-73` debounce closure captured initial `onChange` prop; format toggle recreated editor with stale handler.
+- **Root Cause**: Missing ref for `onChange`.
+- **Resolution**: Added `onChangeRef` synced via effect and used `onChangeRef.current` inside debounce timer.
+
+### Fix 148: Comprehensive Bug-Fix Verification Test Suite
+- **Improvement**: Added `tests/bugFixVerification.test.ts` covering duplicate placeholder/server-variable replacement, graph additionalProperties/not edges, mockGenerator depth type-aware placeholders and integer max bounds, jsdom environment availability, diagnostics clipboard fallback, and header DRY view counts.

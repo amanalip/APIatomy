@@ -43,12 +43,16 @@ export function App() {
     }
   }, [spec]);
 
+  // Keep latest rawText in ref to avoid stale closure on hashchange
+  const rawTextRef = useRef(rawText);
+  useEffect(() => { rawTextRef.current = rawText; }, [rawText]);
+
   // Listen to hash changes in browser
   useEffect(() => {
     const handleHashChange = () => {
       if (window.location.hash) {
         const decompressed = decompressSpecFromHash(window.location.hash);
-        if (decompressed && decompressed !== rawText) {
+        if (decompressed && decompressed !== rawTextRef.current) {
           setRawText(decompressed);
           editorPaneRef.current?.setContent(decompressed);
         }
@@ -57,7 +61,7 @@ export function App() {
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [rawText]);
+  }, []);
 
   // Split-pane resizing logic
   const handleMouseDownResize = (e: React.MouseEvent) => {

@@ -1,6 +1,6 @@
 import dagre from '@dagrejs/dagre';
 import { Node, Edge } from '@xyflow/react';
-import { ApiSpecModel } from '../model';
+import { ApiSpecModel, SchemaModel } from '../model';
 import { HTTP_METHODS } from '../model/httpMethods';
 
 export interface LayoutOptions {
@@ -184,7 +184,7 @@ export function computeApiTopologyGraph(
   return { nodes: layoutedNodes, edges };
 }
 
-function collectChildSchemaNames(schema: any, refs: Set<string>): void {
+function collectChildSchemaNames(schema: SchemaModel | null | undefined, refs: Set<string>): void {
   if (!schema || typeof schema !== 'object') return;
 
   if (schema.refTarget) {
@@ -201,6 +201,10 @@ function collectChildSchemaNames(schema: any, refs: Set<string>): void {
     collectChildSchemaNames(schema.items, refs);
   }
 
+  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+    collectChildSchemaNames(schema.additionalProperties, refs);
+  }
+
   if (schema.allOf) {
     for (const sub of schema.allOf) collectChildSchemaNames(sub, refs);
   }
@@ -209,5 +213,8 @@ function collectChildSchemaNames(schema: any, refs: Set<string>): void {
   }
   if (schema.anyOf) {
     for (const sub of schema.anyOf) collectChildSchemaNames(sub, refs);
+  }
+  if (schema.not) {
+    collectChildSchemaNames(schema.not, refs);
   }
 }

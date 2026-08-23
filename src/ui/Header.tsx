@@ -44,6 +44,8 @@ export const Header: React.FC<HeaderProps> = ({
   const [copiedJson, setCopiedJson] = useState(false);
   const [isSampleDropdownOpen, setIsSampleDropdownOpen] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const isEditorOpenRef = useRef(isEditorOpen);
+  useEffect(() => { isEditorOpenRef.current = isEditorOpen; }, [isEditorOpen]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -62,7 +64,7 @@ export const Header: React.FC<HeaderProps> = ({
       }
       if (event.altKey && (event.key === 'e' || event.key === 'E')) {
         event.preventDefault();
-        setIsEditorOpen(!isEditorOpen);
+        setIsEditorOpen(!isEditorOpenRef.current);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -71,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [setIsEditorOpen]);
 
   const handleShare = async () => {
     const hash = compressSpecToHash(spec.rawText);
@@ -132,41 +134,24 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Desktop View Switcher Tabs */}
         <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-900/90 p-1 rounded-xl border border-slate-200 dark:border-slate-800 ml-4">
-          <button
-            onClick={() => setActiveView('endpoints')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg transition ${
-              activeView === 'endpoints'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Endpoints ({spec.endpoints.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveView('schemas')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg transition ${
-              activeView === 'schemas'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Code2 className="w-3.5 h-3.5" />
-            <span>Schemas ({Object.keys(spec.schemas).length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveView('graph')}
-            className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg transition ${
-              activeView === 'graph'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
-          >
-            <Network className="w-3.5 h-3.5" />
-            <span>Topology Graph</span>
-          </button>
+          {([
+            { id: 'endpoints' as const, label: `Endpoints (${spec.endpoints.length})`, Icon: Layers },
+            { id: 'schemas' as const, label: `Schemas (${Object.keys(spec.schemas).length})`, Icon: Code2 },
+            { id: 'graph' as const, label: 'Topology Graph', Icon: Network },
+          ]).map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveView(id)}
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg transition ${
+                activeView === id
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{label}</span>
+            </button>
+          ))}
         </div>
 
         {/* Mobile View Dropdown Button */}
@@ -181,42 +166,25 @@ export const Header: React.FC<HeaderProps> = ({
 
           {isMobileNavOpen && (
             <div className="absolute left-0 mt-2 w-44 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 space-y-1 z-50">
-              <button
-                onClick={() => {
-                  setActiveView('endpoints');
-                  setIsMobileNavOpen(false);
-                }}
-                className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left ${
-                  activeView === 'endpoints' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Endpoints ({spec.endpoints.length})</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveView('schemas');
-                  setIsMobileNavOpen(false);
-                }}
-                className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left ${
-                  activeView === 'schemas' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Code2 className="w-3.5 h-3.5" />
-                <span>Schemas ({Object.keys(spec.schemas).length})</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveView('graph');
-                  setIsMobileNavOpen(false);
-                }}
-                className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left ${
-                  activeView === 'graph' ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Network className="w-3.5 h-3.5" />
-                <span>Topology Graph</span>
-              </button>
+              {([
+                { id: 'endpoints' as const, label: `Endpoints (${spec.endpoints.length})`, Icon: Layers },
+                { id: 'schemas' as const, label: `Schemas (${Object.keys(spec.schemas).length})`, Icon: Code2 },
+                { id: 'graph' as const, label: 'Topology Graph', Icon: Network },
+              ]).map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => {
+                    setActiveView(id);
+                    setIsMobileNavOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left ${
+                    activeView === id ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{label}</span>
+                </button>
+              ))}
             </div>
           )}
         </div>

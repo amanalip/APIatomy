@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { EndpointModel, ServerModel } from '../model';
+import { generateMockData } from '../model/mockGenerator';
 import { Copy, Check, Terminal } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
 
@@ -24,21 +25,21 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
     // Resolve server variables if present
     if (activeServer?.variables) {
       for (const [varName, varDef] of Object.entries(activeServer.variables)) {
-        rawUrl = rawUrl.replace(`{${varName}}`, varDef.default || 'default');
+        rawUrl = rawUrl.split(`{${varName}}`).join(varDef.default || 'default');
       }
     }
 
     let normalizedPath = endpoint.path.startsWith('/') ? endpoint.path : `/${endpoint.path}`;
     let url = rawUrl.replace(/\/+$/, '') + normalizedPath;
 
-    // Substitute path parameters with placeholders
+    // Substitute path parameters with placeholders (handle repeated placeholders)
     for (const param of endpoint.parameters.filter((p) => p.in === 'path')) {
       const val = param.example !== undefined
         ? encodeURIComponent(String(param.example))
         : param.schema?.default !== undefined
           ? encodeURIComponent(String(param.schema.default))
           : `:${param.name}`;
-      url = url.replace(`{${param.name}}`, val);
+      url = url.split(`{${param.name}}`).join(val);
     }
 
     // Query parameters
@@ -258,51 +259,17 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
 
 function generateSampleJsonFromSchema(schema?: any): string {
   if (!schema) return '{}';
-  if (schema.example) return JSON.stringify(schema.example, null, 2);
-
+  if (schema.example !== undefined) return JSON.stringify(schema.example, null, 2);
+  try {
+    const mock = generateMockData(schema as any, {}, 0);
+    if (mock !== undefined) return JSON.stringify(mock, null, 2);
+  } catch {
+    // fallback to legacy generation below
+  }
+  // Legacy fallback for edge cases where mock generation yields non-serializable placeholder
   if (schema.type === 'array') {
-    if (schema.items) {
-      if (schema.items.example) {
-        return JSON.stringify([schema.items.example], null, 2);
-      }
-      if (schema.items.type === 'string') {
-        return JSON.stringify(['string'], null, 2);
-      }
-      if (schema.items.type === 'number' || schema.items.type === 'integer') {
-        return JSON.stringify([0], null, 2);
-      }
-      if (schema.items.type === 'boolean') {
-        return JSON.stringify([true], null, 2);
-      }
-      if (schema.items.properties) {
-        const itemObj: Record<string, unknown> = {};
-        for (const [key, prop] of Object.entries(schema.items.properties as Record<string, any>)) {
-          itemObj[key] = prop.example !== undefined ? prop.example : prop.type === 'number' ? 0 : 'string';
-        }
-        return JSON.stringify([itemObj], null, 2);
-      }
-    }
+    if (schema.items?.example) return JSON.stringify([schema.items.example], null, 2);
     return '[]';
   }
-
-  const obj: Record<string, unknown> = {};
-  if (schema.properties) {
-    for (const [key, prop] of Object.entries(schema.properties as Record<string, any>)) {
-      if (prop.example !== undefined) {
-        obj[key] = prop.example;
-      } else if (prop.type === 'string') {
-        obj[key] = prop.format === 'email' ? 'user@example.com' : prop.enum ? prop.enum[0] : 'string';
-      } else if (prop.type === 'integer' || prop.type === 'number') {
-        obj[key] = 0;
-      } else if (prop.type === 'boolean') {
-        obj[key] = true;
-      } else if (prop.type === 'array') {
-        obj[key] = prop.items?.example ? [prop.items.example] : [];
-      } else if (prop.type === 'object') {
-        obj[key] = {};
-      }
-    }
-  }
-
-  return JSON.stringify(obj, null, 2);
+  return '{}';
 }

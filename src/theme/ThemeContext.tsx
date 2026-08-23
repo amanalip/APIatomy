@@ -15,7 +15,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       const saved = localStorage.getItem('apiatomy_theme');
       if (saved === 'light' || saved === 'dark') return saved;
-      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     } catch {
       return 'dark';
     }

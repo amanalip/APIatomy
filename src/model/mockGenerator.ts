@@ -5,7 +5,14 @@ export function generateMockData(
   allSchemas: Record<string, SchemaModel> = {},
   depth = 0
 ): unknown {
-  if (depth > 4) return '...';
+  if (depth > 4) {
+    // Return type-aware placeholder instead of generic string to avoid type mismatch
+    if (schema.type === 'object' || schema.properties) return {};
+    if (schema.type === 'array' || schema.items) return [];
+    if (schema.type === 'integer' || schema.type === 'number') return 0;
+    if (schema.type === 'boolean') return false;
+    return '...';
+  }
 
   if (schema.example !== undefined) return schema.example;
   if (schema.default !== undefined) return schema.default;
@@ -59,11 +66,15 @@ export function generateMockData(
   }
 
   if (schema.type === 'integer') {
-    return schema.minimum ?? 1;
+    if (schema.minimum !== undefined) return schema.minimum;
+    if (schema.maximum !== undefined && schema.maximum < 1) return schema.maximum;
+    return 1;
   }
 
   if (schema.type === 'number') {
-    return schema.minimum ?? 19.99;
+    if (schema.minimum !== undefined) return schema.minimum;
+    if (schema.maximum !== undefined && schema.maximum < 1) return schema.maximum;
+    return 19.99;
   }
 
   if (schema.type === 'boolean') {
