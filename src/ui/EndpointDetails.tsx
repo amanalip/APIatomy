@@ -214,7 +214,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                           <td className="py-2.5 px-3 font-mono font-medium text-slate-800 dark:text-slate-200">
                             <div className="flex items-center gap-1.5">
                               <span>{p.name}</span>
-                              {p.required && (
+                              {(p.required || p.in === 'path') && (
                                 <span className="text-[9px] px-1 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
                                   req
                                 </span>

@@ -245,7 +245,8 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
             }
           }
 
-          const formContentType = consumes.includes('multipart/form-data')
+          const hasFileParam = formDataParams.some((fp) => fp.type === 'file');
+          const formContentType = consumes.includes('multipart/form-data') || hasFileParam
             ? 'multipart/form-data'
             : 'application/x-www-form-urlencoded';
 

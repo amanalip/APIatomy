@@ -481,3 +481,26 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: When an API specification had 0 errors, warnings, or info diagnostics, opening the diagnostics drawer presented a blank area without positive confirmation.
 - **Root Cause**: Missing 0-diagnostics empty state check in `src/ui/DiagnosticsBar.tsx`.
 - **Resolution**: Displayed an explicit green checkmark and "All checks passed!" message when the spec has 0 issues.
+
+### Fix 94: Automatic Multipart Form-Data Mapping for File Uploads in Swagger Converter
+- **Issue**: Swagger 2.0 operations defining `formData` parameters of `type: file` without explicit `consumes: ['multipart/form-data']` were converted to `application/x-www-form-urlencoded` request bodies.
+- **Root Cause**: Strict check on `consumes.includes('multipart/form-data')` in `src/parser/swaggerConverter.ts`.
+- **Resolution**: Detected `type: 'file'` parameters and defaulted to `multipart/form-data` request bodies.
+
+### Fix 95: Escape Key Search Clear in Endpoint Explorer
+- **Issue**: Pressing the `Escape` key inside the endpoint search input did not reset the active query.
+- **Root Cause**: Missing keyboard listener in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Added `onKeyDown` listener clearing `searchQuery` when pressing `Escape`.
+
+### Fix 96: Escape Key Search Clear in Schema Viewer
+- **Issue**: Pressing the `Escape` key inside the schema search input did not reset the query.
+- **Root Cause**: Missing keyboard listener in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Added `onKeyDown` listener clearing `searchQuery` when pressing `Escape`.
+
+### Fix 97: Mandatory Required Badge for Path Parameters
+- **Issue**: In the Endpoint Inspector parameter table, path parameters without explicit `required: true` in the spec omitted the `req` badge despite being mandatory by OpenAPI definition.
+- **Root Cause**: Condition only checked `p.required` in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Updated condition to `(p.required || p.in === 'path')`.
+
+### Fix 98: Comprehensive cURL Generator Unit Test Suite
+- **Improvement**: Added dedicated unit test suite in `tests/curlGenerator.test.ts` verifying cURL command synthesis across methods, servers, variables, delimiters (`spaceDelimited`, `pipeDelimited`), array explodes, parameter encodings, multipart forms, basic auth, and API keys.
