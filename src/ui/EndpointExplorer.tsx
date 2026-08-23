@@ -141,7 +141,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                     : 'bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800'
                 }`}
               >
-                {m.toUpperCase()}
+                {m === 'all' ? `ALL (${endpoints.length})` : m.toUpperCase()}
               </button>
             );
           })}

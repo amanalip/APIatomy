@@ -269,6 +269,28 @@ paths:
     expect(longSumDiag?.severity).toBe('info');
   });
 
+  it('flags blank or empty tag strings with warning diagnostics', () => {
+    const blankTagSpec = `
+openapi: 3.0.0
+info:
+  title: Blank Tag Spec
+  version: 1.0.0
+paths:
+  /tags-test:
+    get:
+      tags:
+        - ''
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(blankTagSpec);
+    const emptyTagDiag = parsed.diagnostics.find((d) => d.id.startsWith('empty-tag-'));
+    expect(emptyTagDiag).toBeDefined();
+    expect(emptyTagDiag?.severity).toBe('warning');
+  });
+
   it('flags missing info object with error diagnostic', () => {
     const missingInfoSpec = `
 openapi: 3.0.0

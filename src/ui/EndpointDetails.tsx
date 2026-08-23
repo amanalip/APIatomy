@@ -17,6 +17,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
   endpoint,
   servers,
   schemas,
+  securitySchemes,
   onClose,
   onSelectSchema,
 }) => {
@@ -135,25 +136,35 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                   <span>Security & Authentication</span>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-2">
-                  {endpoint.security.map((sec, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-xs">
-                      <span className="font-mono text-amber-700 dark:text-amber-300 font-medium">{sec.name}</span>
-                      {sec.scopes.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {sec.scopes.map((scope) => (
-                            <span
-                              key={scope}
-                              className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-[10px] text-slate-700 dark:text-slate-300 font-mono"
-                            >
-                              {scope}
+                  {endpoint.security.map((sec, idx) => {
+                    const schemeDef = securitySchemes?.[sec.name];
+                    return (
+                      <div key={idx} className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 font-mono">
+                          <span className="text-amber-700 dark:text-amber-300 font-medium">{sec.name}</span>
+                          {schemeDef && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100/70 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 font-sans border border-amber-200/60 dark:border-amber-500/20">
+                              {schemeDef.type}{schemeDef.scheme ? ` (${schemeDef.scheme})` : schemeDef.in ? ` (${schemeDef.in})` : ''}
                             </span>
-                          ))}
+                          )}
                         </div>
-                      ) : (
-                        <span className="text-slate-500 text-[11px]">No specific scopes required</span>
-                      )}
-                    </div>
-                  ))}
+                        {sec.scopes.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {sec.scopes.map((scope) => (
+                              <span
+                                key={scope}
+                                className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-[10px] text-slate-700 dark:text-slate-300 font-mono"
+                              >
+                                {scope}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-500 text-[11px]">No specific scopes required</span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

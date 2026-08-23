@@ -431,3 +431,28 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Specs with undefined or missing versions rendered an empty or invalid `vundefined` badge in the application header.
 - **Root Cause**: Unconditional `v{spec.version}` rendering in `src/ui/Header.tsx`.
 - **Resolution**: Guarded version badge rendering behind `spec.version` existence.
+
+### Fix 84: Blank Tag String Validation in Linter
+- **Issue**: Operations containing empty or whitespace-only tag strings in `tags` were not flagged.
+- **Root Cause**: Missing check for non-empty tag strings in `src/parser/validator.ts`.
+- **Resolution**: Added a warning diagnostic rule detecting empty or blank tag entries.
+
+### Fix 85: Security Scheme Type and Transport Location Badges
+- **Issue**: Security requirements in the Endpoint Inspector only displayed the raw scheme name without indicating scheme type or location.
+- **Root Cause**: Lack of metadata badge rendering in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Added badges indicating `apiKey (header)`, `http (bearer)`, or `oauth2` next to security names.
+
+### Fix 86: Deprecated Schema Property Badges in Schema Inspector
+- **Issue**: Schema properties flagged with `deprecated: true` did not show a deprecation indicator in the structure tree.
+- **Root Cause**: Missing property deprecation rendering in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Added an amber `deprecated` badge for properties marked as deprecated.
+
+### Fix 87: Format-Aware Header Parameter Defaults in cURL Generator
+- **Issue**: Header parameters expecting UUIDs or numeric formats defaulted to generic `'string'` values.
+- **Root Cause**: Static string fallback in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Generated sample UUIDs and integer defaults based on header schema format and type.
+
+### Fix 88: Method Filter Pill Total Endpoint Count Display
+- **Issue**: The `ALL` method filter pill in the Endpoint Explorer did not display the total number of operations.
+- **Root Cause**: Static button text in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Displayed `ALL (${endpoints.length})` on the all-methods filter pill.

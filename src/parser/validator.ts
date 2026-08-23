@@ -129,6 +129,21 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       });
     }
 
+    // Rule: Empty or blank tag name
+    for (const tag of ep.tags) {
+      if (typeof tag === 'string' && tag.trim() === '') {
+        const line = findLineForPattern(rawText, `${ep.method}:`) || findLineForPattern(rawText, ep.path);
+        diagnostics.push({
+          id: `empty-tag-${ep.id}`,
+          severity: 'warning',
+          message: `Endpoint ${ep.method.toUpperCase()} ${ep.path} contains an empty or whitespace-only tag string.`,
+          path: `/paths${ep.path}/${ep.method}/tags`,
+          line,
+          source: 'linter',
+        });
+      }
+    }
+
     // Rule: Missing 2xx success response
     const hasSuccessResponse = ep.responses.some((r) => {
       const code = r.statusCode.toLowerCase();

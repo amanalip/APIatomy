@@ -96,11 +96,23 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
 
     // Header parameters
     for (const header of endpoint.parameters.filter((p) => p.in === 'header')) {
-      const val = header.example !== undefined
+      let val = header.example !== undefined
         ? header.example
         : header.schema?.default !== undefined
           ? header.schema.default
-          : 'string';
+          : undefined;
+
+      if (val === undefined) {
+        if (header.schema?.format === 'uuid') {
+          val = '123e4567-e89b-12d3-a456-426614174000';
+        } else if (header.schema?.type === 'integer' || header.schema?.type === 'number') {
+          val = '1';
+        } else if (header.schema?.type === 'boolean') {
+          val = 'true';
+        } else {
+          val = 'string';
+        }
+      }
       lines.push(`  -H "${header.name}: ${val}"`);
     }
 

@@ -362,6 +362,11 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                         required
                       </span>
                     )}
+                    {propSchema.deprecated && (
+                      <span className="text-[9px] px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold border border-amber-200 dark:border-amber-500/30">
+                        deprecated
+                      </span>
+                    )}
                     <span className="text-slate-400 dark:text-slate-500">:</span>
                     <span className="text-blue-600 dark:text-blue-400 text-[11px]">
                       {String(propSchema.type || 'object')}
