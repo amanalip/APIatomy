@@ -1,0 +1,179 @@
+import { DiagnosticItem, EndpointModel, SchemaModel } from '../model';
+
+export interface ValidationInput {
+  endpoints: EndpointModel[];
+  schemas: Record<string, SchemaModel>;
+  rawText: string;
+  rawDoc: Record<string, unknown>;
+}
+
+export function validateSpec(input: ValidationInput): DiagnosticItem[] {
+  const diagnostics: DiagnosticItem[] = [];
+  const { endpoints, schemas, rawText, rawDoc } = input;
+
+  // Track all schemas referenced anywhere in endpoints or other schemas
+  const referencedSchemas = new Set<string>();
+
+  for (const ep of endpoints) {
+    // Collect consumed and produced refs
+    for (const ref of ep.consumedSchemaRefs) referencedSchemas.add(ref);
+    for (const ref of ep.producedSchemaRefs) referencedSchemas.add(ref);
+
+    // Rule: Missing summary and description
+    if (!ep.summary && !ep.description) {
+      const line = findLineForPattern(rawText, `${ep.method}:`) || findLineForPattern(rawText, ep.path);
+      diagnostics.push({
+        id: `missing-doc-${ep.id}`,
+        severity: 'warning',
+        message: `Endpoint ${ep.method.toUpperCase()} ${ep.path} has neither a summary nor a description.`,
+        path: `/paths${ep.path}/${ep.method}`,
+        line,
+        source: 'linter',
+      });
+    }
+
+    // Rule: Missing 2xx success response
+    const hasSuccessResponse = ep.responses.some((r) => {
+      const num = parseInt(r.statusCode, 10);
+      return (num >= 200 && num < 300) || r.statusCode === 'default';
+    });
+
+    if (!hasSuccessResponse && ep.responses.length > 0) {
+      const line = findLineForPattern(rawText, ep.path);
+      diagnostics.push({
+        id: `missing-2xx-${ep.id}`,
+        severity: 'warning',
+        message: `Endpoint ${ep.method.toUpperCase()} ${ep.path} does not define a 2xx success response status.`,
+        path: `/paths${ep.path}/${ep.method}/responses`,
+        line,
+        source: 'schema',
+      });
+    }
+
+    // Rule: Empty responses
+    if (ep.responses.length === 0) {
+      const line = findLineForPattern(rawText, ep.path);
+      diagnostics.push({
+        id: `empty-responses-${ep.id}`,
+        severity: 'error',
+        message: `Endpoint ${ep.method.toUpperCase()} ${ep.path} has no response definitions.`,
+        path: `/paths${ep.path}/${ep.method}/responses`,
+        line,
+        source: 'schema',
+      });
+    }
+
+    // Check broken parameter refs or missing parameter types
+    for (const param of ep.parameters) {
+      if (!param.schema && !param.description) {
+        const line = findLineForPattern(rawText, param.name);
+        diagnostics.push({
+          id: `untyped-param-${ep.id}-${param.name}`,
+          severity: 'info',
+          message: `Parameter "${param.name}" in ${ep.method.toUpperCase()} ${ep.path} lacks schema and description.`,
+          path: `/paths${ep.path}/${ep.method}/parameters/${param.name}`,
+          line,
+          source: 'linter',
+        });
+      }
+    }
+  }
+
+  // Collect nested refs inside schemas
+  for (const [schemaName, schemaObj] of Object.entries(schemas)) {
+    collectSubRefs(schemaObj, referencedSchemas);
+
+    // Rule: Schema without properties, items, or composition
+    const hasProps = schemaObj.properties && Object.keys(schemaObj.properties).length > 0;
+    const hasComposition = schemaObj.allOf || schemaObj.oneOf || schemaObj.anyOf;
+    const hasItems = schemaObj.items;
+    const isPrimitive = ['string', 'number', 'integer', 'boolean'].includes(String(schemaObj.type));
+
+    if (!hasProps && !hasComposition && !hasItems && !isPrimitive && !schemaObj.$ref) {
+      const line = findLineForPattern(rawText, schemaName);
+      diagnostics.push({
+        id: `empty-schema-${schemaName}`,
+        severity: 'info',
+        message: `Schema "${schemaName}" has no properties, items, or composition definitions.`,
+        path: `/components/schemas/${schemaName}`,
+        line,
+        source: 'schema',
+      });
+    }
+  }
+
+  // Rule: Unused component schemas
+  for (const schemaName of Object.keys(schemas)) {
+    if (!referencedSchemas.has(schemaName)) {
+      const line = findLineForPattern(rawText, schemaName);
+      diagnostics.push({
+        id: `unused-schema-${schemaName}`,
+        severity: 'info',
+        message: `Schema "${schemaName}" is defined in components but never referenced by endpoints or schemas.`,
+        path: `/components/schemas/${schemaName}`,
+        line,
+        source: 'linter',
+      });
+    }
+  }
+
+  // Rule: Check for broken refs in rawDoc
+  findBrokenRefsInDoc(rawDoc, rawText, diagnostics);
+
+  return diagnostics;
+}
+
+function collectSubRefs(schema: SchemaModel, referenced: Set<string>): void {
+  if (schema.refTarget) {
+    referenced.add(schema.refTarget);
+  }
+  if (schema.properties) {
+    for (const p of Object.values(schema.properties)) {
+      collectSubRefs(p, referenced);
+    }
+  }
+  if (schema.items) {
+    collectSubRefs(schema.items, referenced);
+  }
+  if (schema.allOf) {
+    for (const s of schema.allOf) collectSubRefs(s, referenced);
+  }
+  if (schema.oneOf) {
+    for (const s of schema.oneOf) collectSubRefs(s, referenced);
+  }
+  if (schema.anyOf) {
+    for (const s of schema.anyOf) collectSubRefs(s, referenced);
+  }
+}
+
+function findBrokenRefsInDoc(
+  doc: unknown,
+  rawText: string,
+  diagnostics: DiagnosticItem[],
+  currentPath = ''
+): void {
+  if (typeof doc !== 'object' || doc === null) return;
+
+  if (Array.isArray(doc)) {
+    doc.forEach((item, idx) => findBrokenRefsInDoc(item, rawText, diagnostics, `${currentPath}/${idx}`));
+    return;
+  }
+
+  const obj = doc as Record<string, unknown>;
+  for (const [key, value] of Object.entries(obj)) {
+    findBrokenRefsInDoc(value, rawText, diagnostics, `${currentPath}/${key}`);
+  }
+}
+
+export function findLineForPattern(text: string, pattern: string): number {
+  if (!pattern || !text) return 1;
+  const lines = text.split('\n');
+  const cleanPat = pattern.trim().toLowerCase();
+
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].toLowerCase().includes(cleanPat)) {
+      return i + 1;
+    }
+  }
+  return 1;
+}
