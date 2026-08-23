@@ -141,3 +141,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: When users changed their operating system dark/light preference while the application was open without an explicit manual theme override, the theme did not update dynamically.
 - **Root Cause**: Missing media query listener for `(prefers-color-scheme: dark)` in `src/theme/ThemeContext.tsx`.
 - **Resolution**: Added a reactive `change` event listener on `matchMedia` to update the application theme in real time.
+
+### Fix 26: Responsive Master-Detail Split Pane on Compact Viewports
+- **Issue**: Opening the endpoint details panel on compact or medium viewports alongside the open code editor compressed the endpoint list into an illegibly narrow width.
+- **Root Cause**: Hardcoded 50/50 split width on all screen sizes in `App.tsx`.
+- **Resolution**: Implemented responsive breakpoint layout (`hidden lg:block lg:w-1/2` and `w-full lg:w-1/2`) to present full-width detail view with close button on mobile and tablet screens while retaining side-by-side view on large screens.

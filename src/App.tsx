@@ -158,7 +158,7 @@ export function App() {
           {/* View 1: Endpoints Explorer */}
           {activeView === 'endpoints' && (
             <div className="flex-1 flex h-full overflow-hidden">
-              <div className={`${selectedEndpoint ? 'w-1/2' : 'w-full'} h-full transition-all duration-150`}>
+              <div className={`${selectedEndpoint ? 'hidden lg:block lg:w-1/2' : 'w-full'} h-full transition-all duration-150`}>
                 <EndpointExplorer
                   endpoints={spec.endpoints}
                   selectedEndpoint={selectedEndpoint}
@@ -167,7 +167,7 @@ export function App() {
               </div>
 
               {selectedEndpoint && (
-                <div className="w-1/2 h-full">
+                <div className="w-full lg:w-1/2 h-full">
                   <EndpointDetails
                     endpoint={selectedEndpoint}
                     servers={spec.servers}
