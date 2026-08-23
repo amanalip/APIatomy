@@ -359,7 +359,11 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                   .sort((a, b) => {
                     const norm = (code: string) => {
                       const lower = code.toLowerCase();
+                      if (lower === '1xx') return 100;
                       if (lower === '2xx') return 200;
+                      if (lower === '3xx') return 300;
+                      if (lower === '4xx') return 400;
+                      if (lower === '5xx') return 500;
                       if (lower === 'default') return 9999;
                       const n = parseInt(lower, 10);
                       return isNaN(n) ? 9998 : n;

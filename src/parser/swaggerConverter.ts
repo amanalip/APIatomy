@@ -311,16 +311,20 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
 }
 
 // Rewrite Swagger `#/definitions/Name` to `#/components/schemas/Name`
-function rewriteSwaggerRefs(obj: unknown, seen = new WeakSet<object>()): unknown {
+// Only rewrite strings that are $ref target values; preserves example strings that coincidentally look like refs
+function rewriteSwaggerRefs(obj: unknown, seen = new WeakSet<object>(), parentKey?: string): unknown {
   if (typeof obj === 'string') {
-    if (obj.startsWith('#/definitions/')) {
-      return obj.replace('#/definitions/', '#/components/schemas/');
-    }
-    if (obj.startsWith('#/parameters/')) {
-      return obj.replace('#/parameters/', '#/components/parameters/');
-    }
-    if (obj.startsWith('#/responses/')) {
-      return obj.replace('#/responses/', '#/components/responses/');
+    const isRefContext = parentKey === '$ref';
+    if (isRefContext) {
+      if (obj.startsWith('#/definitions/')) {
+        return obj.replace('#/definitions/', '#/components/schemas/');
+      }
+      if (obj.startsWith('#/parameters/')) {
+        return obj.replace('#/parameters/', '#/components/parameters/');
+      }
+      if (obj.startsWith('#/responses/')) {
+        return obj.replace('#/responses/', '#/components/responses/');
+      }
     }
     return obj;
   }
@@ -328,7 +332,7 @@ function rewriteSwaggerRefs(obj: unknown, seen = new WeakSet<object>()): unknown
   if (Array.isArray(obj)) {
     if (seen.has(obj as object)) return obj;
     seen.add(obj as object);
-    return (obj as unknown[]).map((item) => rewriteSwaggerRefs(item, seen));
+    return (obj as unknown[]).map((item) => rewriteSwaggerRefs(item, seen, parentKey));
   }
 
   if (typeof obj === 'object' && obj !== null) {
@@ -336,7 +340,7 @@ function rewriteSwaggerRefs(obj: unknown, seen = new WeakSet<object>()): unknown
     seen.add(obj as object);
     const result: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-      result[k] = rewriteSwaggerRefs(v, seen);
+      result[k] = rewriteSwaggerRefs(v, seen, k);
     }
     return result;
   }

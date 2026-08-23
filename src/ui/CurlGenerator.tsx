@@ -99,7 +99,9 @@ export function buildCurlCommand(
 
   if (activeServer?.variables) {
     for (const [varName, varDef] of Object.entries(activeServer.variables)) {
-      rawUrl = rawUrl.split(`{${varName}}`).join((varDef as any).default || 'default');
+      const defVal = (varDef as any)?.default;
+      const replacement = defVal !== undefined && String(defVal).trim() !== '' ? String(defVal) : (varDef as any)?.enum?.[0] ?? 'default';
+      rawUrl = rawUrl.split(`{${varName}}`).join(replacement);
     }
   }
 

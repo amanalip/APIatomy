@@ -368,13 +368,14 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
 
     // Rule: Schema without properties, items, or composition
     const hasProps = schemaObj.properties && Object.keys(schemaObj.properties).length > 0;
-    const hasComposition = schemaObj.allOf || schemaObj.oneOf || schemaObj.anyOf;
+    const hasComposition = schemaObj.allOf || schemaObj.oneOf || schemaObj.anyOf || (schemaObj as any).not;
     const hasItems = schemaObj.items;
+    const hasAdditional = !!schemaObj.additionalProperties;
     const prim = Array.isArray(schemaObj.type) ? (schemaObj.type as unknown as string[]).join(',') : String(schemaObj.type);
     const isPrimitive = ['string', 'number', 'integer', 'boolean'].some((t) => prim.includes(t));
     const hasRef = !!(schemaObj.$ref || schemaObj.refTarget);
 
-    if (!hasProps && !hasComposition && !hasItems && !isPrimitive && !hasRef) {
+    if (!hasProps && !hasComposition && !hasItems && !hasAdditional && !isPrimitive && !hasRef) {
       const line = findLineForPattern(rawText, schemaName);
       diagnostics.push({
         id: `empty-schema-${schemaName}`,

@@ -121,7 +121,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
     setCollapsedTags(nextState);
   };
 
-  const methodsList: (HttpMethod | 'all')[] = ['all', 'get', 'post', 'put', 'patch', 'delete', 'options', 'head'];
+  const methodsList: (HttpMethod | 'all')[] = ['all', 'get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'];
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-150">
@@ -152,14 +152,17 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
           )}
         </div>
 
-        {/* Method filter pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+        {/* Method filter pills — UX: aria-pressed + per-method count + TRACE support */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5" role="toolbar" aria-label="Filter by HTTP method">
           {methodsList.map((m) => {
             const isSelected = selectedMethod === m;
+            const count = m === 'all' ? endpoints.length : endpoints.filter((e) => e.method === m).length;
             return (
               <button
                 key={m}
                 onClick={() => setSelectedMethod(m)}
+                aria-pressed={isSelected}
+                title={m === 'all' ? `Show all ${count} endpoints` : `Filter ${m.toUpperCase()} (${count})`}
                 className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold transition ${
                   isSelected
                     ? m === 'all'
@@ -168,7 +171,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                     : 'bg-slate-100 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800'
                 }`}
               >
-                {m === 'all' ? `ALL (${endpoints.length})` : m.toUpperCase()}
+                {m === 'all' ? `ALL (${count})` : `${m.toUpperCase()} (${count})`}
               </button>
             );
           })}

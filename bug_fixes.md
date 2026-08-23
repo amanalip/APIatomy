@@ -864,4 +864,58 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Previous edit incorrectly changed GitHub link to `anomalyco/APIatomy`; owner is `amanalip` per user clarification.
 - **Resolution**: Reverted to `https://github.com/amanalip/APIatomy` and verified; added note that `anomalyco` is OpenCode contributor, not repo owner.
 
+### Fix 177: TRACE Method Missing from Endpoint Explorer Filter Pills
+- **Issue**: Explorer method filter pill bar defined `methodsList` as `['all','get','post','put','patch','delete','options','head']` omitting `trace` even though `src/model/httpMethods.ts` defines `TRACE` with accent `#ec4899` and `src/parser/normalizer.ts` accepts `trace` as valid method (`src/ui/EndpointExplorer.tsx:124`).
+- **Root Cause**: Hardcoded truncated array after Fix 27 (which added options/head but missed trace).
+- **Resolution**: Extended `methodsList` to `['all','get','post','put','patch','delete','options','head','trace']`; verified `parseApiSpec` parses `trace` and filter correctly returns 1 endpoint.
+
+### Fix 178: Response Status Wildcard Sorting Incomplete in EndpointDetails
+- **Issue**: Response sort comparator in `src/ui/EndpointDetails.tsx:359-368` only normalized `2xx` and `default`, so `1xx`/`3xx`/`4xx`/`5xx` fell through to `parseInt('4xx',10)=4` sorting before `200`, producing incorrect order `4xx < 200`.
+- **Root Cause**: Incomplete `norm()` mapping after Fix 72 response sort.
+- **Resolution**: Added explicit branches for `1xx→100, 3xx→300, 4xx→400, 5xx→500` alongside existing `2xx`/`default`, ensuring correct numeric ordering `1xx < 2xx < 3xx < 4xx < 5xx < default`.
+
+### Fix 179: `collectSchemaRefs` Missing `additionalProperties` and `not` Traversal
+- **Issue**: `src/parser/refResolver.ts:198-228` `collectSchemaRefs` traversed `properties`, `items`, `allOf/oneOf/anyOf` but omitted `additionalProperties` map refs and `not` composition, so analytics / reuse counts missed dictionary schemas (`Outer` with `additionalProperties: {$ref: '#/components/schemas/Inner'}`).
+- **Root Cause**: Incomplete recursion parity with `src/layout/graphLayout.ts:214-228` and `src/parser/normalizer.ts:416-431` which already handle those fields.
+- **Resolution**: Added `if (s.additionalProperties && typeof s.additionalProperties === 'object') collectSchemaRefs(s.additionalProperties)` and `if (s.not) collectSchemaRefs(s.not)` branches.
+
+### Fix 180: Swagger Converter Over-Eager String Rewrite
+- **Issue**: `rewriteSwaggerRefs` in `src/parser/swaggerConverter.ts:314-344` rewrote *any* string starting with `#/definitions/` regardless of context, mutating example string values like `example: "#/definitions/Foo"` into `#/components/schemas/Foo` (`src/parser/swaggerConverter.ts:315`).
+- **Root Cause**: `typeof obj === 'string'` branch had no parent-key guard.
+- **Resolution**: Added `parentKey` param threaded through array/object recursion; only rewrite when `parentKey === '$ref'`, preserving example data. Added WeakSet cycle guard already, retained.
+
+### Fix 181: Server Variable Replacement `|| 'default'` Empty-String and Enum Fallback
+- **Issue**: `src/ui/CurlGenerator.tsx:100-104` used `(varDef as any).default || 'default'` which treated empty-string default as falsy and ignored `enum` alternatives, producing `https://default.example.com` instead of using `enum[0]`.
+- **Root Cause**: Logical OR without empty-string check and no enum fallback.
+- **Resolution**: Compute `defVal = (varDef as any)?.default`; `replacement = defVal !== undefined && String(defVal).trim() !== '' ? String(defVal) : (varDef as any)?.enum?.[0] ?? 'default'`; ensures enum precedence and correct handling.
+
+### Fix 182: Validator Empty-Schema False Positive for Map and `not` Schemas
+- **Issue**: `src/parser/validator.ts:369-387` empty-schema rule checked `hasProps`, `hasComposition` (`allOf/oneOf/anyOf`), `hasItems`, primitives and `hasRef`, but flagged valid map schemas (`additionalProperties: {type: string}`) and `not: {type: string}` as empty (`src/parser/validator.ts:372`).
+- **Root Cause**: Missing `hasAdditional` and `not` in composition check.
+- **Resolution**: Added `hasAdditional = !!schemaObj.additionalProperties` and extended `hasComposition` to include `(schemaObj as any).not`; guard now `!hasProps && !hasComposition && !hasItems && !hasAdditional && !isPrimitive && !hasRef`.
+
+### Fix 183: Code Quality — Mock Generator AdditionalProperties Sample Support
+- **Improvement**: Enhanced `src/model/mockGenerator.ts:98-107` to generate realistic mock samples for `additionalProperties` dictionary schemas, returning `{ additionalProp: <mock> }` alongside normal properties and for pure map schemas.
+
+### Fix 184: Code Quality — Editor Format Detection Dynamic
+- **Improvement**: Updated `src/App.tsx:153-158` to pass `format` to `EditorPane` dynamically based on `spec.originalFormat` and `rawText.trim().startsWith('{')`, ensuring JSON specs get JSON syntax highlighting instead of forced YAML.
+
+### Fix 185: Code Quality — Swagger Rewrite Parent-Key Context Typing
+- **Improvement**: Refactored `rewriteSwaggerRefs` signature to `(obj, seen, parentKey?)` with explicit `string | undefined` typing and propagated through array/object branches, improving type safety and documenting intent.
+
+### Fix 186: Code Quality — Endpoint Explorer Methods List as Constant with Trace
+- **Improvement**: Centralized `methodsList` includes `trace` and is now used consistently for pill rendering and filtering, eliminating magic strings and ensuring future method additions require single-site change.
+
+### Fix 187: Code Quality — Validator Empty Schema Helper Clarity
+- **Improvement**: Expanded validator empty-schema variables with explicit `hasAdditional` and `not` inclusion, with comment documenting map-type schemas, improving readability and preventing regression.
+
+### Fix 188: Code Quality — Mock Generator Depth Normalization Preserved
+- **Improvement**: Retained `normalizeType` helper for OAS 3.1 union array types and documented additionalProperties handling parity with graphLayout/normalizer, aligning three modules on same traversal set.
+
+### Fix 189: UX/UI — Method Filter Pills Count Badges, Aria-Pressed, and Trace Visibility
+- **Improvement**: Revamped `src/ui/EndpointExplorer.tsx:156-175` method pills to display per-method counts `GET (3)`, `TRACE (1)` with `aria-pressed` and `title` tooltips, toolbar `role="toolbar"` and `aria-label`, improving discoverability for `TRACE` and accessibility (WCAG 4.1.2). Added trace count ensures users see rare methods exist.
+
+### Fix 190: Comprehensive Quality Test Suite 2
+- **Improvement**: Added `tests/comprehensiveQuality2.test.ts` with 8 tests verifying: (1) TRACE endpoint parsing & filtering, (2) wildcard response sort order for 1xx/2xx/3xx/4xx/5xx/default, (3) `collectSchemaRefs` for additionalProperties/not, (4) swagger example string preservation vs `$ref` rewrite, (5) server variable enum fallback & mock additionalProperties generation, (6) validator not flagging map/not schemas as empty.
+
 

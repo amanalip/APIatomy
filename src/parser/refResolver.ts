@@ -214,6 +214,14 @@ export function collectSchemaRefs(schema: unknown, refs: Set<string> = new Set()
     collectSchemaRefs(s.items, refs);
   }
 
+  if (s.additionalProperties && typeof s.additionalProperties === 'object') {
+    collectSchemaRefs(s.additionalProperties, refs);
+  }
+
+  if (s.not && typeof s.not === 'object') {
+    collectSchemaRefs(s.not, refs);
+  }
+
   if (Array.isArray(s.allOf)) {
     for (const sub of s.allOf) collectSchemaRefs(sub, refs);
   }

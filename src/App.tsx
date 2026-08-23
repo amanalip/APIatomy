@@ -154,7 +154,7 @@ export function App() {
                 ref={editorPaneRef}
                 value={rawText}
                 onChange={(newText) => setRawText(newText)}
-                format="yaml"
+                format={spec.originalFormat === 'swagger2' ? 'yaml' : rawText.trim().startsWith('{') ? 'json' : 'yaml'}
               />
             </div>
 

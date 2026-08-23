@@ -100,7 +100,15 @@ export function generateMockData(
     for (const [key, prop] of Object.entries(schema.properties)) {
       obj[key] = generateMockData(prop, allSchemas, depth + 1);
     }
+    // Include sample for additionalProperties map types
+    if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+      obj['additionalProp'] = generateMockData(schema.additionalProperties as SchemaModel, allSchemas, depth + 1);
+    }
     return obj;
+  }
+
+  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
+    return { additionalProp: generateMockData(schema.additionalProperties as SchemaModel, allSchemas, depth + 1) };
   }
 
   return {};
