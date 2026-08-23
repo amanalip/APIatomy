@@ -116,7 +116,8 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
           val = 'string';
         }
       }
-      lines.push(`  -H "${header.name}: ${val}"`);
+      const sanitizedVal = String(val).replace(/"/g, '\\"');
+      lines.push(`  -H "${header.name}: ${sanitizedVal}"`);
     }
 
     // Cookie parameters

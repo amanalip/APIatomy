@@ -504,3 +504,26 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 
 ### Fix 98: Comprehensive cURL Generator Unit Test Suite
 - **Improvement**: Added dedicated unit test suite in `tests/curlGenerator.test.ts` verifying cURL command synthesis across methods, servers, variables, delimiters (`spaceDelimited`, `pipeDelimited`), array explodes, parameter encodings, multipart forms, basic auth, and API keys.
+
+### Fix 99: Invalid and Unsupported HTTP Method Verb Linter Diagnostic
+- **Issue**: Specifications defining misspelled or non-standard HTTP method verbs in path items were not flagged with validation warnings.
+- **Root Cause**: Missing verification against valid HTTP methods in `src/parser/validator.ts`.
+- **Resolution**: Added a validation rule detecting invalid HTTP verbs and emitting warning diagnostics.
+
+### Fix 100: Property Default and Example Value Badges in Schema Inspector
+- **Issue**: Schema properties declaring `default` or `example` values did not show these annotations in structure tree rows.
+- **Root Cause**: Lack of rendering elements in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Added `default: <val>` and `example: <val>` badges under property rows.
+
+### Fix 101: Global Keyboard Shortcut to Focus Endpoint Search
+- **Issue**: Users navigating the Explorer had no quick keyboard shortcut to focus the endpoint search box.
+- **Root Cause**: Lack of global key event handler in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Added `/` and `Cmd+K` / `Ctrl+K` key handlers focusing the search input.
+
+### Fix 102: Quote Character Sanitization in cURL Header Values
+- **Issue**: Header parameters containing quote characters broke generated cURL shell commands.
+- **Root Cause**: Unescaped string interpolation in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Escaped internal double quotes in header values.
+
+### Fix 103: Comprehensive AST Normalizer Unit Test Suite
+- **Improvement**: Added dedicated AST normalizer test suite in `tests/normalizer.test.ts` verifying graph node schema reference tracking, response parsing, and server normalization.

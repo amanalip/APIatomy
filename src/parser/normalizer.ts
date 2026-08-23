@@ -381,6 +381,11 @@ function parseParameter(p: unknown, context: RefResolutionContext): ParameterMod
     schema = resolveSchema(param.schema, context, name);
   }
 
+  const defaultStyle = (inType === 'query' || inType === 'cookie') ? 'form' : (inType === 'path' || inType === 'header') ? 'simple' : undefined;
+  const style = typeof param.style === 'string' ? param.style : defaultStyle;
+  const defaultExplode = style === 'form';
+  const explode = typeof param.explode === 'boolean' ? param.explode : defaultExplode;
+
   return {
     name,
     in: inType,
@@ -389,8 +394,8 @@ function parseParameter(p: unknown, context: RefResolutionContext): ParameterMod
     deprecated,
     schema,
     example: param.example,
-    style: typeof param.style === 'string' ? param.style : undefined,
-    explode: typeof param.explode === 'boolean' ? param.explode : undefined,
+    style,
+    explode,
     allowReserved: typeof param.allowReserved === 'boolean' ? param.allowReserved : undefined,
   };
 }

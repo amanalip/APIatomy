@@ -291,6 +291,28 @@ paths:
     expect(emptyTagDiag?.severity).toBe('warning');
   });
 
+  it('flags invalid or unsupported HTTP method verbs', () => {
+    const invalidVerbSpec = `
+openapi: 3.0.0
+info:
+  title: Invalid Verb Spec
+  version: 1.0.0
+paths:
+  /items:
+    fetch:
+      summary: Fetch items
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(invalidVerbSpec);
+    const invalidVerbDiag = parsed.diagnostics.find((d) => d.id.startsWith('invalid-http-method-'));
+    expect(invalidVerbDiag).toBeDefined();
+    expect(invalidVerbDiag?.severity).toBe('warning');
+    expect(invalidVerbDiag?.message).toContain('fetch');
+  });
+
   it('flags missing info object with error diagnostic', () => {
     const missingInfoSpec = `
 openapi: 3.0.0

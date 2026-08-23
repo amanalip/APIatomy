@@ -75,6 +75,27 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
         });
       }
     }
+
+    const VALID_HTTP_METHODS = new Set(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);
+    const PATH_LEVEL_KEYS = new Set(['summary', 'description', 'servers', 'parameters', '$ref']);
+
+    for (const [pKey, pathObj] of Object.entries(rawDoc.paths as Record<string, unknown>)) {
+      if (typeof pathObj === 'object' && pathObj !== null) {
+        for (const opKey of Object.keys(pathObj as Record<string, unknown>)) {
+          if (!PATH_LEVEL_KEYS.has(opKey) && !VALID_HTTP_METHODS.has(opKey.toLowerCase())) {
+            const line = findLineForPattern(rawText, opKey);
+            diagnostics.push({
+              id: `invalid-http-method-${pKey}-${opKey}`,
+              severity: 'warning',
+              message: `Unknown or unsupported HTTP method verb "${opKey}" in path "${pKey}". Valid methods are GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD, TRACE.`,
+              path: `/paths/${pKey}/${opKey}`,
+              line,
+              source: 'schema',
+            });
+          }
+        }
+      }
+    }
   }
 
   // Track operationIds for uniqueness

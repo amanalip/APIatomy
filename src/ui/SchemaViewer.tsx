@@ -420,6 +420,20 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                       <span className="font-mono text-slate-700 dark:text-slate-400">[{propSchema.enum.join(', ')}]</span>
                     </div>
                   )}
+
+                  {propSchema.default !== undefined && (
+                    <div className="flex items-center gap-1 text-[10px] text-slate-500 font-mono">
+                      <span>default:</span>
+                      <span className="text-slate-700 dark:text-slate-300">{JSON.stringify(propSchema.default)}</span>
+                    </div>
+                  )}
+
+                  {propSchema.example !== undefined && (
+                    <div className="flex items-center gap-1 text-[10px] text-slate-500 font-mono">
+                      <span>example:</span>
+                      <span className="text-emerald-700 dark:text-emerald-400">{JSON.stringify(propSchema.example)}</span>
+                    </div>
+                  )}
                 </div>
 
                 {propSchema.description && (

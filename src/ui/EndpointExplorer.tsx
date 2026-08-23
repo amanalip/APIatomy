@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EndpointModel, HttpMethod } from '../model';
 import { HTTP_METHODS } from '../model/httpMethods';
 import { Search, ChevronDown, ChevronRight, Tag, Shield, X } from 'lucide-react';
@@ -18,6 +18,22 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
   const [selectedMethod, setSelectedMethod] = useState<HttpMethod | 'all'>('all');
   const [selectedTag, setSelectedTag] = useState<string>('all');
   const [collapsedTags, setCollapsedTags] = useState<Record<string, boolean>>({});
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || document.activeElement?.classList.contains('cm-content')) {
+        return;
+      }
+      if (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key === 'k')) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, []);
 
   // All unique tags in spec
   const allTags = useMemo(() => {
@@ -108,13 +124,14 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
         <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
           <input
+            ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Escape') setSearchQuery('');
             }}
-            placeholder="Search endpoints by path, summary, or tag..."
+            placeholder="Search endpoints by path, summary, or tag... [/]"
             className="w-full pl-9 pr-8 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           {searchQuery && (
