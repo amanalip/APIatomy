@@ -81,3 +81,13 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Swagger 2.0 specs defining top-level `parameters` or `responses` dictionaries did not migrate them into OpenAPI 3.0 `components.parameters` and `components.responses`.
 - **Root Cause**: Conversion routine only mapped `definitions` and `securityDefinitions`.
 - **Resolution**: Updated `src/parser/swaggerConverter.ts` to convert top-level `parameters` and `responses`, rewriting internal `$ref` pointers accordingly.
+
+### Fix 14: Active Broken `$ref` Validation in Linter
+- **Issue**: The validator's `findBrokenRefsInDoc` helper traversed objects without evaluating whether references actually pointed to valid targets in the root document.
+- **Root Cause**: Missing pointer resolution check on `$ref` entries in `src/parser/validator.ts`.
+- **Resolution**: Connected `resolveJsonPointer` to verify all `$ref` links across the document, highlighting broken references as actionable error diagnostics.
+
+### Fix 15: Parameter Enum Badges and Response Headers in Endpoint Inspector
+- **Issue**: Endpoint parameter enum constraints and response header specifications were not displayed in the Inspector drawer.
+- **Root Cause**: Missing rendering blocks in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Added enum badges under parameter type cells and a response headers summary block for responses that define headers.

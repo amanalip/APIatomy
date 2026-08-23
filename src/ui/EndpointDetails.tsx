@@ -187,8 +187,15 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                             </span>
                           </td>
                           <td className="py-2.5 px-3 font-mono text-blue-600 dark:text-slate-400 text-[11px]">
-                            {String(p.schema?.type || 'string')}
-                            {p.schema?.format ? ` (${p.schema.format})` : ''}
+                            <div>
+                              {String(p.schema?.type || 'string')}
+                              {p.schema?.format ? ` (${p.schema.format})` : ''}
+                            </div>
+                            {p.schema?.enum && (
+                              <div className="text-[10px] text-slate-500 mt-0.5">
+                                enum: [{p.schema.enum.join(', ')}]
+                              </div>
+                            )}
                           </td>
                           <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 text-[11px]">
                             {p.description || <span className="italic text-slate-400 dark:text-slate-600">No description</span>}
@@ -301,8 +308,26 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                         </div>
                       </button>
 
-                      {isExpanded && resp.content.length > 0 && (
-                        <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/90 space-y-2">
+                      {isExpanded && (
+                        <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/90 space-y-3">
+                          {resp.headers && Object.keys(resp.headers).length > 0 && (
+                            <div className="space-y-1">
+                              <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                                Response Headers
+                              </span>
+                              <div className="p-2 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono space-y-1">
+                                {Object.entries(resp.headers).map(([hKey, hVal]: [string, any]) => (
+                                  <div key={hKey} className="flex items-center justify-between">
+                                    <span className="text-slate-800 dark:text-slate-200">{hKey}</span>
+                                    <span className="text-slate-500 text-[11px]">
+                                      {hVal.description || hVal.schema?.type || 'string'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           {resp.content.map((c, idx) => (
                             <div key={idx} className="space-y-2">
                               {c.schema?.refTarget && (

@@ -1,4 +1,5 @@
 import { DiagnosticItem, EndpointModel, SchemaModel } from '../model';
+import { resolveJsonPointer } from './refResolver';
 
 export interface ValidationInput {
   endpoints: EndpointModel[];
@@ -118,7 +119,7 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
   }
 
   // Rule: Check for broken refs in rawDoc
-  findBrokenRefsInDoc(rawDoc, rawText, diagnostics);
+  findBrokenRefsInDoc(rawDoc, rawDoc, rawText, diagnostics);
 
   return diagnostics;
 }
@@ -148,6 +149,7 @@ function collectSubRefs(schema: SchemaModel, referenced: Set<string>): void {
 
 function findBrokenRefsInDoc(
   doc: unknown,
+  rootDoc: Record<string, unknown>,
   rawText: string,
   diagnostics: DiagnosticItem[],
   currentPath = ''
@@ -155,13 +157,34 @@ function findBrokenRefsInDoc(
   if (typeof doc !== 'object' || doc === null) return;
 
   if (Array.isArray(doc)) {
-    doc.forEach((item, idx) => findBrokenRefsInDoc(item, rawText, diagnostics, `${currentPath}/${idx}`));
+    doc.forEach((item, idx) =>
+      findBrokenRefsInDoc(item, rootDoc, rawText, diagnostics, `${currentPath}/${idx}`)
+    );
     return;
   }
 
   const obj = doc as Record<string, unknown>;
+
+  if (typeof obj.$ref === 'string') {
+    const refStr = obj.$ref;
+    if (refStr.startsWith('#/')) {
+      const resolved = resolveJsonPointer(rootDoc, refStr);
+      if (resolved === undefined) {
+        const line = findLineForPattern(rawText, refStr);
+        diagnostics.push({
+          id: `broken-ref-${currentPath}-${refStr}`,
+          severity: 'error',
+          message: `Unresolved reference "${refStr}" at ${currentPath || 'root'}.`,
+          path: currentPath,
+          line,
+          source: 'linter',
+        });
+      }
+    }
+  }
+
   for (const [key, value] of Object.entries(obj)) {
-    findBrokenRefsInDoc(value, rawText, diagnostics, `${currentPath}/${key}`);
+    findBrokenRefsInDoc(value, rootDoc, rawText, diagnostics, `${currentPath}/${key}`);
   }
 }
 
