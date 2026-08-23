@@ -146,3 +146,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Opening the endpoint details panel on compact or medium viewports alongside the open code editor compressed the endpoint list into an illegibly narrow width.
 - **Root Cause**: Hardcoded 50/50 split width on all screen sizes in `App.tsx`.
 - **Resolution**: Implemented responsive breakpoint layout (`hidden lg:block lg:w-1/2` and `w-full lg:w-1/2`) to present full-width detail view with close button on mobile and tablet screens while retaining side-by-side view on large screens.
+
+### Fix 27: Comprehensive HTTP Method Filtering in Endpoint Explorer
+- **Issue**: Endpoint explorer filter pill bar omitted `OPTIONS` and `HEAD` methods, preventing users from filtering specifically for those operation types.
+- **Root Cause**: Truncated methods array constant in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Added `options` and `head` to the method filter array with corresponding color tokens and badges.

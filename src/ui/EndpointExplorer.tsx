@@ -78,7 +78,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
     setCollapsedTags((prev) => ({ ...prev, [tag]: !prev[tag] }));
   };
 
-  const methodsList: (HttpMethod | 'all')[] = ['all', 'get', 'post', 'put', 'delete', 'patch'];
+  const methodsList: (HttpMethod | 'all')[] = ['all', 'get', 'post', 'put', 'patch', 'delete', 'options', 'head'];
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-150">
