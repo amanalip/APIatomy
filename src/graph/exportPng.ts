@@ -14,9 +14,14 @@ export async function exportGraphToPng(
       quality: 0.95,
       pixelRatio: 2,
       filter: (node) => {
-        // Exclude UI controls panel from snapshot
-        if (node instanceof HTMLElement && node.classList.contains('react-flow__panel')) {
-          return false;
+        // Exclude UI controls panel, toolbar, and minimap from snapshot if desired
+        if (node instanceof HTMLElement) {
+          if (
+            node.classList.contains('react-flow__panel') ||
+            node.getAttribute('data-export-ignore') === 'true'
+          ) {
+            return false;
+          }
         }
         return true;
       },

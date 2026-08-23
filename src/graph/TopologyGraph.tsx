@@ -142,7 +142,7 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
   return (
     <div id="api-topology-canvas" className="w-full h-full relative bg-slate-100 dark:bg-slate-950 transition-colors duration-150">
       {/* Top Toolbar overlay */}
-      <div className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-2 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl shadow-lg">
+      <div data-export-ignore="true" className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-2 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl shadow-lg">
         {/* Search */}
         <div className="relative flex items-center">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
