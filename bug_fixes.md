@@ -181,3 +181,28 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: When filtering the topology graph by node type (`endpoints` or `schemas`), connecting edges remained rendered on the canvas across hidden nodes.
 - **Root Cause**: Edge state was not synchronized with `hidden` node ID changes in `src/graph/TopologyGraph.tsx`.
 - **Resolution**: Added edge visibility synchronization to hide any edges whose source or target nodes are hidden by filter conditions.
+
+### Fix 34: OAuth2 Flow Name Mapping and Root Security Conversion in Swagger Converter
+- **Issue**: Converting Swagger 2.0 OAuth2 security definitions with `flow: 'application'` or `flow: 'accessCode'` mapped to invalid flow names in OpenAPI 3.0, and root-level security requirements were omitted.
+- **Root Cause**: Missing translation of `application` to `clientCredentials` and `accessCode` to `authorizationCode`, and missing `openapi.security` copy in `src/parser/swaggerConverter.ts`.
+- **Resolution**: Mapped Swagger 2.0 OAuth2 flow types to their OpenAPI 3 equivalents (`clientCredentials`, `authorizationCode`) and forwarded root `security` arrays.
+
+### Fix 35: Path Slash Format Validation in Linter
+- **Issue**: OpenAPI specification paths not starting with a leading slash `/` were accepted silently without surfacing validation feedback.
+- **Root Cause**: Missing check on raw path strings in `src/parser/validator.ts`.
+- **Resolution**: Added validation rule emitting a warning diagnostic for path entries lacking a leading slash.
+
+### Fix 36: Deprecated Endpoint Pill and Strikethrough Display
+- **Issue**: Endpoints flagged as deprecated did not display clear visual deprecation tags or strikethrough styling in the Explorer sidebar.
+- **Root Cause**: Subtle indicator styling in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Added a high-contrast `Deprecated` badge and strikethrough styling on deprecated operation paths.
+
+### Fix 37: Array Mock Generation Conformance to `minItems` Constraint
+- **Issue**: Array schemas defining a `minItems` constraint (e.g. `minItems: 3`) only generated a 1-element array in mock sample JSON.
+- **Root Cause**: Hardcoded 1-element return in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Updated `generateMockData` to produce `Math.min(schema.minItems, 5)` array elements.
+
+### Fix 38: Top-Level Security Requirement Inheritance in Endpoints Normalizer
+- **Issue**: Operations that did not explicitly define an operation-level `security` array lost their top-level security requirements and appeared unauthenticated.
+- **Root Cause**: Endpoint parser in `src/parser/normalizer.ts` only evaluated `op.security` without falling back to `doc.security`.
+- **Resolution**: Configured endpoint normalizer to inherit global document security requirements when operation-level security is not specified.

@@ -10,6 +10,17 @@ host: api.example.com
 basePath: /v1
 schemes:
   - https
+securityDefinitions:
+  OAuth2App:
+    type: oauth2
+    flow: application
+    tokenUrl: https://api.example.com/oauth/token
+    scopes:
+      write:orders: Modify orders
+  BasicAuth:
+    type: basic
+security:
+  - BasicAuth: []
 parameters:
   limitParam:
     name: limit
@@ -37,6 +48,7 @@ paths:
       consumes:
         - application/json
       parameters:
+        - in: body
         - in: body
           name: user
           required: true
@@ -97,5 +109,17 @@ describe('Swagger 2.0 Converter', () => {
     expect(uploadEndpoint).toBeDefined();
     expect(uploadEndpoint?.requestBody).toBeDefined();
     expect(uploadEndpoint?.requestBody?.content[0]?.contentType).toBe('multipart/form-data');
+
+    // Security scheme conversion
+    expect(spec.securitySchemes['BasicAuth']).toBeDefined();
+    expect(spec.securitySchemes['BasicAuth'].type).toBe('http');
+    expect(spec.securitySchemes['BasicAuth'].scheme).toBe('basic');
+
+    expect(spec.securitySchemes['OAuth2App']).toBeDefined();
+    expect(spec.securitySchemes['OAuth2App'].flows?.['clientCredentials']).toBeDefined();
+
+    // Inherited root security requirement
+    expect(getEndpoint?.security.length).toBe(1);
+    expect(getEndpoint?.security[0].name).toBe('BasicAuth');
   });
 });

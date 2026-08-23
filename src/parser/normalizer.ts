@@ -282,10 +282,11 @@ export function normalizeSpec(
         }
       }
 
-      // Security
+      // Security: Inherit root document security requirements when operation-level security is omitted
       const security: SecurityRequirementModel[] = [];
-      if (Array.isArray(op.security)) {
-        for (const secReq of op.security) {
+      const effectiveSec = Array.isArray(op.security) ? op.security : Array.isArray(doc.security) ? doc.security : undefined;
+      if (Array.isArray(effectiveSec)) {
+        for (const secReq of effectiveSec) {
           if (typeof secReq === 'object' && secReq !== null) {
             for (const [secKey, scopes] of Object.entries(secReq as Record<string, unknown>)) {
               security.push({

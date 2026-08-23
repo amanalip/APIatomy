@@ -443,10 +443,11 @@ function generateMockData(schema: SchemaModel, allSchemas: Record<string, Schema
   }
 
   if (schema.type === 'array' || schema.items) {
+    const count = typeof schema.minItems === 'number' && schema.minItems > 0 ? Math.min(schema.minItems, 5) : 1;
     const itemData = schema.items
       ? generateMockData(schema.items, allSchemas, depth + 1)
       : 'item';
-    return [itemData];
+    return Array.from({ length: count }, () => itemData);
   }
 
   if (schema.properties) {

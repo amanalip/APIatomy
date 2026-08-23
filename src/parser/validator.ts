@@ -15,6 +15,23 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
   // Track all schemas referenced anywhere in endpoints or other schemas
   const referencedSchemas = new Set<string>();
 
+  // Check path formatting in rawDoc
+  if (rawDoc.paths && typeof rawDoc.paths === 'object') {
+    for (const pKey of Object.keys(rawDoc.paths as Record<string, unknown>)) {
+      if (!pKey.startsWith('/')) {
+        const line = findLineForPattern(rawText, pKey);
+        diagnostics.push({
+          id: `invalid-path-slash-${pKey}`,
+          severity: 'warning',
+          message: `Path "${pKey}" must begin with a forward slash "/".`,
+          path: `/paths/${pKey}`,
+          line,
+          source: 'schema',
+        });
+      }
+    }
+  }
+
   for (const ep of endpoints) {
     // Collect consumed and produced refs
     for (const ref of ep.consumedSchemaRefs) referencedSchemas.add(ref);

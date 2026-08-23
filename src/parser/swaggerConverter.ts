@@ -12,6 +12,10 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
     externalDocs: swagger.externalDocs,
   };
 
+  if (Array.isArray(swagger.security)) {
+    openapi.security = swagger.security;
+  }
+
   // Convert host, basePath, schemes to servers
   const servers: Array<{ url: string; description?: string }> = [];
   const host = typeof swagger.host === 'string' ? swagger.host : '';
@@ -86,18 +90,25 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
             description: sd.description,
           };
         } else if (sd.type === 'oauth2') {
+          const flowType =
+            sd.flow === 'accessCode'
+              ? 'authorizationCode'
+              : sd.flow === 'application'
+              ? 'clientCredentials'
+              : typeof sd.flow === 'string'
+              ? sd.flow
+              : 'implicit';
+
           secSchemes[key] = {
             type: 'oauth2',
             description: sd.description,
-            flows: sd.flow
-              ? {
-                  [sd.flow === 'accessCode' ? 'authorizationCode' : (sd.flow as string)]: {
-                    authorizationUrl: sd.authorizationUrl,
-                    tokenUrl: sd.tokenUrl,
-                    scopes: sd.scopes || {},
-                  },
-                }
-              : {},
+            flows: {
+              [flowType]: {
+                authorizationUrl: sd.authorizationUrl,
+                tokenUrl: sd.tokenUrl,
+                scopes: sd.scopes || {},
+              },
+            },
           };
         } else {
           secSchemes[key] = secDef;

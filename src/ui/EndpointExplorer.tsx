@@ -192,14 +192,16 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                               {methodConfig.label}
                             </span>
                             <span
-                              className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate flex-1"
+                              className={`font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate flex-1 ${
+                                ep.deprecated ? 'line-through opacity-60' : ''
+                              }`}
                               title={ep.path}
                             >
                               {ep.path}
                             </span>
                             {ep.deprecated && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
-                                dep
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 font-bold border border-rose-200 dark:border-rose-500/30 uppercase tracking-wider">
+                                Deprecated
                               </span>
                             )}
                           </div>

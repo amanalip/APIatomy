@@ -120,6 +120,55 @@ components:
     expect(ep.responses[0].content[0].contentType).toBe('application/json');
   });
 
+  it('warns when paths do not begin with a leading forward slash', () => {
+    const invalidPathSpec = `
+openapi: 3.0.0
+info:
+  title: Invalid Path Spec
+  version: 1.0.0
+paths:
+  invalid_path:
+    get:
+      summary: Get without slash
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(invalidPathSpec);
+    const pathDiag = parsed.diagnostics.find((d) => d.id.startsWith('invalid-path-slash-'));
+    expect(pathDiag).toBeDefined();
+    expect(pathDiag?.severity).toBe('warning');
+  });
+
+  it('inherits root-level security requirements in operations', () => {
+    const rootSecSpec = `
+openapi: 3.0.0
+info:
+  title: Root Sec Spec
+  version: 1.0.0
+security:
+  - BearerAuth: []
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+paths:
+  /secure:
+    get:
+      summary: Secure endpoint
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(rootSecSpec);
+    expect(parsed.endpoints.length).toBe(1);
+    expect(parsed.endpoints[0].security.length).toBe(1);
+    expect(parsed.endpoints[0].security[0].name).toBe('BearerAuth');
+  });
+
   it('handles minimal spec cleanly', () => {
     const spec = parseApiSpec(MINIMAL_SPEC);
 
