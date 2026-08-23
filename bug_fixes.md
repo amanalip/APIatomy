@@ -166,3 +166,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Clicking general root-level diagnostics (e.g. document empty or root non-object) that lacked line numbers had no effect when the editor pane was closed.
 - **Root Cause**: Diagnostic click handler required `diag.line` to be defined before opening the editor.
 - **Resolution**: Updated `handleSelectDiagnostic` in `src/App.tsx` to unconditionally open the editor and navigate to line 1 as a fallback.
+
+### Fix 31: Response Body Content-Type Badges and Raw Example Rendering
+- **Issue**: Non-JSON responses or empty responses in the Endpoint Inspector lacked clear content-type badges and example previews.
+- **Root Cause**: Conditional rendering in `src/ui/EndpointDetails.tsx` only supported objects with nested schemas.
+- **Resolution**: Added explicit content-type badges, raw example code blocks, and clear empty-body notices.

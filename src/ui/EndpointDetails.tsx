@@ -328,22 +328,33 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                             </div>
                           )}
 
+                          {resp.content.length === 0 && (!resp.headers || Object.keys(resp.headers).length === 0) && (
+                            <div className="text-xs text-slate-500 italic">
+                              No response body or headers specified.
+                            </div>
+                          )}
+
                           {resp.content.map((c, idx) => (
                             <div key={idx} className="space-y-2">
-                              {c.schema?.refTarget && (
-                                <button
-                                  onClick={() => {
-                                    const target = schemas[c.schema!.refTarget!];
-                                    if (target) onSelectSchema?.(c.schema!.refTarget!, target);
-                                  }}
-                                  className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-mono"
-                                >
-                                  <span>Schema: {c.schema.refTarget}</span>
-                                  <ArrowRight className="w-3 h-3" />
-                                </button>
-                              )}
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-[11px] font-mono font-medium">
+                                  {c.contentType}
+                                </span>
+                                {c.schema?.refTarget && (
+                                  <button
+                                    onClick={() => {
+                                      const target = schemas[c.schema!.refTarget!];
+                                      if (target) onSelectSchema?.(c.schema!.refTarget!, target);
+                                    }}
+                                    className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-mono"
+                                  >
+                                    <span>Schema: {c.schema.refTarget}</span>
+                                    <ArrowRight className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
 
-                              {c.schema && (
+                              {c.schema ? (
                                 <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
                                   <SchemaPropertyTree
                                     schema={c.schema}
@@ -351,7 +362,11 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                                     onSelectSchema={onSelectSchema}
                                   />
                                 </div>
-                              )}
+                              ) : c.example ? (
+                                <pre className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
+                                  <code>{typeof c.example === 'object' ? JSON.stringify(c.example, null, 2) : String(c.example)}</code>
+                                </pre>
+                              ) : null}
                             </div>
                           ))}
                         </div>
