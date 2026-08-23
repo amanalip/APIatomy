@@ -35,6 +35,8 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
   // Convert definitions to components.schemas
   const components: Record<string, unknown> = {
     schemas: {},
+    parameters: {},
+    responses: {},
     securitySchemes: {},
   };
 
@@ -44,6 +46,24 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
       schemas[key] = rewriteSwaggerRefs(schema);
     }
     components.schemas = schemas;
+  }
+
+  // Convert global parameters
+  if (swagger.parameters && typeof swagger.parameters === 'object') {
+    const params: Record<string, unknown> = {};
+    for (const [key, param] of Object.entries(swagger.parameters as Record<string, unknown>)) {
+      params[key] = rewriteSwaggerRefs(param);
+    }
+    components.parameters = params;
+  }
+
+  // Convert global responses
+  if (swagger.responses && typeof swagger.responses === 'object') {
+    const resps: Record<string, unknown> = {};
+    for (const [key, resp] of Object.entries(swagger.responses as Record<string, unknown>)) {
+      resps[key] = rewriteSwaggerRefs(resp);
+    }
+    components.responses = resps;
   }
 
   // Convert securityDefinitions to components.securitySchemes
@@ -259,6 +279,12 @@ function rewriteSwaggerRefs(obj: unknown): unknown {
   if (typeof obj === 'string') {
     if (obj.startsWith('#/definitions/')) {
       return obj.replace('#/definitions/', '#/components/schemas/');
+    }
+    if (obj.startsWith('#/parameters/')) {
+      return obj.replace('#/parameters/', '#/components/parameters/');
+    }
+    if (obj.startsWith('#/responses/')) {
+      return obj.replace('#/responses/', '#/components/responses/');
     }
     return obj;
   }

@@ -9,7 +9,12 @@ export interface RefResolutionContext {
 export function extractRefTargetName(ref: string): string {
   if (!ref) return '';
   const parts = ref.split('/');
-  return decodeURIComponent(parts[parts.length - 1] || ref);
+  const rawTarget = parts[parts.length - 1] || ref;
+  try {
+    return decodeURIComponent(rawTarget.replace(/~1/g, '/').replace(/~0/g, '~'));
+  } catch {
+    return rawTarget.replace(/~1/g, '/').replace(/~0/g, '~');
+  }
 }
 
 export function resolveJsonPointer(doc: Record<string, unknown>, pointer: string): unknown {
@@ -20,7 +25,14 @@ export function resolveJsonPointer(doc: Record<string, unknown>, pointer: string
   const parts = pointer
     .slice(2)
     .split('/')
-    .map((p) => p.replace(/~1/g, '/').replace(/~0/g, '~'));
+    .map((p) => {
+      const unescaped = p.replace(/~1/g, '/').replace(/~0/g, '~');
+      try {
+        return decodeURIComponent(unescaped);
+      } catch {
+        return unescaped;
+      }
+    });
 
   let current: unknown = doc;
   for (const part of parts) {

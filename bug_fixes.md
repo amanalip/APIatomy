@@ -71,3 +71,13 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: If the active schema was removed or renamed during live spec edits, the viewer could get stuck in an unselected state.
 - **Root Cause**: Missing synchronization check against the available schemas map.
 - **Resolution**: Added automatic fallback to the first available schema key in `src/ui/SchemaViewer.tsx` when the previously active schema no longer exists.
+
+### Fix 12: RFC 6901 Escaped and URI-Encoded JSON Pointer Resolution
+- **Issue**: References targeting JSON Pointer paths with escaped characters (`~1` for `/`, `~0` for `~`) or URI percent-encoded segments (e.g. `#/paths/~1users~1%7Bid%7D` or spaces in schema names) failed resolution.
+- **Root Cause**: Raw string lookup without unescaping and URI decoding.
+- **Resolution**: Enhanced `resolveJsonPointer` and `extractRefTargetName` in `src/parser/refResolver.ts` to decode RFC 6901 tokens and URI components safely.
+
+### Fix 13: Swagger 2.0 Global Parameters and Responses Conversion
+- **Issue**: Swagger 2.0 specs defining top-level `parameters` or `responses` dictionaries did not migrate them into OpenAPI 3.0 `components.parameters` and `components.responses`.
+- **Root Cause**: Conversion routine only mapped `definitions` and `securityDefinitions`.
+- **Resolution**: Updated `src/parser/swaggerConverter.ts` to convert top-level `parameters` and `responses`, rewriting internal `$ref` pointers accordingly.

@@ -10,6 +10,15 @@ host: api.example.com
 basePath: /v1
 schemes:
   - https
+parameters:
+  limitParam:
+    name: limit
+    in: query
+    type: integer
+    default: 20
+responses:
+  NotFound:
+    description: Entity not found
 paths:
   /users:
     get:
@@ -36,6 +45,19 @@ paths:
       responses:
         200:
           description: User created
+  /upload:
+    post:
+      summary: Upload file
+      consumes:
+        - multipart/form-data
+      parameters:
+        - in: formData
+          name: file
+          type: file
+          required: true
+      responses:
+        200:
+          description: Upload successful
 definitions:
   User:
     type: object
@@ -69,5 +91,11 @@ describe('Swagger 2.0 Converter', () => {
     const getEndpoint = spec.endpoints.find((e) => e.path === '/users' && e.method === 'get');
     expect(getEndpoint).toBeDefined();
     expect(getEndpoint?.producedSchemaRefs).toContain('User');
+
+    // FormData converted to multipart requestBody
+    const uploadEndpoint = spec.endpoints.find((e) => e.path === '/upload' && e.method === 'post');
+    expect(uploadEndpoint).toBeDefined();
+    expect(uploadEndpoint?.requestBody).toBeDefined();
+    expect(uploadEndpoint?.requestBody?.content[0]?.contentType).toBe('multipart/form-data');
   });
 });
