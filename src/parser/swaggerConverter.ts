@@ -3,7 +3,10 @@
 export function isSwagger2(doc: Record<string, unknown>): boolean {
   const v = doc.swagger;
   if (typeof v === 'number') return v === 2 || v === 2.0;
-  if (typeof v === 'string') return v.trim().startsWith('2.');
+  if (typeof v === 'string') {
+    const s = v.trim();
+    return s === '2' || s.startsWith('2.');
+  }
   return false;
 }
 

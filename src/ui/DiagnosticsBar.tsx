@@ -50,10 +50,13 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  // Reset filter when diagnostics change drastically (e.g., spec reload)
+  // Reset filter when diagnostics change drastically (e.g., spec reload) or active filter yields empty results
   React.useEffect(() => {
     if (diagnostics.length === 0) setActiveFilter('all');
-  }, [diagnostics.length]);
+    else if (activeFilter !== 'all' && diagnostics.filter((d) => d.severity === activeFilter).length === 0) {
+      setActiveFilter('all');
+    }
+  }, [diagnostics, activeFilter]);
 
   return (
     <div className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 z-20 transition-colors duration-150 shadow-lg">

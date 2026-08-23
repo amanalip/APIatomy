@@ -53,9 +53,9 @@ export function generateMockData(
     return generateMockData(schema.anyOf[0], allSchemas, depth + 1);
   }
 
-  if ((schema as any).not) {
+  if (schema.not) {
     // For not schemas, generate a placeholder that intentionally violates the negated type
-    const notSchema = (schema as any).not as SchemaModel;
+    const notSchema = schema.not as SchemaModel;
     const notType = Array.isArray(notSchema.type) ? (notSchema.type as string[]).find((v) => v !== 'null') : (notSchema.type as string | undefined);
     if (notType === 'string') return 12345;
     if (notType === 'number' || notType === 'integer') return 'not-a-number';

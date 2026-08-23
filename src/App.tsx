@@ -30,13 +30,28 @@ export function App() {
 
   const editorPaneRef = useRef<EditorPaneRef>(null);
 
-  // Parse OpenAPI spec from text with error boundary
+  // Parse OpenAPI spec from text with error boundary + diagnostics surfacing
   const spec: ApiSpecModel = useMemo(() => {
     try {
       return parseApiSpec(rawText);
     } catch (err) {
       console.error('parseApiSpec crashed', err);
-      return parseApiSpec('openapi: 3.0.0\ninfo:\n  title: Parse Error\n  version: 0.0.0\npaths: {}');
+      const fallback = parseApiSpec('openapi: 3.0.0\ninfo:\n  title: Parse Error\n  version: 0.0.0\npaths: {}');
+      const msg = err instanceof Error ? err.message : String(err);
+      return {
+        ...fallback,
+        diagnostics: [
+          {
+            id: 'parse-crash',
+            severity: 'error',
+            message: `Critical parser crash: ${msg}`,
+            line: 1,
+            source: 'syntax',
+          },
+          ...fallback.diagnostics,
+        ],
+        rawText,
+      };
     }
   }, [rawText]);
 
@@ -135,7 +150,7 @@ export function App() {
       />
 
       {/* Main Split-Pane Workspace */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div id="main-content" className="flex-1 flex overflow-hidden relative">
         {/* Left: Code Editor Pane */}
         {isEditorOpen && (
           <div

@@ -201,35 +201,26 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
           )}
         </div>
 
-        {/* Filter buttons */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/60 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/60 text-xs">
+        {/* Filter buttons — UX: aria-pressed + counts */}
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/60 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700/60 text-xs" role="group" aria-label="Filter graph by node type">
           <button
+            aria-pressed={filterType === 'all'}
             onClick={() => setFilterType('all')}
-            className={`px-2 py-0.5 rounded ${
-              filterType === 'all'
-                ? 'bg-blue-600 text-white font-medium shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
+            className={`px-2 py-0.5 rounded transition ${filterType === 'all' ? 'bg-blue-600 text-white font-medium shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
           >
             All ({spec.endpoints.length + Object.keys(spec.schemas).length})
           </button>
           <button
+            aria-pressed={filterType === 'endpoints'}
             onClick={() => setFilterType('endpoints')}
-            className={`px-2 py-0.5 rounded ${
-              filterType === 'endpoints'
-                ? 'bg-blue-600 text-white font-medium shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
+            className={`px-2 py-0.5 rounded transition ${filterType === 'endpoints' ? 'bg-blue-600 text-white font-medium shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
           >
             Endpoints ({spec.endpoints.length})
           </button>
           <button
+            aria-pressed={filterType === 'schemas'}
             onClick={() => setFilterType('schemas')}
-            className={`px-2 py-0.5 rounded ${
-              filterType === 'schemas'
-                ? 'bg-blue-600 text-white font-medium shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-            }`}
+            className={`px-2 py-0.5 rounded transition ${filterType === 'schemas' ? 'bg-blue-600 text-white font-medium shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'}`}
           >
             Schemas ({Object.keys(spec.schemas).length})
           </button>
@@ -287,11 +278,24 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
         </button>
       </div>
 
-      {nodes.length === 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 text-slate-400 dark:text-slate-500">
+      {initialNodes.length === 0 && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 text-slate-400 dark:text-slate-500 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-sm">
           <Network className="w-12 h-12 mb-2 stroke-[1.5] text-slate-400" />
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No Graph Nodes Available</p>
-          <p className="text-xs text-slate-500 mt-0.5">Add endpoints or schemas to the spec editor to render the topology graph.</p>
+          <p className="text-xs text-slate-500 mt-0.5 text-center px-4">Add endpoints or schemas to the spec editor to render the topology graph.</p>
+          {searchQuery || filterType !== 'all' || selectedTag !== 'all' ? (
+            <button
+              onClick={() => { setSearchQuery(''); setFilterType('all'); setSelectedTag('all'); }}
+              className="mt-3 px-3 py-1 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition"
+            >
+              Clear Graph Filters
+            </button>
+          ) : null}
+        </div>
+      )}
+      {initialNodes.length > 0 && nodes.filter((n) => !n.hidden).length === 0 && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-10 bg-amber-50 dark:bg-amber-950/90 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs px-3 py-2 rounded-lg shadow">
+          No nodes match current filters — <button onClick={() => { setSearchQuery(''); setFilterType('all'); setSelectedTag('all'); }} className="underline font-semibold">Clear filters</button>
         </div>
       )}
 

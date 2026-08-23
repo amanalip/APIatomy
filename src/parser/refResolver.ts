@@ -178,7 +178,7 @@ export function resolveSchema(
     model.items = resolveSchema(s.items, context);
   }
 
-  // Composition: allOf, oneOf, anyOf, not
+  // Composition: allOf, oneOf, anyOf, not — typed handling
   if (Array.isArray(s.allOf)) {
     model.allOf = s.allOf.map((sub) => resolveSchema(sub, context));
   }

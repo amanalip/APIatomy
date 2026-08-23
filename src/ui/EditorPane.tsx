@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
-import { EditorState, Compartment } from '@codemirror/state';
+import { EditorState, Compartment, Transaction } from '@codemirror/state';
 import { EditorView, lineNumbers, highlightActiveLine, highlightActiveLineGutter, keymap } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { yaml } from '@codemirror/lang-yaml';
@@ -53,6 +53,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
         if (view.state.doc.toString() !== text) {
           view.dispatch({
             changes: { from: 0, to: view.state.doc.length, insert: text },
+            annotations: [Transaction.userEvent.of('apiatomy-sync')],
           });
         }
       },
@@ -67,6 +68,11 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
 
       const updateListener = EditorView.updateListener.of((update) => {
         if (update.docChanged) {
+          // Suppress echo when change originated from external sync (annotation)
+          const isExternal = update.transactions.some((tr) =>
+            tr.annotation(Transaction.userEvent) === 'apiatomy-sync'
+          );
+          if (isExternal) return;
           const docString = update.state.doc.toString();
           if (debounceTimerRef.current) {
             window.clearTimeout(debounceTimerRef.current);
@@ -125,13 +131,14 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
       }
     }, [theme]);
 
-    // Sync external value changes
+    // Sync external value changes (annotated to suppress onChange echo)
     useEffect(() => {
       if (editorViewRef.current) {
         const currentDoc = editorViewRef.current.state.doc.toString();
         if (currentDoc !== value) {
           editorViewRef.current.dispatch({
             changes: { from: 0, to: currentDoc.length, insert: value },
+            annotations: [Transaction.userEvent.of('apiatomy-sync')],
           });
         }
       }
@@ -150,6 +157,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
           if (text && editorViewRef.current) {
             editorViewRef.current.dispatch({
               changes: { from: 0, to: editorViewRef.current.state.doc.length, insert: text },
+              annotations: [Transaction.userEvent.of('apiatomy-sync')],
             });
             onChange(text);
           }

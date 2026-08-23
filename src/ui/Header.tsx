@@ -78,7 +78,12 @@ export const Header: React.FC<HeaderProps> = ({
   const handleShare = async () => {
     const hash = compressSpecToHash(spec.rawText);
     const fullUrl = `${window.location.origin}${window.location.pathname}${hash}`;
-    window.location.hash = hash;
+    // Use replaceState to avoid polluting browser history (back button)
+    try {
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
+    } catch {
+      window.location.hash = hash;
+    }
 
     const success = await copyTextToClipboard(fullUrl);
     if (success) {
@@ -111,6 +116,9 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="h-14 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/90 backdrop-blur-md px-4 flex items-center justify-between text-slate-800 dark:text-slate-100 shrink-0 z-30 select-none transition-colors duration-150">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-blue-600 text-white px-3 py-1 rounded text-xs z-50">
+        Skip to content
+      </a>
       {/* Brand & Spec Info */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
@@ -293,7 +301,9 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition"
+          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          aria-pressed={theme === 'dark'}
+          className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition focus-visible:ring-2 focus-visible:ring-blue-500"
           title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         >
           {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}

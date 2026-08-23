@@ -148,7 +148,13 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {schemaNames.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs">No schemas found</div>
+            <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs space-y-2">
+              <div className="mx-auto w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+                <Box className="w-4 h-4 text-slate-400" />
+              </div>
+              <div>No schemas found</div>
+              {searchQuery && (<button onClick={() => setSearchQuery('')} className="text-blue-600 dark:text-blue-400 hover:underline text-[11px]">Clear search</button>)}
+            </div>
           ) : (
             schemaNames.map((name) => {
               const isSelected = activeSchemaName === name;

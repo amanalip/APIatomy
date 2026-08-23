@@ -95,7 +95,7 @@ export function buildCurlCommand(
   selectedServerUrl: string,
   activeServer?: ServerModel
 ): string {
-  let rawUrl = (selectedServerUrl || 'https://api.example.com').replace(/\/$/, '');
+  let rawUrl = (selectedServerUrl || 'https://api.example.com').replace(/\/+$/, '');
 
   if (activeServer?.variables) {
     for (const [varName, varDef] of Object.entries(activeServer.variables)) {
@@ -233,9 +233,11 @@ export function buildCurlCommand(
         lines.push(`  -H "Content-Type: ${primaryMedia.contentType}"`);
       }
       if (primaryMedia.contentType.includes('json')) {
-        const sampleBody = primaryMedia.example
+        const rawBody = primaryMedia.example
           ? JSON.stringify(primaryMedia.example, null, 2)
           : generateSampleJsonFromSchema(primaryMedia.schema);
+        // Escape single quotes for shell: ' -> '\'' (close, escaped, reopen)
+        const sampleBody = rawBody.replace(/'/g, `'\\''`);
         lines.push(`  -d '${sampleBody}'`);
       } else if (isFormUrlEncoded) {
         if (primaryMedia.schema?.properties) {

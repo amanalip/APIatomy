@@ -967,4 +967,71 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 ### Fix 201: UX/UI — Topology Graph Clear Search + Tag Count + Keyboard Hints
 - **Improvement**: TopologyGraph search now has Escape + ✕ clear, Explorer tag dropdown shows `(count)`, both main searches display `/` kbd badge with `aria-label`, improving discoverability (WCAG) and consistency with header `/` shortcut.
 
+### Fix 202: Validator Info Object Array Bypass
+- **Issue**: Specifications with `info: []` (array) incorrectly passed the `typeof object` check and were not flagged as missing `info` object, causing downstream `info.title` access on array to emit misleading `missing-info-title` instead of `missing-info-object`.
+- **Root Cause**: Check `typeof rawDoc.info !== 'object'` returns false for arrays in `src/parser/validator.ts:19`.
+- **Resolution**: Added `|| Array.isArray(rawDoc.info)` to the missing-info guard to correctly reject arrays and primitives.
+
+### Fix 203: cURL Server URL Multiple Trailing Slashes
+- **Issue**: Server URLs with multiple trailing slashes (`https://api.example.com///`) produced malformed request URLs containing `//` after concatenation (`https://api.example.com//pets`) because first normalization used `replace(/\/$/, '')` (single slash) in `src/ui/CurlGenerator.tsx:98`.
+- **Root Cause**: Inconsistent regex between `rawUrl` init (`/\/$/`) and later `normalizedPath` join (`/\/+$/`).
+- **Resolution**: Unified to `replace(/\/+$/, '')` for both stages, ensuring `https://api.example.com///` → `https://api.example.com/pets`.
+
+### Fix 204: cURL Single-Quote Shell Injection in JSON Body
+- **Issue**: Generated `curl -d '...'` used raw JSON string without escaping single quotes; a schema example containing `it's` broke shell quoting (`'{"note":"it's"}'` → premature close) in `src/ui/CurlGenerator.tsx:235`.
+- **Root Cause**: No escaping for `'` inside single-quoted shell argument.
+- **Resolution**: Replace `'` with `'\''` via `rawBody.replace(/'/g, "'\\''")` (close, escaped quote, reopen) before emitting `-d` line.
+
+### Fix 205: EditorPane External Sync Echo Duplicate onChange
+- **Issue**: When parent loaded a sample spec via `setContent` or `value` prop sync, `EditorPane` dispatched a document change which then triggered `updateListener` debounce → `onChange` → parent `setRawText` → re-parse, causing redundant parse cycles and potential infinite loop on rapid sample switches (`src/ui/EditorPane.tsx:68`).
+- **Root Cause**: `updateListener` did not distinguish user-typed changes from programmatic sync dispatches.
+- **Resolution**: Imported `Transaction` from `@codemirror/state`, annotated all external sync dispatches with `Transaction.userEvent.of('apiatomy-sync')`, and added `isExternal` check in `updateListener` to suppress echo (`update.transactions.some(tr => tr.annotation(Transaction.userEvent)==='apiatomy-sync')`).
+
+### Fix 206: Header Share History Pollution
+- **Issue**: Clicking Share did `window.location.hash = hash`, pushing a new browser history entry per share; back button cycled through previous shared hashes instead of prior pages (`src/ui/Header.tsx:78`).
+- **Root Cause**: Direct hash assignment always creates history entry.
+- **Resolution**: Use `history.replaceState(null, '', pathname+search+hash)` with try/catch fallback to `window.location.hash`, preserving share URL without polluting history.
+
+### Fix 207: Swagger `isSwagger2` Missing Bare `2` Version String
+- **Issue**: Specs declaring `swagger: "2"` (without dot) were not recognized as Swagger 2.0 and thus bypassed `convertSwagger2ToOpenApi3`, rendering empty paths and false missing-paths errors (`src/parser/swaggerConverter.ts:5`).
+- **Root Cause**: Check `s.trim().startsWith('2.')` missed equal `"2"`.
+- **Resolution**: Updated to `s === '2' || s.startsWith('2.')` handling numeric and string variants (`2`, `2.0`, `2.0.0`, `2.x`).
+
+### Fix 208: Topology Graph Empty State Incorrect for Filtered View
+- **Issue**: Blank canvas check used `nodes.length === 0` from state which retains filtered hidden nodes (`hidden: true`) rather than removing them, so an empty spec showed no overlay after filtering, and a filtered view showing 0 visible nodes gave no guidance (`src/graph/TopologyGraph.tsx:290`).
+- **Root Cause**: Derived empty check from post-filter `nodes` state instead of source `initialNodes`.
+- **Resolution**: Primary overlay now checks `initialNodes.length === 0` with backdrop blur and clear-filters action; secondary amber banner shows when `initialNodes.length>0 && visibleNodes===0` suggesting filter clear.
+
+### Fix 209: URL Hash Raw Text Fallback Missing `paths:` Keyword
+- **Issue**: Shared links containing plain YAML with only `paths:` (no `openapi`/`swagger` keyword) like `paths:\n  /test:...` failed the `lower.includes('openapi')` check and returned `null`, breaking decompression of minimal specs (`src/share/urlHash.ts:48`).
+- **Root Cause**: Fallback only checked for `openapi`/`swagger` and `{` prefixes.
+- **Resolution**: Extended check to include `lower.includes('"paths"')`, `lower.includes('paths:')`, `trimmedLower.startsWith('openapi')/swagger`, and second raw fallback without decode, ensuring minimal specs decompress.
+
+### Fix 210: DiagnosticsBar Filter Showing Empty Instead of Success After Spec Reload
+- **Issue**: Selecting `Error` filter then loading a clean spec (0 errors, 1 info) left drawer on `Error` showing “No entries match filter” instead of success checkmark, because `useEffect` only reset on `diagnostics.length===0` (`src/ui/DiagnosticsBar.tsx:43`).
+- **Root Cause**: Filter not auto-reset when active filter has 0 matches but overall diagnostics non-empty.
+- **Resolution**: Enhanced effect to `if (len===0) setAll else if (active!=='all' && filteredCount===0) setAll` with deps `[diagnostics, activeFilter]`, always showing relevant results.
+
+### Fix 211: App Parse Crash Silent Fallback Without Diagnostics
+- **Issue**: Critical `parseApiSpec` throw (e.g., malformed circular schema causing `RangeError`) was caught, logged to console, but fallback spec was returned with empty diagnostics, giving user a blank “Parse Error” spec with no visible error explanation (`src/App.tsx:34`).
+- **Root Cause**: Catch block discarded error message.
+- **Resolution**: Catch now prepends a `parse-crash` error diagnostic (`Critical parser crash: ${msg}`) to fallback diagnostics and preserves `rawText`, surfacing crash reason in DiagnosticsBar.
+
+### Fix 212: Code Quality — Typed `not` Handling and Utility Extraction
+- **Improvement**: Replaced all `(schema as any).not` casts with typed `schema.not` in `src/model/mockGenerator.ts:56`, `src/parser/validator.ts:371,499`, documented via comment. Added `src/utils/typeGuards.ts` with `isRecord`/`isString` reusable guards for future refactoring, improving strictness and reducing `any` surface. File counts as code quality improvement.
+
+### Fix 213: Code Quality — Comprehensive Test Coverage Expansion (15 Tests)
+- **Improvement**: Added `tests/qualityBatch4.test.ts` with 15 tests verifying (1) array info rejection, (2) multiple slash normalization, (3) single-quote escaping, (4) swagger `2` variant, (5) paths fallback decompression, (6) hash + extra params, (7) server enum fallback, (8) invalid slash warning, (9) mock `not` violating placeholder, (10) array clone isolation, (11) parse-crash absence smoke, (12) pipeDelimited encoding, (13) uuid header fallback, (14) swagger rewrite example preservation, (15) unused-schema Orphan detection — raising coverage from 114 to 129 tests.
+
+### Fix 214: UX/UI — Accessible Skip Link and Filter Button Semantics
+- **Improvement**: Added `Skip to content` sr-only link in `src/ui/Header.tsx:113` targeting `#main-content` added to `src/App.tsx:153`, improving keyboard navigation (WCAG 2.4.1). Topology graph filter group now has `role="group"` + `aria-label` and each button has `aria-pressed` + transition, header theme toggle adds `aria-pressed`/`aria-label`/`focus-visible:ring`, explorer empty state gains centered icon + descriptive subtext + styled clear button.
+
+### Fix 215: UX/UI — Enhanced Empty and Filtered States Consistency
+- **Improvement**: Revamped empty states across `src/ui/EndpointExplorer.tsx:225` (icon + subtext + bordered clear button) and `src/ui/SchemaViewer.tsx:149` (icon + “Clear search” when query active), plus graph dual-overlay (empty + “No nodes match filters” banner with inline clear). Ensures consistent guidance and one-click recovery.
+
+### Fix 216: UX/UI — Graph Toolbar Aria-Pressed and Search Clear Polish
+- **Improvement**: Graph toolbar search now consistently has Escape handling; filter pills expose `aria-pressed` for screen readers; added backdrop-blur overlay for empty graph to keep toolbar interactive while explaining state.
+
+
+
 

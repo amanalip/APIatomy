@@ -49,12 +49,26 @@ export function decompressSpecFromHash(hashString: string): string | null {
   try {
     const decoded = decodeURIComponent(specEncoded);
     const lower = decoded.toLowerCase();
+    const trimmedLower = decoded.trim().toLowerCase();
     if (
       decoded.trim().startsWith('{') ||
+      trimmedLower.startsWith('openapi') ||
+      trimmedLower.startsWith('swagger') ||
       lower.includes('openapi') ||
-      lower.includes('swagger')
+      lower.includes('swagger') ||
+      lower.includes('"paths"') ||
+      lower.includes('paths:')
     ) {
       return decoded;
+    }
+  } catch {
+    // ignore
+  }
+  // Second fallback: try raw text without decoding (already plain text)
+  try {
+    const rawLower = specEncoded.toLowerCase();
+    if (specEncoded.trim().startsWith('{') || rawLower.includes('openapi') || rawLower.includes('swagger')) {
+      return specEncoded;
     }
   } catch {
     // ignore

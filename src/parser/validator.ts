@@ -15,8 +15,8 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
   // Track all schemas referenced anywhere in endpoints or other schemas
   const referencedSchemas = new Set<string>();
 
-  // Rule: Validate info object
-  if (!rawDoc.info || typeof rawDoc.info !== 'object') {
+  // Rule: Validate info object (reject arrays and primitives)
+  if (!rawDoc.info || typeof rawDoc.info !== 'object' || Array.isArray(rawDoc.info)) {
     diagnostics.push({
       id: 'missing-info-object',
       severity: 'error',
@@ -368,7 +368,7 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
 
     // Rule: Schema without properties, items, or composition
     const hasProps = schemaObj.properties && Object.keys(schemaObj.properties).length > 0;
-    const hasComposition = schemaObj.allOf || schemaObj.oneOf || schemaObj.anyOf || (schemaObj as any).not;
+    const hasComposition = schemaObj.allOf || schemaObj.oneOf || schemaObj.anyOf || schemaObj.not;
     const hasItems = schemaObj.items;
     const hasAdditional = !!schemaObj.additionalProperties;
     const prim = Array.isArray(schemaObj.type) ? (schemaObj.type as unknown as string[]).join(',') : String(schemaObj.type);
@@ -496,8 +496,8 @@ function collectSubRefs(schema: SchemaModel, referenced: Set<string>): void {
   if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
     collectSubRefs(schema.additionalProperties as SchemaModel, referenced);
   }
-  if ((schema as any).not) {
-    collectSubRefs((schema as any).not, referenced);
+  if (schema.not) {
+    collectSubRefs(schema.not, referenced);
   }
   if (schema.allOf) {
     for (const s of schema.allOf) collectSubRefs(s, referenced);
