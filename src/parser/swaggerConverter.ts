@@ -186,13 +186,27 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
                 default: p.default,
               };
 
-              newParams.push({
+              const newP: Record<string, unknown> = {
                 name: p.name,
                 in: p.in,
                 required: p.required ?? p.in === 'path',
                 description: p.description,
                 schema: p.schema ? p.schema : paramSchema,
-              });
+              };
+
+              if (p.collectionFormat === 'multi') {
+                newP.style = 'form';
+                newP.explode = true;
+              } else if (p.collectionFormat === 'pipes') {
+                newP.style = 'pipeDelimited';
+              } else if (p.collectionFormat === 'ssv') {
+                newP.style = 'spaceDelimited';
+              } else if (p.collectionFormat === 'csv') {
+                newP.style = 'form';
+                newP.explode = false;
+              }
+
+              newParams.push(newP);
             }
           }
         }

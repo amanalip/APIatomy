@@ -34,9 +34,9 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
     // Substitute path parameters with placeholders
     for (const param of endpoint.parameters.filter((p) => p.in === 'path')) {
       const val = param.example !== undefined
-        ? String(param.example)
+        ? encodeURIComponent(String(param.example))
         : param.schema?.default !== undefined
-          ? String(param.schema.default)
+          ? encodeURIComponent(String(param.schema.default))
           : `:${param.name}`;
       url = url.replace(`{${param.name}}`, val);
     }

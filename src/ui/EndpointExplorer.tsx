@@ -78,6 +78,15 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
     setCollapsedTags((prev) => ({ ...prev, [tag]: !prev[tag] }));
   };
 
+  const handleToggleAllTags = () => {
+    const allCollapsed = Object.keys(groupedEndpoints).every((tag) => collapsedTags[tag]);
+    const nextState: Record<string, boolean> = {};
+    for (const tag of Object.keys(groupedEndpoints)) {
+      nextState[tag] = !allCollapsed;
+    }
+    setCollapsedTags(nextState);
+  };
+
   const methodsList: (HttpMethod | 'all')[] = ['all', 'get', 'post', 'put', 'patch', 'delete', 'options', 'head'];
 
   return (
@@ -134,6 +143,13 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                 </option>
               ))}
             </select>
+            <button
+              onClick={handleToggleAllTags}
+              className="px-2 py-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 rounded-lg text-[10px] font-medium whitespace-nowrap"
+              title="Toggle Expand/Collapse for all tag groups"
+            >
+              {Object.keys(groupedEndpoints).every((tag) => collapsedTags[tag]) ? 'Expand All' : 'Collapse All'}
+            </button>
           </div>
         )}
       </div>

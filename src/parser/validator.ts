@@ -32,10 +32,31 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     }
   }
 
+  // Track operationIds for uniqueness
+  const seenOperationIds = new Map<string, EndpointModel>();
+
   for (const ep of endpoints) {
     // Collect consumed and produced refs
     for (const ref of ep.consumedSchemaRefs) referencedSchemas.add(ref);
     for (const ref of ep.producedSchemaRefs) referencedSchemas.add(ref);
+
+    // Rule: Duplicate operationId validation
+    if (ep.operationId) {
+      const existing = seenOperationIds.get(ep.operationId);
+      if (existing) {
+        const line = findLineForPattern(rawText, ep.operationId);
+        diagnostics.push({
+          id: `duplicate-op-id-${ep.id}-${ep.operationId}`,
+          severity: 'warning',
+          message: `Duplicate operationId "${ep.operationId}" found in ${ep.method.toUpperCase()} ${ep.path} (already used in ${existing.method.toUpperCase()} ${existing.path}).`,
+          path: `/paths${ep.path}/${ep.method}/operationId`,
+          line,
+          source: 'linter',
+        });
+      } else {
+        seenOperationIds.set(ep.operationId, ep);
+      }
+    }
 
     // Rule: Missing summary and description
     if (!ep.summary && !ep.description) {

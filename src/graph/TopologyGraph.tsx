@@ -50,8 +50,17 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'endpoints' | 'schemas'>('all');
+  const [selectedTag, setSelectedTag] = useState<string>('all');
 
   const isDark = theme === 'dark';
+
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    for (const ep of spec.endpoints) {
+      for (const t of ep.tags) tags.add(t);
+    }
+    return Array.from(tags).sort();
+  }, [spec.endpoints]);
 
   const { initialNodes, initialEdges } = useMemo(() => {
     const { nodes, edges } = computeApiTopologyGraph(spec, {
@@ -85,6 +94,13 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
 
         if (filterType === 'endpoints' && n.type !== 'endpointNode') isVisible = false;
         if (filterType === 'schemas' && n.type !== 'schemaNode') isVisible = false;
+
+        if (selectedTag !== 'all' && n.type === 'endpointNode') {
+          const data = n.data as any;
+          if (!data.tags || !data.tags.includes(selectedTag)) {
+            isVisible = false;
+          }
+        }
 
         if (!isVisible) {
           hiddenNodeIds.add(n.id);
@@ -122,7 +138,7 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
         hidden: hiddenNodeIds.has(e.source) || hiddenNodeIds.has(e.target),
       }))
     );
-  }, [searchQuery, filterType, setNodes, setEdges]);
+  }, [searchQuery, filterType, selectedTag, setNodes, setEdges]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -138,33 +154,41 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
     [onSelectEndpoint, onSelectSchema]
   );
 
-  const handleExportPng = async () => {
-    setIsExporting(true);
-    await exportGraphToPng(
-      'api-topology-canvas',
-      `${spec.title.toLowerCase().replace(/\s+/g, '-')}-topology.png`,
-      isDark ? '#020617' : '#f8fafc'
-    );
-    setIsExporting(false);
-  };
-
   const toggleDirection = () => {
     setDirection((prev) => (prev === 'LR' ? 'TB' : 'LR'));
   };
 
+  const handleExportPng = async () => {
+    try {
+      setIsExporting(true);
+      const bg = isDark ? '#020617' : '#f8fafc';
+      await exportGraphToPng('api-topology-flow-container', `${spec.title || 'api-topology'}.png`, bg);
+    } catch (err) {
+      console.error('Failed to export graph to PNG', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
-    <div id="api-topology-canvas" className="w-full h-full relative bg-slate-100 dark:bg-slate-950 transition-colors duration-150">
-      {/* Top Toolbar overlay */}
-      <div data-export-ignore="true" className="absolute top-3 left-3 z-10 flex flex-wrap items-center gap-2 bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl shadow-lg">
-        {/* Search */}
-        <div className="relative flex items-center">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
+    <div
+      id="api-topology-flow-container"
+      className="w-full h-full relative bg-slate-50 dark:bg-slate-950 transition-colors duration-150"
+    >
+      {/* Floating Toolbar */}
+      <div
+        data-export-ignore="true"
+        className="absolute top-4 left-4 z-10 flex flex-wrap items-center gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl"
+      >
+        {/* Search in graph */}
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search nodes in graph..."
-            className="pl-8 pr-3 py-1 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 w-48"
+            placeholder="Find in graph..."
+            className="pl-8 pr-2.5 py-1 text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 w-36 sm:w-44"
           />
         </div>
 
@@ -201,6 +225,22 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
             Schemas ({Object.keys(spec.schemas).length})
           </button>
         </div>
+
+        {/* Tag Filter Dropdown */}
+        {allTags.length > 1 && (
+          <select
+            value={selectedTag}
+            onChange={(e) => setSelectedTag(e.target.value)}
+            className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="all">All Tags</option>
+            {allTags.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        )}
 
         {/* Layout Switcher */}
         <button

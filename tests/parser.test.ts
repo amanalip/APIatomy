@@ -168,6 +168,34 @@ paths:
     expect(missingParamDiag?.message).toContain('postId');
   });
 
+  it('flags duplicate operationIds with warning diagnostics', () => {
+    const duplicateOpIdSpec = `
+openapi: 3.0.0
+info:
+  title: Duplicate OpId Spec
+  version: 1.0.0
+paths:
+  /users:
+    get:
+      operationId: getResource
+      responses:
+        '200':
+          description: OK
+  /posts:
+    get:
+      operationId: getResource
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(duplicateOpIdSpec);
+    const dupDiag = parsed.diagnostics.find((d) => d.id.startsWith('duplicate-op-id-'));
+    expect(dupDiag).toBeDefined();
+    expect(dupDiag?.severity).toBe('warning');
+    expect(dupDiag?.message).toContain('getResource');
+  });
+
   it('inherits root-level security requirements in operations', () => {
     const rootSecSpec = `
 openapi: 3.0.0

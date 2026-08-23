@@ -231,3 +231,28 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Swagger 2.0 operation-level `schemes` overrides (e.g. `schemes: ['https']` on an individual endpoint) were ignored during conversion.
 - **Root Cause**: Conversion routine in `src/parser/swaggerConverter.ts` only processed root schemes.
 - **Resolution**: Mapped operation-level `op.schemes` into operation-scoped `newOp.servers` entries.
+
+### Fix 44: Swagger 2.0 CollectionFormat Parameter Serialization Mapping
+- **Issue**: Swagger 2.0 array parameters specifying `collectionFormat` (`multi`, `csv`, `pipes`, `ssv`) lost their serialization configurations during OpenAPI 3.0 conversion.
+- **Root Cause**: Missing mapping of `collectionFormat` to OpenAPI 3 `style` and `explode` properties in `src/parser/swaggerConverter.ts`.
+- **Resolution**: Mapped `multi` to `style: form, explode: true`, `csv` to `style: form, explode: false`, `pipes` to `style: pipeDelimited`, and `ssv` to `style: spaceDelimited`.
+
+### Fix 45: Duplicate OperationId Linter Validation Rule
+- **Issue**: OpenAPI documents with duplicated `operationId` values across multiple endpoints were not flagged by the linter.
+- **Root Cause**: Missing uniqueness check in `src/parser/validator.ts`.
+- **Resolution**: Added validation rule tracking all operationIds and emitting warning diagnostics for any duplicate declarations.
+
+### Fix 46: Expand All and Collapse All Tags Toggle in Endpoint Explorer
+- **Issue**: Specifications with numerous tag groups required manual expansion/collapse of each individual tag section.
+- **Root Cause**: Lack of batch toggle control in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Added a toggle button switching all tag groups between expanded and collapsed states.
+
+### Fix 47: URL-Encoding for Path Parameter Values in cURL Generator
+- **Issue**: Path parameter sample values or defaults containing spaces, punctuation, or email addresses were inserted directly into cURL URLs without encoding.
+- **Root Cause**: Missing `encodeURIComponent` wrapper around substituted path parameter values in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Applied `encodeURIComponent` to path parameter examples and defaults during URL template substitution.
+
+### Fix 48: Subsystem Tag Filtering on Topology Graph Canvas
+- **Issue**: The topology canvas only supported filtering by node type (`endpoints` vs `schemas`), without the ability to isolate specific feature tags.
+- **Root Cause**: Missing tag selector and node filtering predicate in `src/graph/TopologyGraph.tsx`.
+- **Resolution**: Added an interactive tag dropdown filter in the canvas toolbar to display only nodes belonging to selected subsystem tags.

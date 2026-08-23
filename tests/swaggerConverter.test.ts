@@ -34,6 +34,13 @@ paths:
   /users:
     get:
       summary: Get users list
+      parameters:
+        - name: tags
+          in: query
+          type: array
+          items:
+            type: string
+          collectionFormat: multi
       produces:
         - application/json
       responses:
@@ -103,6 +110,11 @@ describe('Swagger 2.0 Converter', () => {
     const getEndpoint = spec.endpoints.find((e) => e.path === '/users' && e.method === 'get');
     expect(getEndpoint).toBeDefined();
     expect(getEndpoint?.producedSchemaRefs).toContain('User');
+
+    // Parameter converted with array items
+    const tagsParam = getEndpoint?.parameters.find((p) => p.name === 'tags');
+    expect(tagsParam).toBeDefined();
+    expect(tagsParam?.schema?.type).toBe('array');
 
     // FormData converted to multipart requestBody
     const uploadEndpoint = spec.endpoints.find((e) => e.path === '/upload' && e.method === 'post');
