@@ -176,3 +176,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Paths without leading slashes or servers with trailing slashes produced malformed URLs in cURL snippets, and parameter defaults were ignored.
 - **Root Cause**: Direct string concatenation in `src/ui/CurlGenerator.tsx` without slash normalization and missing `param.schema.default` lookups.
 - **Resolution**: Normalized URL paths and incorporated schema default value lookups across query, header, and path parameters.
+
+### Fix 33: Edge Visibility Synchronization in Canvas Node Filtering
+- **Issue**: When filtering the topology graph by node type (`endpoints` or `schemas`), connecting edges remained rendered on the canvas across hidden nodes.
+- **Root Cause**: Edge state was not synchronized with `hidden` node ID changes in `src/graph/TopologyGraph.tsx`.
+- **Resolution**: Added edge visibility synchronization to hide any edges whose source or target nodes are hidden by filter conditions.

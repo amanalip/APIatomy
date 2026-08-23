@@ -76,6 +76,8 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
 
   // Apply filtering and search highlighting
   useEffect(() => {
+    const hiddenNodeIds = new Set<string>();
+
     setNodes((prevNodes) =>
       prevNodes.map((n) => {
         let isVisible = true;
@@ -83,6 +85,10 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
 
         if (filterType === 'endpoints' && n.type !== 'endpointNode') isVisible = false;
         if (filterType === 'schemas' && n.type !== 'schemaNode') isVisible = false;
+
+        if (!isVisible) {
+          hiddenNodeIds.add(n.id);
+        }
 
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
@@ -109,7 +115,14 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
         };
       })
     );
-  }, [searchQuery, filterType, setNodes]);
+
+    setEdges((prevEdges) =>
+      prevEdges.map((e) => ({
+        ...e,
+        hidden: hiddenNodeIds.has(e.source) || hiddenNodeIds.has(e.target),
+      }))
+    );
+  }, [searchQuery, filterType, setNodes, setEdges]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
