@@ -44,17 +44,35 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
     // Query parameters
     const queryParams = endpoint.parameters.filter((p) => p.in === 'query');
     if (queryParams.length > 0) {
-      const qString = queryParams
-        .map((p) => {
+      const qParts: string[] = [];
+      for (const p of queryParams) {
+        if (p.schema?.type === 'array' || Array.isArray(p.example)) {
+          const arrVal = Array.isArray(p.example)
+            ? p.example
+            : Array.isArray(p.schema?.default)
+              ? (p.schema.default as unknown[])
+              : ['value1', 'value2'];
+
+          if (p.explode !== false) {
+            for (const item of arrVal) {
+              qParts.push(`${p.name}=${encodeURIComponent(String(item))}`);
+            }
+          } else {
+            const joined = arrVal.map(String).join(',');
+            qParts.push(`${p.name}=${encodeURIComponent(joined)}`);
+          }
+        } else {
           const val = p.example !== undefined
             ? p.example
             : p.schema?.default !== undefined
               ? p.schema.default
               : 'value';
-          return `${p.name}=${encodeURIComponent(String(val))}`;
-        })
-        .join('&');
-      url += `?${qString}`;
+          qParts.push(`${p.name}=${encodeURIComponent(String(val))}`);
+        }
+      }
+      if (qParts.length > 0) {
+        url += `?${qParts.join('&')}`;
+      }
     }
 
     const lines: string[] = [`curl -X ${endpoint.method.toUpperCase()} "${url}"`];

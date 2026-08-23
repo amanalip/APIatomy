@@ -193,6 +193,10 @@ export function normalizeSpec(
 
         // Resolve $ref on requestBody if present
         if (typeof rb.$ref === 'string') {
+          const target = extractRefTargetName(rb.$ref);
+          if (context.rootDoc.components && (context.rootDoc.components as any).schemas?.[target]) {
+            consumedSchemaRefs.add(target);
+          }
           const resolvedRb = resolveJsonPointer(context.rootDoc, rb.$ref);
           if (typeof resolvedRb === 'object' && resolvedRb !== null) {
             rb = resolvedRb as Record<string, unknown>;

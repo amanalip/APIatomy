@@ -196,6 +196,37 @@ paths:
     expect(dupDiag?.message).toContain('getResource');
   });
 
+  it('flags duplicate parameters in the same operation', () => {
+    const duplicateParamSpec = `
+openapi: 3.0.0
+info:
+  title: Duplicate Param Spec
+  version: 1.0.0
+paths:
+  /search:
+    get:
+      summary: Search
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(duplicateParamSpec);
+    const dupParamDiag = parsed.diagnostics.find((d) => d.id.startsWith('duplicate-param-'));
+    expect(dupParamDiag).toBeDefined();
+    expect(dupParamDiag?.severity).toBe('warning');
+    expect(dupParamDiag?.message).toContain('q');
+  });
+
   it('recognizes 2XX wildcard responses as valid success definitions', () => {
     const wildcardSpec = `
 openapi: 3.0.0

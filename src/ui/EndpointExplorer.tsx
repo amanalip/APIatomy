@@ -74,6 +74,17 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
     return groups;
   }, [filteredEndpoints, selectedTag]);
 
+  const totalByTag = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const ep of endpoints) {
+      const tags = ep.tags.length > 0 ? ep.tags : ['Default'];
+      for (const t of tags) {
+        counts[t] = (counts[t] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [endpoints]);
+
   const toggleTagCollapse = (tag: string) => {
     setCollapsedTags((prev) => ({ ...prev, [tag]: !prev[tag] }));
   };
@@ -180,7 +191,9 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                     <span className="uppercase tracking-wider text-[11px] text-slate-600 dark:text-slate-400 font-mono">
                       {tag}
                     </span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">({eps.length})</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                      ({eps.length}{totalByTag[tag] && totalByTag[tag] !== eps.length ? ` / ${totalByTag[tag]}` : ''})
+                    </span>
                   </div>
                 </button>
 

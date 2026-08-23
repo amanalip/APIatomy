@@ -406,6 +406,26 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
           )}
         </div>
       )}
+
+      {/* Additional properties dictionary map */}
+      {schema.additionalProperties && (
+        <div className="pt-2 text-xs font-mono text-slate-600 dark:text-slate-400 flex items-center gap-1.5 pl-3 border-l border-dashed border-slate-200 dark:border-slate-800">
+          <span className="text-slate-500">[key: string]:</span>
+          <span className="text-blue-600 dark:text-blue-400 font-semibold">
+            {typeof schema.additionalProperties === 'object'
+              ? String((schema.additionalProperties as any).type || (schema.additionalProperties as any).refTarget || 'any')
+              : 'any'}
+          </span>
+          {typeof schema.additionalProperties === 'object' && (schema.additionalProperties as any).refTarget && (
+            <button
+              onClick={() => onNavigateRef((schema.additionalProperties as any).refTarget!)}
+              className="text-indigo-600 dark:text-indigo-400 hover:underline font-mono"
+            >
+              → {(schema.additionalProperties as any).refTarget}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

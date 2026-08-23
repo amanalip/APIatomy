@@ -104,6 +104,35 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       });
     }
 
+    // Check duplicate parameters in rawDoc operation
+    if (rawDoc.paths && typeof rawDoc.paths === 'object') {
+      const pathsObj = rawDoc.paths as Record<string, unknown>;
+      const pathItem = pathsObj[ep.path] as Record<string, unknown> | undefined;
+      const opItem = pathItem?.[ep.method] as Record<string, unknown> | undefined;
+      if (opItem && Array.isArray(opItem.parameters)) {
+        const rawSeen = new Set<string>();
+        for (const p of opItem.parameters) {
+          if (typeof p === 'object' && p !== null) {
+            const pObj = p as Record<string, unknown>;
+            const key = `${pObj.in || 'query'}:${pObj.name}`;
+            if (rawSeen.has(key)) {
+              const line = findLineForPattern(rawText, String(pObj.name));
+              diagnostics.push({
+                id: `duplicate-param-${ep.id}-${key}`,
+                severity: 'warning',
+                message: `Duplicate parameter "${pObj.name}" in "${pObj.in || 'query'}" declared in ${ep.method.toUpperCase()} ${ep.path}.`,
+                path: `/paths${ep.path}/${ep.method}/parameters`,
+                line,
+                source: 'linter',
+              });
+            } else {
+              rawSeen.add(key);
+            }
+          }
+        }
+      }
+    }
+
     // Check broken parameter refs or missing parameter types
     for (const param of ep.parameters) {
       if (!param.schema && !param.description) {

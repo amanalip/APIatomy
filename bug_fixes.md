@@ -306,3 +306,28 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: After panning or zooming far away in the topology graph, users had no quick way to re-center and fit the graph in view.
 - **Root Cause**: Missing fitView trigger button in `src/graph/TopologyGraph.tsx` toolbar.
 - **Resolution**: Added a dedicated `Fit View` action button in the floating toolbar.
+
+### Fix 59: Duplicate Parameter Validation in Linter
+- **Issue**: Operations containing duplicate parameter definitions with identical name and `in` locations were not flagged.
+- **Root Cause**: Missing duplicate parameter check in `src/parser/validator.ts`.
+- **Resolution**: Added validation rule detecting duplicate parameter declarations per operation.
+
+### Fix 60: Filtered vs Total Endpoint Count Badges in Explorer
+- **Issue**: Explorer tag headers displayed static counts when filtering by method or search term, creating confusion with visible endpoint counts.
+- **Root Cause**: Header badge only rendered current grouped length in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Displayed active filtered count alongside total tag count `(filtered / total)`.
+
+### Fix 61: Schema Inspector AdditionalProperties Map Rendering
+- **Issue**: Schemas declaring `additionalProperties` (dynamic key-value maps/dictionaries) omitted the map signature from the tree view.
+- **Root Cause**: Tree node renderer in `src/ui/SchemaViewer.tsx` only evaluated named properties.
+- **Resolution**: Added `[key: string]: <type>` rendering row for schemas defining `additionalProperties`.
+
+### Fix 62: Array Query Parameter Explode Formatting in cURL Snippets
+- **Issue**: Array query parameters were serialized as single string values regardless of `explode` configuration.
+- **Root Cause**: Direct value extraction without array iteration in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Formatted exploded array query parameters as repeated key-value pairs (`key=v1&key=v2`) and unexploded parameters as comma-separated values.
+
+### Fix 63: Request Body Direct Reference Target Tracking in Graph Normalizer
+- **Issue**: Operations referencing component request bodies directly did not always register top-level schema references in graph edge maps.
+- **Root Cause**: Reference target extraction omitted direct pointer names in `src/parser/normalizer.ts`.
+- **Resolution**: Captured direct request body schema reference targets into `consumedSchemaRefs`.
