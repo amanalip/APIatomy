@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { EndpointModel, ServerModel } from '../model';
+import { EndpointModel, ServerModel, SchemaModel } from '../model';
 import { generateMockData } from '../model/mockGenerator';
 import { Copy, Check, Terminal } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
@@ -100,7 +100,9 @@ export function buildCurlCommand(
   if (activeServer?.variables) {
     for (const [varName, varDef] of Object.entries(activeServer.variables)) {
       const defVal = (varDef as any)?.default;
-      const replacement = defVal !== undefined && String(defVal).trim() !== '' ? String(defVal) : (varDef as any)?.enum?.[0] ?? 'default';
+      let replacement = defVal !== undefined && String(defVal).trim() !== '' ? String(defVal) : (varDef as any)?.enum?.[0] ?? 'default';
+      // Sanitize to prevent breaking out of double-quoted URL in shell
+      replacement = String(replacement).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
       rawUrl = rawUrl.split(`{${varName}}`).join(replacement);
     }
   }
@@ -260,11 +262,11 @@ export function buildCurlCommand(
   return lines.join(' \\\n');
 }
 
-export function generateSampleJsonFromSchema(schema?: any): string {
+export function generateSampleJsonFromSchema(schema?: SchemaModel): string {
   if (!schema) return '{}';
   if (schema.example !== undefined) return JSON.stringify(schema.example, null, 2);
   try {
-    const mock = generateMockData(schema as any, {}, 0);
+    const mock = generateMockData(schema, {}, 0);
     if (mock !== undefined) return JSON.stringify(mock, null, 2);
   } catch {
     // fallback to legacy generation below

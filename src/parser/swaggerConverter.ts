@@ -33,11 +33,18 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
   const basePath = typeof swagger.basePath === 'string' ? swagger.basePath : '';
   const schemes = Array.isArray(swagger.schemes) ? swagger.schemes : ['https'];
 
+  const ALLOWED_SCHEMES = new Set(['http', 'https', 'ws', 'wss']);
   if (host || basePath) {
     for (const scheme of schemes) {
-      const schemeStr = String(scheme);
+      const schemeStr = String(scheme).toLowerCase();
+      if (!ALLOWED_SCHEMES.has(schemeStr)) continue;
+      // Skip ws/wss for curl context but keep https/http; still allow ws if explicitly requested
       const url = `${schemeStr}://${host || 'localhost'}${basePath}`;
       servers.push({ url, description: `Default ${schemeStr.toUpperCase()} server` });
+    }
+    // Fallback if all schemes were invalid
+    if (servers.length === 0 && (host || basePath)) {
+      servers.push({ url: `https://${host || 'localhost'}${basePath}`, description: 'Default HTTPS server' });
     }
   } else if (swagger.servers && Array.isArray(swagger.servers)) {
     openapi.servers = swagger.servers;
@@ -164,9 +171,11 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
         };
 
         if (Array.isArray(op.schemes) && (host || basePath)) {
-          newOp.servers = op.schemes.map((s) => ({
-            url: `${String(s)}://${host || 'localhost'}${basePath}`,
-            description: `Operation ${String(s).toUpperCase()} server`,
+          const filteredSchemes = (op.schemes as unknown[]).map((s) => String(s).toLowerCase()).filter((s) => ALLOWED_SCHEMES.has(s));
+          const effectiveSchemes = filteredSchemes.length > 0 ? filteredSchemes : ['https'];
+          newOp.servers = effectiveSchemes.map((s) => ({
+            url: `${s}://${host || 'localhost'}${basePath}`,
+            description: `Operation ${s.toUpperCase()} server`,
           }));
         }
 

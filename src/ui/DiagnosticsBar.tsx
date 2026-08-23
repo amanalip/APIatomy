@@ -43,6 +43,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
+        e.stopPropagation();
         setIsOpen(false);
       }
     };
@@ -201,7 +202,11 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
                 <div
                   key={`${diag.id}-${index}`}
                   onClick={() => onSelectDiagnostic?.(diag)}
-                  className="flex items-center justify-between p-2.5 hover:bg-slate-100/80 dark:hover:bg-slate-900/80 cursor-pointer transition"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectDiagnostic?.(diag); } }}
+                  aria-label={`Go to ${diag.severity} at line ${diag.line ?? 1}: ${diag.message}`}
+                  className="flex items-center justify-between p-2.5 hover:bg-slate-100/80 dark:hover:bg-slate-900/80 cursor-pointer transition focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:outline-none"
                 >
                   <div className="flex items-center gap-2.5 min-w-0 pr-4">
                     {isError ? (

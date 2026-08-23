@@ -12,8 +12,8 @@ interface EndpointNodeData {
   direction?: 'LR' | 'TB';
 }
 
-export const EndpointNode: React.FC<NodeProps<any>> = memo(({ data, selected }) => {
-  const nodeData = data as EndpointNodeData;
+export const EndpointNode: React.FC<NodeProps> = memo(({ data, selected }) => {
+  const nodeData = data as unknown as EndpointNodeData;
   const methodConfig = HTTP_METHODS[nodeData.method] || HTTP_METHODS.get;
   const isVertical = nodeData.direction === 'TB';
 

@@ -36,8 +36,29 @@ export function App() {
       return parseApiSpec(rawText);
     } catch (err) {
       console.error('parseApiSpec crashed', err);
-      const fallback = parseApiSpec('openapi: 3.0.0\ninfo:\n  title: Parse Error\n  version: 0.0.0\npaths: {}');
       const msg = err instanceof Error ? err.message : String(err);
+      let fallback: ApiSpecModel;
+      try {
+        fallback = parseApiSpec('openapi: 3.0.0\ninfo:\n  title: Parse Error\n  version: 0.0.0\npaths: {}');
+      } catch {
+        fallback = {
+          title: 'Parse Error',
+          version: '0.0.0',
+          description: undefined,
+          termsOfService: undefined,
+          contact: undefined,
+          license: undefined,
+          openApiVersion: '3.0.0',
+          originalFormat: 'openapi3',
+          servers: [],
+          tags: [],
+          endpoints: [],
+          schemas: {},
+          securitySchemes: {},
+          diagnostics: [],
+          rawText,
+        } as ApiSpecModel;
+      }
       return {
         ...fallback,
         diagnostics: [
@@ -76,6 +97,9 @@ export function App() {
           setRawText(decompressed);
           editorPaneRef.current?.setContent(decompressed);
         }
+      } else {
+        // Hash cleared: stay on current editor content (no stale spec)
+        // Do not reset to PETSTORE_SPEC to avoid losing user edits
       }
     };
 
@@ -83,14 +107,20 @@ export function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Split-pane resizing logic with unmount cleanup
+  // Split-pane resizing logic with unmount cleanup and tiny viewport guard
+  const activeMoveRef = useRef<((e: MouseEvent) => void) | null>(null);
+  const activeUpRef = useRef<(() => void) | null>(null);
   const handleMouseDownResize = (e: React.MouseEvent) => {
     e.preventDefault();
     isResizingRef.current = true;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isResizingRef.current) return;
-      const newWidth = Math.max(280, Math.min(moveEvent.clientX, window.innerWidth - 360));
+      const minWidth = 280;
+      const maxWidth = Math.max(minWidth, window.innerWidth - 360);
+      // Clamp correctly even on tiny viewports (e.g. 320px)
+      const raw = moveEvent.clientX;
+      const newWidth = Math.max(minWidth, Math.min(raw, maxWidth));
       setEditorWidth(newWidth);
     };
 
@@ -98,8 +128,12 @@ export function App() {
       isResizingRef.current = false;
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      activeMoveRef.current = null;
+      activeUpRef.current = null;
     };
 
+    activeMoveRef.current = handleMouseMove;
+    activeUpRef.current = handleMouseUp;
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
   };
@@ -107,6 +141,8 @@ export function App() {
   useEffect(() => {
     return () => {
       isResizingRef.current = false;
+      if (activeMoveRef.current) window.removeEventListener('mousemove', activeMoveRef.current);
+      if (activeUpRef.current) window.removeEventListener('mouseup', activeUpRef.current);
     };
   }, []);
 
@@ -123,13 +159,20 @@ export function App() {
     setSelectedEndpoint(null);
   };
 
+  const diagTimerRef = useRef<number | null>(null);
   const handleSelectDiagnostic = (diag: DiagnosticItem) => {
     setIsEditorOpen(true);
     const targetLine = diag.line ?? 1;
-    setTimeout(() => {
+    if (diagTimerRef.current) window.clearTimeout(diagTimerRef.current);
+    diagTimerRef.current = window.setTimeout(() => {
       editorPaneRef.current?.jumpToLine(targetLine);
     }, 50);
   };
+  useEffect(() => {
+    return () => {
+      if (diagTimerRef.current) window.clearTimeout(diagTimerRef.current);
+    };
+  }, []);
 
   const handleNavigateToSchema = (schemaName: string, _schema: SchemaModel) => {
     setSelectedSchemaName(schemaName);
@@ -170,11 +213,10 @@ export function App() {
                 value={rawText}
                 onChange={(newText) => setRawText(newText)}
                 format={(() => {
-                  const t = rawText.trim();
-                  // Detect JSON by leading brace after optional BOM, regardless of swagger/openapi version
+                  // Strip BOM (\uFEFF) before detection
+                  const t = rawText.replace(/^\uFEFF/, '').trim();
                   const isJson = t.startsWith('{') || t.startsWith('[');
                   if (isJson) return 'json';
-                  // Swagger 2.0 in YAML should still use yaml highlighting
                   return 'yaml';
                 })()}
               />
@@ -187,9 +229,16 @@ export function App() {
               aria-orientation="vertical"
               aria-label="Resize editor pane"
               tabIndex={0}
+              aria-valuemin={280}
+              aria-valuemax={Math.max(280, typeof window !== 'undefined' ? window.innerWidth - 360 : 800)}
+              aria-valuenow={editorWidth}
+              aria-valuetext={`${editorWidth}px editor width`}
               onKeyDown={(e) => {
                 if (e.key === 'ArrowLeft') setEditorWidth((w) => Math.max(280, w - 20));
-                if (e.key === 'ArrowRight') setEditorWidth((w) => Math.min(window.innerWidth - 360, w + 20));
+                else if (e.key === 'ArrowRight') setEditorWidth((w) => Math.min(Math.max(280, window.innerWidth - 360), w + 20));
+                else if (e.key === 'Home') setEditorWidth(280);
+                else if (e.key === 'End') setEditorWidth(Math.max(280, window.innerWidth - 360));
+                else if (e.key === 'Enter') setEditorWidth(420);
               }}
               className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-blue-500/50 active:bg-blue-500 transition z-20 focus-visible:ring-1 focus-visible:ring-blue-500 outline-none"
               title="Drag to resize editor pane (or use Arrow keys when focused)"

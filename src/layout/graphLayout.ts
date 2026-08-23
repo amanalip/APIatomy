@@ -1,7 +1,8 @@
 import dagre from '@dagrejs/dagre';
 import { Node, Edge } from '@xyflow/react';
-import { ApiSpecModel, SchemaModel } from '../model';
+import { ApiSpecModel } from '../model';
 import { HTTP_METHODS } from '../model/httpMethods';
+import { collectSchemaRefs } from '../utils/schemaRefs';
 
 export interface LayoutOptions {
   direction: 'LR' | 'TB';
@@ -41,10 +42,10 @@ export function computeApiTopologyGraph(
       }
     }
   }
-  // Include indirect references via schema composition (properties/items/additionalProperties/not/allOf/oneOf/anyOf)
+  // Include indirect references via schema composition (unified util)
   for (const schema of Object.values(spec.schemas)) {
     const nested = new Set<string>();
-    collectChildSchemaNames(schema, nested);
+    collectSchemaRefs(schema, nested);
     for (const ref of nested) {
       if (spec.schemas[ref]) {
         schemaReuseCount[ref] = (schemaReuseCount[ref] || 0) + 1;
@@ -84,7 +85,7 @@ export function computeApiTopologyGraph(
 
       if (!edgeSet.has(edgeId)) {
         edgeSet.add(edgeId);
-        dagreGraph.setEdge(nodeId, schemaNodeId);
+        dagreGraph.setEdge(nodeId, schemaNodeId, {}, edgeId);
 
         edges.push({
           id: edgeId,
@@ -110,7 +111,7 @@ export function computeApiTopologyGraph(
 
       if (!edgeSet.has(edgeId)) {
         edgeSet.add(edgeId);
-        dagreGraph.setEdge(nodeId, schemaNodeId);
+        dagreGraph.setEdge(nodeId, schemaNodeId, {}, edgeId);
 
         edges.push({
           id: edgeId,
@@ -150,9 +151,9 @@ export function computeApiTopologyGraph(
       },
     });
 
-    // Edges between Schemas (nested refs)
+    // Edges between Schemas (nested refs) via unified util
     const nestedRefs = new Set<string>();
-    collectChildSchemaNames(schemaObj, nestedRefs);
+    collectSchemaRefs(schemaObj, nestedRefs);
 
     for (const childRef of nestedRefs) {
       if (childRef === schemaName || !spec.schemas[childRef]) continue; // Guard against self loops and missing schemas
@@ -161,7 +162,7 @@ export function computeApiTopologyGraph(
 
       if (!edgeSet.has(edgeId)) {
         edgeSet.add(edgeId);
-        dagreGraph.setEdge(nodeId, childNodeId);
+        dagreGraph.setEdge(nodeId, childNodeId, {}, edgeId);
 
         edges.push({
           id: edgeId,
@@ -203,37 +204,4 @@ export function computeApiTopologyGraph(
   return { nodes: layoutedNodes, edges };
 }
 
-function collectChildSchemaNames(schema: SchemaModel | null | undefined, refs: Set<string>): void {
-  if (!schema || typeof schema !== 'object') return;
 
-  if (schema.refTarget) {
-    refs.add(schema.refTarget);
-  }
-
-  if (schema.properties) {
-    for (const prop of Object.values(schema.properties)) {
-      collectChildSchemaNames(prop, refs);
-    }
-  }
-
-  if (schema.items) {
-    collectChildSchemaNames(schema.items, refs);
-  }
-
-  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
-    collectChildSchemaNames(schema.additionalProperties, refs);
-  }
-
-  if (schema.allOf) {
-    for (const sub of schema.allOf) collectChildSchemaNames(sub, refs);
-  }
-  if (schema.oneOf) {
-    for (const sub of schema.oneOf) collectChildSchemaNames(sub, refs);
-  }
-  if (schema.anyOf) {
-    for (const sub of schema.anyOf) collectChildSchemaNames(sub, refs);
-  }
-  if (schema.not) {
-    collectChildSchemaNames(schema.not, refs);
-  }
-}

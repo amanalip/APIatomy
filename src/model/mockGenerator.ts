@@ -76,7 +76,8 @@ export function generateMockData(
     if (schema.format === 'uuid') return 'a1b2c3d4-e5f6-7a8b-9c0d-ef1234567890';
     if (schema.format === 'uri') return 'https://api.example.com';
     if (schema.format === 'byte') return 'U3dhZ2dlciByb2Nrcw==';
-    if (schema.format === 'binary') return 'binary_stream';
+    if (schema.format === 'binary') return 'SGVsbG8gV29ybGQ='; // base64 realistic
+    if (schema.format === 'password') return 's3cret-P@ssw0rd';
     return schema.name || 'string_value';
   }
 

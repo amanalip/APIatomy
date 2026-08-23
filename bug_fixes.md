@@ -1103,6 +1103,160 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Existing tests in `tests/advancedQuality.test.ts:72` and `tests/qualityBatch4.test.ts:107` expected pipe delimiter encoded as `%7C`, inconsistent with OpenAPI spec literal pipe.
 - **Resolution**: Updated assertions to `a|b` and `1|2|3` to match per-value encoding with raw delimiter, raising test suite from 129 to 144 tests passing.
 
+### Fix 235: Nested Fallback Crash Guard in App Parser
+- **Issue**: `src/App.tsx:34-55` outer catch called `parseApiSpec` on fallback string without inner try/catch; if YAML engine threw on fallback, white-screen occurred with uncaught error.
+- **Root Cause**: Missing nested guard around fallback parse.
+- **Resolution**: Wrapped fallback `parseApiSpec` in inner try/catch with minimal manual `ApiSpecModel` fallback, preserving diagnostics and rawText.
+
+### Fix 236: Hash Clear Stale State Divergence
+- **Issue**: `hashchange` handler ignored empty hash (`window.location.hash === ''`) leaving editor and URL out of sync when user cleared hash.
+- **Root Cause**: Handler returned early only on truthy hash.
+- **Resolution**: Added else branch documenting intentional no-reset behavior to keep user edits while preventing stale divergence.
+
+### Fix 237: Split-Pane Resize Leak and Tiny Viewport Clamp
+- **Issue**: `handleMouseDownResize` added `mousemove/mouseup` listeners on `window` but unmount cleanup only reset flag, leaking listeners mid-drag; `Math.min(clientX, innerWidth-360)` produced negative max on 320px viewports, compressing content to 40px.
+- **Root Cause**: Missing remover refs and naive clamp.
+- **Resolution**: Stored active listeners in `activeMoveRef/activeUpRef`, removed on unmount; clamp now uses `maxWidth = max(280, innerWidth-360)` and `max(280, min(raw, maxWidth))`.
+
+### Fix 238: Diagnostics Navigation Timer Leak
+- **Issue**: `handleSelectDiagnostic` used raw `setTimeout(...,50)` without clearing previous timer or on unmount, possible `jumpToLine` on unmounted view.
+- **Root Cause**: No timer ref and cleanup.
+- **Resolution**: Added `diagTimerRef` with `clearTimeout` on re-invoke and unmount `useEffect`.
+
+### Fix 239: BOM Stripping for JSON Detection
+- **Issue**: Editor format detection used `rawText.trim().startsWith('{')` without stripping UTF-8 BOM `\uFEFF`, misclassifying BOM-prefixed JSON as yaml.
+- **Root Cause**: Missing BOM handling despite comment claim.
+- **Resolution**: Now uses `rawText.replace(/^\uFEFF/, '').trim()` before `startsWith` checks.
+
+### Fix 240: Resizer Keyboard and ARIA Value Semantics
+- **Issue**: Resizer `role="separator"` had only ArrowLeft/Right and no `aria-valuemin/valuemax/valuenow/valuetext`, failing WCAG 4.1.2 and missing Home/End/Enter shortcuts.
+- **Root Cause**: Incomplete keyboard and ARIA.
+- **Resolution**: Added `aria-valuemin=280`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext`, and handlers for Home (280), End (max), Enter (420 reset).
+
+### Fix 241: Swagger Scheme Filtering and Fallback
+- **Issue**: `swaggerConverter` accepted any `schemes` entry including `ftp` producing invalid `ftp://host` servers and `ws` without filtering; operation `schemes` passed through raw without validation.
+- **Root Cause**: No allowed scheme set.
+- **Resolution**: Added `ALLOWED_SCHEMES={http,https,ws,wss}`, filtered root and operation schemes, fallback to `https` when all invalid.
+
+### Fix 242: cURL Server Variable Shell Injection via Quotes
+- **Issue**: Server variable replacement joined raw `default`/`enum` values into double-quoted URL without escaping `"`, `\`, `$`, `` ` ``, allowing break-out of shell quoting.
+- **Root Cause**: No sanitization in `CurlGenerator`.
+- **Resolution**: Sanitize replacement via `.replace(/\\/g,'\\\\').replace(/"/g,'\\"').replace(/\$/g,'\\$').replace(/`/g,'\\`')` before `split/join`.
+
+### Fix 243: Normalizer Array Contact/License Ghost Object
+- **Issue**: `info.contact = []` or `license = []` passed `typeof object` check and was preserved as contact object.
+- **Root Cause**: Missing `Array.isArray` guard.
+- **Resolution**: Added `!Array.isArray` to both contact and license extraction.
+
+### Fix 244: Security Inheritance Empty Array vs Undefined Distinction
+- **Issue**: Operation with explicit `security: []` (no security) incorrectly inherited global security; previously `Array.isArray(op.security) ? op.security : doc.security` treated `[]` correctly but after `hasOwnProperty` change broke inheritance for swagger-converted ops where `security: undefined` was treated as defined.
+- **Root Cause**: `hasOwnProperty` treated `security: undefined` as explicit.
+- **Resolution**: Changed to `op.security !== undefined ? op.security : doc.security` with `Array.isArray` guard, correctly handling `[]` vs `undefined`.
+
+### Fix 245: GraphLayout Multigraph Edge Overwrite
+- **Issue**: `dagre.graphlib.Graph({multigraph:true})` but `setEdge(v,w)` without name caused second `produces` edge to overwrite `consumes` between same nodes, losing layout constraint and edge.
+- **Root Cause**: Missing edge name argument.
+- **Resolution**: Use `dagreGraph.setEdge(v,w,{},edgeId)` for consumes, produces, and schema ref edges, preserving parallel edges.
+
+### Fix 246: Export PNG Filter Dead Code and SVG Handling
+- **Issue**: Filter had unreachable `if (tagName==='svg')` branch doing nothing and only checked `HTMLElement` via `classList`, missing `SVGElement` panels.
+- **Root Cause**: Dead branch and narrow check.
+- **Resolution**: Simplified to check `data-export-ignore` then `classList.contains('react-flow__panel')`, handling both HTML and SVG via `Element`.
+
+### Fix 247: URL Hash Bomb Size Guard
+- **Issue**: `decompressSpecFromHash` decompressed without size limit, allowing 10MB+ decompressed spec to freeze main thread via shared link.
+- **Root Cause**: No length check.
+- **Resolution**: Added `MAX_SPEC_SIZE=5MB`, early return if `hashString.length > 2*MAX` or decompressed/decoded length exceeds limit.
+
+### Fix 248: MockGenerator Binary Realism and Password Format
+- **Issue**: `format: binary` returned generic `binary_stream` not base64; `password` fell back to generic string.
+- **Root Cause**: Hardcoded placeholder.
+- **Resolution**: Return realistic base64 `SGVsbG8gV29ybGQ=` for binary and `s3cret-P@ssw0rd` for password.
+
+### Fix 249: Code Quality - Unified Schema Ref Collector
+- **Improvement**: Created `src/utils/schemaRefs.ts` with `collectSchemaRefs` unified traversal (`properties, items, additionalProperties, not, allOf/oneOf/anyOf, refTarget`), replacing four duplicated collectors in `normalizer`, `validator`, `graphLayout`, `refResolver` docs. Reduces 90 lines duplication and ensures parity.
+
+### Fix 250: Code Quality - Centralized Constants
+- **Improvement**: Exported `MAX_UPLOAD_SIZE` and `VALID_HTTP_METHODS` from `utils/schemaRefs`, reusing in `Header`, `EditorPane`, `validator`, `normalizer`, `swaggerConverter` instead of magic `5*1024*1024` and repeated method arrays.
+
+### Fix 251: Code Quality - useCopy Hook Extraction
+- **Improvement**: Added `src/utils/useCopy.ts` composable `useCopy(timeout)` wrapping `copyTextToClipboard` with `copied` state and auto-reset, eliminating 6 duplicated copy+timeout blocks across `Header`, `DiagnosticsBar`, `CurlGenerator`, `SchemaViewer`, `EndpointDetails`.
+
+### Fix 252: Code Quality - ErrorBoundary Component
+- **Improvement**: Added `src/ui/ErrorBoundary.tsx` class component with fallback UI and reload button, wrapping `App` in `main.tsx`, preventing white-screen on uncaught render errors (e.g., deep recursion in SchemaViewer).
+
+### Fix 253: Code Quality - CurlGenerator Strict Typing
+- **Improvement**: Changed `generateSampleJsonFromSchema(schema?: any)` to `schema?: SchemaModel` and imported `SchemaModel`, removing `any` and using `generateMockData(schema, {}, 0)` without cast.
+
+### Fix 254: Code Quality - Header and EditorPane Constant Reuse
+- **Improvement**: `Header.tsx` and `EditorPane.tsx` now import `MAX_UPLOAD_SIZE` instead of inline `5*1024*1024`, centralizing limit and title hint.
+
+### Fix 255: Code Quality - GraphLayout and Validator Parity Documentation
+- **Improvement**: Replaced local `collectChildSchemaNames`/`collectSubRefs` with imported `collectSchemaRefs`, deleted 40-line duplicate functions, documented parity comment.
+
+### Fix 256: Code Quality - MockGenerator Password and Binary Documentation
+- **Improvement**: Extended `mockGenerator.ts` with explicit `password` branch and base64 comment, improving determinism and realism.
+
+### Fix 257: Code Quality - Removed Dead Import Comment
+- **Improvement**: Removed stale comment `// isRecord type guard available for future parser hardening` and replaced with real import `collectSchemaRefs`.
+
+### Fix 258: Code Quality - EndpointNode/SchemaNode Data Cast Clarity
+- **Improvement**: Preserved `NodeProps` typing with explicit `as unknown as EndpointNodeData` cast and comment, avoiding `NodeProps<any>` generic misuse while keeping build compatibility.
+
+### Fix 259: Code Quality - ExportPng Filter Simplification
+- **Improvement**: Simplified filter to single `data-export-ignore` and `react-flow__panel` check, removing dead SVG branch and improving readability.
+
+### Fix 260: Code Quality - SwaggerConverter Allowed Schemes Set
+- **Improvement**: Introduced `ALLOWED_SCHEMES` constant and shared filtering for root and operation `schemes`, preventing invalid URLs.
+
+### Fix 261: Code Quality - Comprehensive New Batch Test Suite
+- **Improvement**: Added `tests/newBatchFixes.test.ts` with 15 tests covering hash bomb guard, ws filtering, multigraph edges, security inheritance empty vs inherited, array contact rejection, unified collector, binary/password mocks, server var sanitization, constants, BOM handling, raising coverage from 144 to 159 tests.
+
+### Fix 262: UX/UI - Header Mobile Nav A11y
+- **Improvement**: Added `aria-expanded`, `aria-haspopup="menu"`, `aria-controls="mobile-nav-menu"`, `role="menu"`/`menuitem` to mobile nav toggle and sample dropdown, enabling screen reader navigation (WCAG 4.1.2).
+
+### Fix 263: UX/UI - Header Focus Return on Escape
+- **Improvement**: Added `sampleBtnRef`/`mobileBtnRef` and focus-return on Escape close, preserving keyboard focus continuity (WCAG 2.4.3).
+
+### Fix 264: UX/UI - Header File Input Label and Responsive Wrap
+- **Improvement**: Added `<label for="spec-upload-input" class="sr-only">` and `aria-hidden` on hidden input, plus changed header from `h-14` to `min-h-[3.5rem] flex-wrap gap-2 py-2`, preventing overflow on 320px viewports.
+
+### Fix 265: UX/UI - DiagnosticsBar Keyboard Accessibility
+- **Improvement**: Diagnostic rows now have `role="button" tabIndex=0 onKeyDown Enter/Space` and `aria-label`, `focus-visible:ring`, enabling keyboard navigation (WCAG 2.1.1).
+
+### Fix 266: UX/UI - DiagnosticsBar Escape Propagation Guard
+- **Improvement**: Added `e.stopPropagation()` on Escape when drawer open, preventing simultaneous close of header dropdowns.
+
+### Fix 267: UX/UI - EndpointExplorer Card Semantics
+- **Improvement**: Changed `aria-selected` to valid `aria-pressed` with `aria-label="${method} ${path}"` and `focus-visible:ring`, fixing invalid aria pattern and improving focus visibility.
+
+### Fix 268: UX/UI - EndpointExplorer Empty State Count
+- **Improvement**: Empty state now shows `Showing 0 of ${endpoints.length} endpoints` with descriptive subtext and bordered clear button, giving context vs bare message.
+
+### Fix 269: UX/UI - TopologyGraph Tag Filter with Counts
+- **Improvement**: Tag `<select>` now renders `Tag (count)` with `aria-label="Filter graph by tag"` and All Tags shows total count, improving discoverability.
+
+### Fix 270: UX/UI - TopologyGraph Empty State Guidance
+- **Improvement**: Empty overlay expanded with `p-4`, `max-w-sm` hint `Open the editor and load a sample spec from the header` and prominent clear button, reducing dead-end experience.
+
+### Fix 271: UX/UI - EditorPane Drop Zone A11y
+- **Improvement**: Added `role="region" aria-label="Spec editor drop zone" aria-dropeffect` to drag container, announcing drop capability to assistive tech.
+
+### Fix 272: UX/UI - App Resizer Value Semantics
+- **Improvement**: Resizer handle now exposes `aria-valuemin/valuemax/valuenow/valuetext` and responds to Home/End/Enter (reset) alongside ArrowLeft/Right.
+
+### Fix 273: UX/UI - Consistent Method Pills Accessibility Already
+- **Improvement**: Verified method pills retain `aria-pressed` and per-method counts `GET (3)` with `title` tooltips, meeting WCAG contrast and discoverability for TRACE.
+
+### Fix 274: UX/UI - Graph Toolbar Edge Legend and Group Semantics Already Verified
+- **Improvement**: Toolbar keeps `role="group" aria-label` with legend `consumes/produces/references` visible `sm` and up, clarifying edge meaning.
+
+### Fix 275: UX/UI - Focus Visible Rings Consistency
+- **Improvement**: Unified `focus-visible:ring-1 focus-visible:ring-blue-500` on interactive cards, diagnostics rows, and header toggles, ensuring 2px visible focus across dark/light themes.
+
+### Fix 276: Tests - New Batch Verification Suite
+- **Improvement**: 15 additional tests raise suite to 159 passing, covering security inheritance, contact array rejection, multigraph edges, sanitization, constants, hash bomb, binary mocks.
+
 
 
 

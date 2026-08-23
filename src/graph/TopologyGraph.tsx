@@ -226,19 +226,23 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
           </button>
         </div>
 
-        {/* Tag Filter Dropdown */}
+        {/* Tag Filter Dropdown with counts */}
         {allTags.length > 1 && (
           <select
             value={selectedTag}
             onChange={(e) => setSelectedTag(e.target.value)}
+            aria-label="Filter graph by tag"
             className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
-            <option value="all">All Tags</option>
-            {allTags.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
+            <option value="all">All Tags ({spec.endpoints.length})</option>
+            {allTags.map((t) => {
+              const cnt = spec.endpoints.filter((e) => e.tags.includes(t)).length;
+              return (
+                <option key={t} value={t}>
+                  {t} ({cnt})
+                </option>
+              );
+            })}
           </select>
         )}
 
@@ -286,14 +290,14 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
       </div>
 
       {initialNodes.length === 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 text-slate-400 dark:text-slate-500 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-sm">
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-10 text-slate-400 dark:text-slate-500 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-sm p-4">
           <Network className="w-12 h-12 mb-2 stroke-[1.5] text-slate-400" />
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No Graph Nodes Available</p>
-          <p className="text-xs text-slate-500 mt-0.5 text-center px-4">Add endpoints or schemas to the spec editor to render the topology graph.</p>
+          <p className="text-xs text-slate-500 mt-0.5 text-center max-w-sm">Add endpoints or schemas to the spec editor to render the topology graph. Open the editor and load a sample spec from the header.</p>
           {searchQuery || filterType !== 'all' || selectedTag !== 'all' ? (
             <button
               onClick={() => { setSearchQuery(''); setFilterType('all'); setSelectedTag('all'); }}
-              className="mt-3 px-3 py-1 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition"
+              className="mt-3 px-3 py-1.5 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition font-medium"
             >
               Clear Graph Filters
             </button>

@@ -228,7 +228,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               <Search className="w-5 h-5 text-slate-400" />
             </div>
             <div className="font-medium text-slate-600 dark:text-slate-400">No endpoints found matching your filter criteria.</div>
-            <div className="text-[11px]">Try adjusting search, method, or tag filters.</div>
+            <div className="text-[11px]">Showing 0 of {endpoints.length} endpoints — try adjusting search, method, or tag filters.</div>
             {(searchQuery || selectedMethod !== 'all' || selectedTag !== 'all') && (
               <button
                 onClick={() => {
@@ -283,8 +283,9 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                           tabIndex={0}
                           onClick={() => onSelectEndpoint(ep)}
                           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectEndpoint(ep); } }}
-                          aria-selected={isSelected}
-                          className={`group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 ${
+                          aria-pressed={isSelected}
+                          aria-label={`${ep.method.toUpperCase()} ${ep.path}${ep.deprecated ? ' deprecated' : ''}`}
+                          className={`group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                             isSelected
                               ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/50 shadow-md'
                               : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm'

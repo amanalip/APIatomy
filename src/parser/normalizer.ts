@@ -16,7 +16,7 @@ import {
 import { extractRefTargetName, RefResolutionContext, resolveJsonPointer, resolveSchema } from './refResolver';
 import { isSwagger2, convertSwagger2ToOpenApi3 } from './swaggerConverter';
 import { validateSpec, findLineForPattern } from './validator';
-// isRecord type guard available for future parser hardening via ../utils/typeGuards
+import { collectSchemaRefs } from '../utils/schemaRefs';
 
 export function normalizeSpec(
   rawDoc: Record<string, unknown>,
@@ -54,8 +54,8 @@ export function normalizeSpec(
   const version = typeof info.version === 'string' ? info.version : '1.0.0';
   const description = typeof info.description === 'string' ? info.description : undefined;
   const termsOfService = typeof info.termsOfService === 'string' ? info.termsOfService : undefined;
-  const contact = typeof info.contact === 'object' && info.contact !== null ? (info.contact as any) : undefined;
-  const license = typeof info.license === 'object' && info.license !== null ? (info.license as any) : undefined;
+  const contact = typeof info.contact === 'object' && info.contact !== null && !Array.isArray(info.contact) ? (info.contact as any) : undefined;
+  const license = typeof info.license === 'object' && info.license !== null && !Array.isArray((info as any).license) ? (info.license as any) : undefined;
 
   // 2. Servers
   const servers: ServerModel[] = [];
@@ -211,11 +211,11 @@ export function normalizeSpec(
           for (const [cType, mediaObj] of Object.entries(rb.content as Record<string, unknown>)) {
             if (typeof mediaObj === 'object' && mediaObj !== null) {
               const m = mediaObj as Record<string, unknown>;
-              let schema: SchemaModel | undefined;
-              if (m.schema) {
-                schema = resolveSchema(m.schema, context);
-                collectRefsFromSchema(schema, consumedSchemaRefs);
-              }
+               let schema: SchemaModel | undefined;
+                if (m.schema) {
+                  schema = resolveSchema(m.schema, context);
+                  collectSchemaRefs(schema, consumedSchemaRefs);
+                }
               contentList.push({
                 contentType: cType,
                 schema,
@@ -267,7 +267,7 @@ export function normalizeSpec(
                 let schema: SchemaModel | undefined;
                 if (m.schema) {
                   schema = resolveSchema(m.schema, context);
-                  collectRefsFromSchema(schema, producedSchemaRefs);
+                  collectSchemaRefs(schema, producedSchemaRefs);
                 }
                 contentList.push({
                   contentType: cType,
@@ -289,8 +289,9 @@ export function normalizeSpec(
       }
 
       // Security: Inherit root document security requirements when operation-level security is omitted
+      // Explicit [] means no security, undefined means inherit global
       const security: SecurityRequirementModel[] = [];
-      const effectiveSec = Array.isArray(op.security) ? op.security : Array.isArray(doc.security) ? doc.security : undefined;
+      const effectiveSec = op.security !== undefined ? op.security : doc.security;
       if (Array.isArray(effectiveSec)) {
         for (const secReq of effectiveSec) {
           if (typeof secReq === 'object' && secReq !== null) {
@@ -402,31 +403,4 @@ function parseParameter(p: unknown, context: RefResolutionContext): ParameterMod
   };
 }
 
-function collectRefsFromSchema(schema: SchemaModel, targetSet: Set<string>): void {
-  if (schema.refTarget) {
-    targetSet.add(schema.refTarget);
-  }
-  if (schema.properties) {
-    for (const prop of Object.values(schema.properties)) {
-      collectRefsFromSchema(prop, targetSet);
-    }
-  }
-  if (schema.items) {
-    collectRefsFromSchema(schema.items, targetSet);
-  }
-  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
-    collectRefsFromSchema(schema.additionalProperties as SchemaModel, targetSet);
-  }
-  if (schema.allOf) {
-    for (const sub of schema.allOf) collectRefsFromSchema(sub, targetSet);
-  }
-  if (schema.oneOf) {
-    for (const sub of schema.oneOf) collectRefsFromSchema(sub, targetSet);
-  }
-  if (schema.anyOf) {
-    for (const sub of schema.anyOf) collectRefsFromSchema(sub, targetSet);
-  }
-  if (schema.not) {
-    collectRefsFromSchema(schema.not, targetSet);
-  }
-}
+

@@ -1,5 +1,6 @@
 import { DiagnosticItem, EndpointModel, SchemaModel } from '../model';
 import { resolveJsonPointer } from './refResolver';
+import { collectSchemaRefs } from '../utils/schemaRefs';
 
 export interface ValidationInput {
   endpoints: EndpointModel[];
@@ -362,9 +363,9 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     }
   }
 
-  // Collect nested refs inside schemas
+  // Collect nested refs inside schemas (via shared util)
   for (const [schemaName, schemaObj] of Object.entries(schemas)) {
-    collectSubRefs(schemaObj, referencedSchemas);
+    collectSchemaRefs(schemaObj, referencedSchemas);
 
     // Rule: Schema without properties, items, or composition
     const hasProps = schemaObj.properties && Object.keys(schemaObj.properties).length > 0;
@@ -481,34 +482,7 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
   return diagnostics;
 }
 
-function collectSubRefs(schema: SchemaModel, referenced: Set<string>): void {
-  if (schema.refTarget) {
-    referenced.add(schema.refTarget);
-  }
-  if (schema.properties) {
-    for (const p of Object.values(schema.properties)) {
-      collectSubRefs(p, referenced);
-    }
-  }
-  if (schema.items) {
-    collectSubRefs(schema.items, referenced);
-  }
-  if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
-    collectSubRefs(schema.additionalProperties as SchemaModel, referenced);
-  }
-  if (schema.not) {
-    collectSubRefs(schema.not, referenced);
-  }
-  if (schema.allOf) {
-    for (const s of schema.allOf) collectSubRefs(s, referenced);
-  }
-  if (schema.oneOf) {
-    for (const s of schema.oneOf) collectSubRefs(s, referenced);
-  }
-  if (schema.anyOf) {
-    for (const s of schema.anyOf) collectSubRefs(s, referenced);
-  }
-}
+
 
 function findBrokenRefsInDoc(
   doc: unknown,

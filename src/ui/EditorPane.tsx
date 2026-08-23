@@ -7,6 +7,7 @@ import { json } from '@codemirror/lang-json';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { useTheme } from '../theme/ThemeContext';
 import { Upload } from 'lucide-react';
+import { MAX_UPLOAD_SIZE } from '../utils/schemaRefs';
 
 export interface EditorPaneRef {
   jumpToLine: (line: number) => void;
@@ -159,7 +160,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
           alert(`Unsupported file type "${file.name}". Please drop a .yaml, .yml or .json file.`);
           return;
         }
-        if (file.size > 5 * 1024 * 1024) {
+        if (file.size > MAX_UPLOAD_SIZE) {
           alert('File too large. Maximum is 5 MB.');
           return;
         }
@@ -181,6 +182,9 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
 
     return (
       <div
+        role="region"
+        aria-label="Spec editor drop zone"
+        aria-dropeffect={isDragging ? 'copy' : undefined}
         className={`relative flex flex-col h-full bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-150 ${
           isDragging ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/20' : ''
         }`}

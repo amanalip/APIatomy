@@ -15,16 +15,8 @@ export async function exportGraphToPng(
       pixelRatio: 2,
       filter: (node) => {
         if (node instanceof Element) {
-          if (
-            (node as HTMLElement).classList?.contains('react-flow__panel') ||
-            node.getAttribute('data-export-ignore') === 'true'
-          ) {
-            return false;
-          }
-          // Also exclude SVG panels via class check
-          if (node.tagName && node.tagName.toLowerCase() === 'svg') {
-            // keep edges/canvas svgs, only filter if inside panel already handled
-          }
+          if (node.getAttribute('data-export-ignore') === 'true') return false;
+          if ((node as HTMLElement).classList?.contains('react-flow__panel')) return false;
         }
         return true;
       },

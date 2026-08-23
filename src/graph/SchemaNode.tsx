@@ -12,8 +12,8 @@ interface SchemaNodeData {
   direction?: 'LR' | 'TB';
 }
 
-export const SchemaNode: React.FC<NodeProps<any>> = memo(({ data, selected }) => {
-  const nodeData = data as SchemaNodeData;
+export const SchemaNode: React.FC<NodeProps> = memo(({ data, selected }) => {
+  const nodeData = data as unknown as SchemaNodeData;
   const isVertical = nodeData.direction === 'TB';
 
   const targetPosition = isVertical ? Position.Top : Position.Left;
