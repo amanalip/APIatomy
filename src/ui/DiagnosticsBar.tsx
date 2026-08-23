@@ -23,6 +23,16 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
     return d.severity === activeFilter;
   });
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
   return (
     <div className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 z-20 transition-colors duration-150 shadow-lg">
       {/* Diagnostics Bar Toggle */}

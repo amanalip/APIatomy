@@ -527,3 +527,26 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 
 ### Fix 103: Comprehensive AST Normalizer Unit Test Suite
 - **Improvement**: Added dedicated AST normalizer test suite in `tests/normalizer.test.ts` verifying graph node schema reference tracking, response parsing, and server normalization.
+
+### Fix 104: Escape Key Dismissal in Diagnostics Bar Drawer
+- **Issue**: Pressing `Escape` while the diagnostics drawer was expanded did not collapse the drawer.
+- **Root Cause**: Missing keyboard event listener in `src/ui/DiagnosticsBar.tsx`.
+- **Resolution**: Added `useEffect` listening for `Escape` when `isOpen` is active.
+
+### Fix 105: Escape Key Dismissal in Endpoint Details Panel
+- **Issue**: Pressing `Escape` while inspecting an endpoint did not close the details drawer.
+- **Root Cause**: Missing keyboard event listener in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Added `useEffect` invoking `onClose()` on `Escape` keypress.
+
+### Fix 106: Escape Key Dismissal in Header Sample Dropdown and Navigation
+- **Issue**: Pressing `Escape` while sample specs dropdown or mobile nav was open did not dismiss the menus.
+- **Root Cause**: Click-outside handler in `src/ui/Header.tsx` did not listen for key events.
+- **Resolution**: Added `keydown` listener dismissing open menus on `Escape`.
+
+### Fix 107: Missing Root Paths Object Linter Validation
+- **Issue**: Specifications completely missing the root `paths` object were not flagged with an actionable error diagnostic.
+- **Root Cause**: Missing check for `rawDoc.paths` presence in `src/parser/validator.ts`.
+- **Resolution**: Added error diagnostic rule when root `paths` is missing or invalid.
+
+### Fix 108: Comprehensive Dagre Graph Layout Unit Test Suite
+- **Improvement**: Added dedicated test suite in `tests/graphLayout.test.ts` verifying node positions, edge types (`produces`, `consumes`), schema reuse metrics, and direction configs (`LR`, `TB`).

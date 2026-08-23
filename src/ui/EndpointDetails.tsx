@@ -40,6 +40,16 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
     setExpandedResponses((prev) => ({ ...prev, [code]: !prev[code] }));
   };
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 overflow-hidden shadow-2xl transition-colors duration-150">
       {/* Header */}

@@ -331,6 +331,20 @@ paths:
     expect(missingInfoDiag?.severity).toBe('error');
   });
 
+  it('flags missing paths mapping with error diagnostic', () => {
+    const missingPathsSpec = `
+openapi: 3.0.0
+info:
+  title: No Paths Spec
+  version: 1.0.0
+`;
+
+    const parsed = parseApiSpec(missingPathsSpec);
+    const missingPathsDiag = parsed.diagnostics.find((d) => d.id === 'missing-paths-object');
+    expect(missingPathsDiag).toBeDefined();
+    expect(missingPathsDiag?.severity).toBe('error');
+  });
+
   it('detects unused root tags with info diagnostics', () => {
     const unusedTagSpec = `
 openapi: 3.0.0

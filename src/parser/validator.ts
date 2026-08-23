@@ -49,8 +49,17 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     }
   }
 
-  // Check path formatting in rawDoc
-  if (rawDoc.paths && typeof rawDoc.paths === 'object') {
+  // Check paths mapping in rawDoc
+  if (!rawDoc.paths || typeof rawDoc.paths !== 'object' || Array.isArray(rawDoc.paths)) {
+    diagnostics.push({
+      id: 'missing-paths-object',
+      severity: 'error',
+      message: 'The specification root object is missing the required "paths" mapping.',
+      path: '/paths',
+      line: 1,
+      source: 'schema',
+    });
+  } else {
     for (const pKey of Object.keys(rawDoc.paths as Record<string, unknown>)) {
       if (!pKey.startsWith('/')) {
         const line = findLineForPattern(rawText, pKey);
