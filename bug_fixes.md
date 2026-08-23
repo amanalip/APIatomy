@@ -39,3 +39,15 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Selecting a sample spec or loading an uploaded file did not always reliably update the active CodeMirror document state if the editor was initialized.
 - **Root Cause**: `EditorPane.tsx` initialized state on mount but did not listen for external `value` prop changes.
 - **Resolution**: Added a document synchronization effect in `EditorPane.tsx` that checks whether the editor text matches the incoming prop and dispatches changes accordingly.
+
+### Fix 6: Topology Edge Labels Day/Light Theme & Overlap
+- **Issue**: The relationship badges on graph edges (e.g. `produces`, `consumes`) remained dark pills on the light canvas, and multiple edges converging on the same schema caused overlapping labels.
+- **Root Cause**: Hardcoded dark background `bg-slate-900/90` in `src/graph/CustomEdge.tsx` and positioning all labels strictly at the exact 50% midpoint of the bezier curve.
+- **Resolution**:
+  - Updated `src/graph/CustomEdge.tsx` with light/dark theme classes and distinct color coding for `consumes` (blue) and `produces` (emerald).
+  - Implemented smart curve offset positioning: `consumes` labels are placed at ~35% and `produces` labels are placed at ~65% along the edge curve, eliminating label collision when endpoints and schemas connect.
+
+### Fix 7: Status Code Color Tokens for Light Mode
+- **Issue**: Status code badge colors in `src/model/httpMethods.ts` were tuned only for high contrast against dark backgrounds and looked pale in light mode.
+- **Root Cause**: Lack of dual-mode Tailwind classes in `getStatusCategory`.
+- **Resolution**: Updated status category configurations with high-contrast text and border styles for both light and dark modes.
