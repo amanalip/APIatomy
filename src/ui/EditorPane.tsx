@@ -123,10 +123,9 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
       }
     }, [theme]);
 
-    // Sync external value changes when not focused/modified (avoid cursor jump)
+    // Sync external value changes
     useEffect(() => {
       if (editorViewRef.current) {
-        if (editorViewRef.current.hasFocus) return;
         const currentDoc = editorViewRef.current.state.doc.toString();
         if (currentDoc !== value) {
           editorViewRef.current.dispatch({

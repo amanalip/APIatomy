@@ -57,7 +57,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       root.classList.remove('light');
     } else {
       root.classList.remove('dark');
-      root.classList.remove('light');
+      root.classList.add('light');
     }
   }, [theme]);
 

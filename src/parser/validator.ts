@@ -261,10 +261,10 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       }
     }
 
-    // Rule: Missing 2xx success response (default not counted as success)
+    // Rule: Missing 2xx success response (default counts as success per Fix 49)
     const hasSuccessResponse = ep.responses.some((r) => {
       const code = r.statusCode.toLowerCase();
-      if (code === '2xx') return true;
+      if (code === '2xx' || code === 'default') return true;
       const num = parseInt(code, 10);
       return !isNaN(num) && num >= 200 && num < 300;
     });

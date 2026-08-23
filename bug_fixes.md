@@ -822,30 +822,30 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Root Cause**: Case-sensitive string check.
 - **Resolution**: Added `toLowerCase()` comparison and `trim().startsWith('{')` handling.
 
-### Fix 168: Validator `default` Incorrectly Counted as 2xx Success
-- **Issue**: `hasSuccessResponse` returned true for `statusCode === 'default'`, suppressing `missing-2xx` warnings even when no 200-range response existed; `default` often represents error responses (`src/parser/validator.ts:262-281`).
-- **Root Cause**: Over-broad success check.
-- **Resolution**: Removed `default` from success condition, only `2xx` and 200-299 numeric codes qualify.
+### Fix 168: Validator `default` Success Handling Preserved (Reverted)
+- **Issue**: Attempted change to remove `default` from `hasSuccessResponse` conflicted with established Fix 49 which treats `default` as covering success to avoid false positives; reverted to original inclusive logic (`src/parser/validator.ts:264`).
+- **Root Cause**: Previous edit introduced regression against Fix 49.
+- **Resolution**: Restored `code === '2xx' || code === 'default'` as success, documented as intentional; test updated to verify 0 missing-2xx for default.
 
 ### Fix 169: Validator Empty Schema Check Missed `refTarget`
 - **Issue**: `!schemaObj.$ref` check missed schemas already resolved where `refTarget` is set but `$ref` may be rewritten or missing, incorrectly flagging referenced schemas as empty (`src/parser/validator.ts:372-385`).
 - **Root Cause**: Checked raw `$ref` not normalized `refTarget`.
 - **Resolution**: Added `hasRef = !!(schemaObj.$ref || schemaObj.refTarget)` and updated primitive check to handle array type joins.
 
-### Fix 170: ThemeContext Safari Compatibility and Light Class Pollution
-- **Issue**: `mediaQuery.addEventListener` fails on Safari <14 which uses `addListener`; also adding `light` class when theme is light pollutes `documentElement` (Tailwind expects only `dark` presence) (`src/theme/ThemeContext.tsx:31-52`).
-- **Root Cause**: Missing fallback and extra class.
-- **Resolution**: Added `addListener/removeListener` fallback; changed light branch to `remove('light')` only retaining `dark` toggle semantics.
+### Fix 170: ThemeContext Safari Compatibility (Light Class Preserved)
+- **Issue**: `mediaQuery.addEventListener` fails on Safari <14 which uses `addListener` (`src/theme/ThemeContext.tsx:31-52`).
+- **Root Cause**: Missing fallback.
+- **Resolution**: Added `addListener/removeListener` fallback; preserved original `light` class addition on `theme === 'light'` to avoid regression (owner `amanalip` repo expects light class for styling).
 
 ### Fix 171: App Root `select-none` Blocked Copy and Resize Leak
 - **Issue**: Root div had `select-none` preventing text selection/copy of endpoint paths and diagnostics; split-pane resize added `mousemove`/`mouseup` listeners but leaking if component unmounted mid-drag; `parseApiSpec` could throw unhandled crashing app (`src/App.tsx:34,67,114`).
 - **Root Cause**: Overbroad CSS utility, missing cleanup and error boundary.
 - **Resolution**: Removed `select-none` from root, added unmount `useEffect` cleanup for resizing flag, wrapped `parseApiSpec` in try/catch with fallback minimal spec.
 
-### Fix 172: Editor External Sync Cursor Jump & Response Sort and Table Keys
-- **Issue**: `EditorPane` external `value` sync dispatched while editor had focus, resetting cursor on each keystroke (debounce 300ms); `EndpointDetails` response sort parsed `2XX` as `2` misordering, and table rows used `key={`${p.in}-${p.name}`}` colliding on duplicates (`src/ui/EditorPane.tsx:127-136, src/ui/EndpointDetails.tsx:359-366,236`).
-- **Root Cause**: Missing `hasFocus` guard, naive `parseInt` on wildcard codes, non-unique keys.
-- **Resolution**: Added `view.hasFocus` guard to skip sync when editing; normalized `2xx→200` and `default→9999` in sort comparator; changed row key to include index `${p.in}-${p.name}-${idx}`.
+### Fix 172: Editor Response Sort and Table Keys (Focus Guard Reverted)
+- **Issue**: `EndpointDetails` response sort parsed `2XX` as `2` misordering, and table rows used `key={`${p.in}-${p.name}`}` colliding on duplicates (`src/ui/EndpointDetails.tsx:359-366,236`). Previous attempt added `hasFocus` guard in EditorPane which blocked sample/spec updates while focused, causing stale content (`src/ui/EditorPane.tsx:127`).
+- **Root Cause**: Naive `parseInt` on wildcard codes, non-unique keys; over-eager focus guard introduced regression.
+- **Resolution**: Reverted focus guard to original unconditional sync; normalized `2xx→200` and `default→9999` in sort comparator; changed row key to include index `${p.in}-${p.name}-${idx}`.
 
 ### Fix 173: Topology Graph FitView Timer Leak and Accessibility
 - **Issue**: `setTimeout(() => fitView)` had no cleanup, calling `fitView` on unmounted component; toolbar inputs/buttons lacked `aria-label`/`aria-pressed`, and filter/search controls inaccessible to screen readers (`src/graph/TopologyGraph.tsx:78-84,181,241`).
@@ -860,8 +860,8 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 ### Fix 175: Comprehensive Fix-Coverage Test Suite
 - **Improvement**: Added `tests/fixCoverage.test.ts` with 11 tests verifying yamlJson format, Swagger 2 numeric version handling, circular rewrite safety, `x-` extension exemption, `default` not as 2xx, array mock distinct instances, OAS 3.1 nullable types, cURL sanitization/cookie encoding/multi-security, JSON-preferred body, multigraph edges, and empty-schema `refTarget` correctness.
 
-### Fix 176: GitHub Link Correction
-- **Issue**: Header GitHub anchor pointed to placeholder `amanalip/APIatomy`.
-- **Resolution**: Corrected to `anomalyco/APIatomy`.
+### Fix 176: GitHub Link Ownership Preserved
+- **Issue**: Previous edit incorrectly changed GitHub link to `anomalyco/APIatomy`; owner is `amanalip` per user clarification.
+- **Resolution**: Reverted to `https://github.com/amanalip/APIatomy` and verified; added note that `anomalyco` is OpenCode contributor, not repo owner.
 
 
