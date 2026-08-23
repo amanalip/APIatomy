@@ -76,7 +76,13 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
     <div className="flex h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-150">
       {/* Left List of Schema Names */}
       <div className="w-64 border-r border-slate-200 dark:border-slate-800 flex flex-col bg-white/70 dark:bg-slate-900/40">
-        <div className="p-3 border-b border-slate-200 dark:border-slate-800">
+        <div className="p-3 border-b border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <span>Schemas</span>
+            <span className="text-[10px] font-normal text-slate-400 font-mono">
+              ({schemaNames.length}{Object.keys(schemas).length !== schemaNames.length ? ` / ${Object.keys(schemas).length}` : ''})
+            </span>
+          </div>
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
             <input

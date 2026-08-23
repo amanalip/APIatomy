@@ -202,7 +202,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                               {p.in}
                             </span>
                           </td>
-                          <td className="py-2.5 px-3 font-mono text-blue-600 dark:text-slate-400 text-[11px]">
+                          <td className="py-2.5 px-3 font-mono text-blue-600 dark:text-blue-400 text-[11px]">
                             <div>
                               {String(p.schema?.type || 'string')}
                               {p.schema?.format ? ` (${p.schema.format})` : ''}
@@ -240,9 +240,13 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                 <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
                   <FileCode className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                   <span>Request Body</span>
-                  {endpoint.requestBody.required && (
+                  {endpoint.requestBody.required ? (
                     <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold ml-1 border border-red-200 dark:border-red-500/30">
                       Required
+                    </span>
+                  ) : (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 ml-1 border border-slate-200 dark:border-slate-700">
+                      Optional
                     </span>
                   )}
                 </div>

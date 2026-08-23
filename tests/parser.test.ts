@@ -266,6 +266,31 @@ paths:
     expect(missingInfoDiag?.severity).toBe('error');
   });
 
+  it('detects unused root tags with info diagnostics', () => {
+    const unusedTagSpec = `
+openapi: 3.0.0
+info:
+  title: Tag Spec
+  version: 1.0.0
+tags:
+  - name: usedTag
+  - name: orphanTag
+paths:
+  /test:
+    get:
+      tags:
+        - usedTag
+      responses:
+        '200':
+          description: OK
+`;
+
+    const parsed = parseApiSpec(unusedTagSpec);
+    const unusedTagDiag = parsed.diagnostics.find((d) => d.id === 'unused-tag-orphanTag');
+    expect(unusedTagDiag).toBeDefined();
+    expect(unusedTagDiag?.severity).toBe('info');
+  });
+
   it('recognizes 2XX wildcard responses as valid success definitions', () => {
     const wildcardSpec = `
 openapi: 3.0.0

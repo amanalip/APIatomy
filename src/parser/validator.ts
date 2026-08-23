@@ -284,6 +284,30 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     }
   }
 
+  // Rule: Unused tags defined in root tags list
+  if (Array.isArray(rawDoc.tags)) {
+    const usedTags = new Set<string>();
+    for (const ep of endpoints) {
+      for (const t of ep.tags) usedTags.add(t);
+    }
+    for (const tagItem of rawDoc.tags) {
+      if (typeof tagItem === 'object' && tagItem !== null && typeof (tagItem as any).name === 'string') {
+        const tagName = (tagItem as any).name;
+        if (!usedTags.has(tagName)) {
+          const line = findLineForPattern(rawText, tagName);
+          diagnostics.push({
+            id: `unused-tag-${tagName}`,
+            severity: 'info',
+            message: `Tag "${tagName}" is declared in root tags list but is not used by any endpoint.`,
+            path: `/tags`,
+            line,
+            source: 'linter',
+          });
+        }
+      }
+    }
+  }
+
   // Rule: Check for broken refs in rawDoc
   findBrokenRefsInDoc(rawDoc, rawDoc, rawText, diagnostics);
 

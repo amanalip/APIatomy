@@ -381,3 +381,28 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Issue**: Resetting a schema search required manually backspacing the query text in the Schema Viewer.
 - **Root Cause**: Lack of clear button in `src/ui/SchemaViewer.tsx`.
 - **Resolution**: Added an instant one-click clear button (`X`) inside the schema search box.
+
+### Fix 74: Unused Root Tags Validation in Linter
+- **Issue**: Tags defined in the root `tags` specification list that were never assigned to any endpoint operations were not surfaced to users.
+- **Root Cause**: Missing tag usage tracking in `src/parser/validator.ts`.
+- **Resolution**: Added a validation rule detecting unreferenced root tags and emitting informative linter diagnostics.
+
+### Fix 75: Server URL Trailing Slash Normalization in cURL Snippets
+- **Issue**: Servers ending with a trailing slash combined with leading slash endpoint paths produced malformed URLs containing duplicate slashes (`//`).
+- **Root Cause**: Raw string concatenation without slash trimming in `src/ui/CurlGenerator.tsx`.
+- **Resolution**: Stripped trailing slashes from server URLs before concatenating endpoint paths.
+
+### Fix 76: High-Contrast Parameter Schema Type Highlighting in Dark Mode
+- **Issue**: Parameter schema types in the Endpoint Inspector used a muted dark-mode token (`dark:text-slate-400`), lowering visibility.
+- **Root Cause**: Suboptimal Tailwind color token in `src/ui/EndpointDetails.tsx`.
+- **Resolution**: Updated parameter types to high-contrast `dark:text-blue-400`.
+
+### Fix 77: Schemas Sidebar Header Title and Total Count Badge
+- **Issue**: The left schema explorer in the Schema Viewer lacked a header title and count indicator showing the number of filtered vs total schemas.
+- **Root Cause**: Missing header section in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Added a header displaying `Schemas (filtered / total)` above the search input.
+
+### Fix 78: Explicit Optional Request Body Badge
+- **Issue**: Operations defining an optional request body had no visual badge distinguishing them from operations without specified bodies.
+- **Root Cause**: Conditional rendering in `src/ui/EndpointDetails.tsx` only handled `required: true`.
+- **Resolution**: Added an `Optional` status pill for request bodies when `required: false`.

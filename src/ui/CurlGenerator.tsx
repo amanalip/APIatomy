@@ -29,7 +29,7 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
     }
 
     let normalizedPath = endpoint.path.startsWith('/') ? endpoint.path : `/${endpoint.path}`;
-    let url = rawUrl + normalizedPath;
+    let url = rawUrl.replace(/\/+$/, '') + normalizedPath;
 
     // Substitute path parameters with placeholders
     for (const param of endpoint.parameters.filter((p) => p.in === 'path')) {
