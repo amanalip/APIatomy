@@ -106,7 +106,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       aria-modal="true"
       aria-label="Command palette"
     >
-      <div ref={trapRef} className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden ring-1 ring-black/10">
+      <div
+        ref={trapRef}
+        className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden ring-1 ring-black/10"
+      >
         <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-200 dark:border-slate-800">
           <Search className="w-4 h-4 text-slate-400" />
           <input

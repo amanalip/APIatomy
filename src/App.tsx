@@ -365,7 +365,11 @@ export function App() {
           specText={rawText}
           specTitle={spec.title}
           sourceUrl={sourceUrl}
-          appState={{ view: activeView, endpointId: selectedEndpoint?.id, schemaName: selectedSchemaName }}
+          appState={{
+            view: activeView,
+            endpointId: selectedEndpoint?.id,
+            schemaName: selectedSchemaName,
+          }}
           onClose={() => setIsShareOpen(false)}
         />
       )}

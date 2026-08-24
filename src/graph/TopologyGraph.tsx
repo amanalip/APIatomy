@@ -76,7 +76,9 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
         const worker = new Worker(new URL('../workers/layoutWorker.ts', import.meta.url), {
           type: 'module',
         });
-        worker.onmessage = (e: MessageEvent<{ nodes: Node[]; edges: Edge[] } | { error: string }>) => {
+        worker.onmessage = (
+          e: MessageEvent<{ nodes: Node[]; edges: Edge[] } | { error: string }>
+        ) => {
           const data = e.data as { nodes?: Node[]; edges?: Edge[]; error?: string };
           if (data.nodes && data.edges) {
             setInitialNodes(data.nodes);
