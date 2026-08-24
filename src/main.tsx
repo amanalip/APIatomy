@@ -3,14 +3,17 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { ThemeProvider } from './theme/ThemeContext';
 import { ErrorBoundary } from './ui/ErrorBoundary';
+import { ToastProvider } from './ui/Toast';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <ThemeProvider>
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
+      <ToastProvider>
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </ToastProvider>
     </ThemeProvider>
   </React.StrictMode>
 );

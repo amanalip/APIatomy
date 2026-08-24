@@ -10,7 +10,7 @@ Zero backend, no accounts, no specs leaving your machine. The entire application
 
 ## Core Features
 
-- **Multi Spec Normalization**: Full support for OpenAPI 3.0.x and 3.1.x with automatic conversion of Swagger 2.0 specs including `host`/`basePath`/`schemes`, `collectionFormat`, file uploads and OAuth2 flow mapping.
+- **Multi Spec Normalization**: Broad OpenAPI 3.0/3.1 support with automatic conversion of Swagger 2.0 specs including `host`/`basePath`/`schemes`, `collectionFormat`, file uploads and OAuth2 flow mapping. External file refs and full JSON Schema 2020-12 require bundling.
 - **Interactive Topology Graph**: Powered by React Flow and Dagre. Maps relationships between HTTP endpoints, consumed request payloads, produced response models and nested component schemas with layout direction controls, tag filtering and PNG export.
 - **Endpoint Explorer**: Color coded HTTP method badges, filterable by path, method and tag, with search, method pills and tag grouping. Detailed drawer shows parameters, request bodies, responses, response headers and security requirements.
 - **Schema Viewer**: Expandable tree view for component schemas with composition support (`allOf`, `oneOf`, `anyOf`, `not`), circular reference protection, clickable `$ref` navigation, additionalProperties maps and inline mock data generator with JSON and YAML toggle.

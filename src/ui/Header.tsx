@@ -3,7 +3,9 @@ import { ApiSpecModel } from '../model';
 import { SAMPLE_SPECS, SampleSpecOption } from '../samples';
 import { copyTextToClipboard } from '../share/urlHash';
 import { ShareDialog } from './ShareDialog';
+import { ShortcutHelp } from './ShortcutHelp';
 import { useTheme } from '../theme/ThemeContext';
+import { useToast } from './Toast';
 import { MAX_UPLOAD_SIZE } from '../utils/schemaRefs';
 import {
   Share2,
@@ -18,6 +20,7 @@ import {
   ChevronDown,
   Menu,
   Link2,
+  HelpCircle,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -44,6 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
   sourceUrl,
 }) => {
   const { theme, toggleTheme } = useTheme();
+  const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileNavRef = useRef<HTMLDivElement>(null);
@@ -53,6 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [isSampleDropdownOpen, setIsSampleDropdownOpen] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const isEditorOpenRef = useRef(isEditorOpen);
   useEffect(() => { isEditorOpenRef.current = isEditorOpen; }, [isEditorOpen]);
 
@@ -80,6 +85,10 @@ export const Header: React.FC<HeaderProps> = ({
         event.preventDefault();
         setIsEditorOpen(!isEditorOpenRef.current);
       }
+      if (event.key === '?' && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement)) {
+        event.preventDefault();
+        setIsHelpOpen(true);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('keydown', handleKeyDown);
@@ -99,6 +108,9 @@ export const Header: React.FC<HeaderProps> = ({
     if (success) {
       setCopiedJson(true);
       setTimeout(() => setCopiedJson(false), 2000);
+      showToast('Copied normalized JSON', 'success');
+    } else {
+      showToast('Copy failed', 'error');
     }
   };
 
@@ -107,17 +119,20 @@ export const Header: React.FC<HeaderProps> = ({
     if (!file) return;
     const maxBytes = MAX_UPLOAD_SIZE;
     if (file.size > maxBytes) {
-      alert(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 5 MB.`);
+      showToast(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 5 MB.`, 'error');
       e.target.value = '';
       return;
     }
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
-      if (text) onUploadText(text);
+      if (text) {
+        onUploadText(text);
+        showToast('Spec loaded', 'success');
+      }
     };
     reader.onerror = () => {
-      alert('Failed to read file. Please try again.');
+      showToast('Failed to read file. Please try again.', 'error');
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -324,6 +339,16 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="hidden xs:inline">Share</span>
         </button>
 
+        {/* Help */}
+        <button
+          onClick={() => setIsHelpOpen(true)}
+          aria-label="Keyboard shortcuts help"
+          className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition"
+          title="Keyboard shortcuts (?)"
+        >
+          <HelpCircle className="w-4 h-4" />
+        </button>
+
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
@@ -349,6 +374,7 @@ export const Header: React.FC<HeaderProps> = ({
         </a>
       </div>
       {isShareOpen && <ShareDialog specText={spec.rawText} specTitle={spec.title} sourceUrl={sourceUrl} onClose={() => setIsShareOpen(false)} />}
+      {isHelpOpen && <ShortcutHelp onClose={() => setIsHelpOpen(false)} />}
     </header>
   );
 };
