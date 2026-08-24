@@ -52,6 +52,7 @@ export function normalizeSpec(
     rootDoc: doc,
     resolvedCache: new Map<string, SchemaModel>(),
     visitingPath: new Set<string>(),
+    basePath: '',
   };
 
   // 1. Info block (guarded via isRecord for stricter typing)

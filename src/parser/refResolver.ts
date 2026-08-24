@@ -6,6 +6,13 @@ export interface RefResolutionContext {
   rootDoc: Record<string, unknown>;
   resolvedCache: Map<string, SchemaModel>;
   visitingPath: Set<string>;
+  basePath?: string;
+}
+
+function getCacheKey(ref: string, basePath?: string): string {
+  if (!ref) return ref;
+  if (isExternalRef(ref)) return ref;
+  return basePath ? `${basePath}${ref}` : ref;
 }
 
 export function extractRefTargetName(ref: string): string {
@@ -87,9 +94,7 @@ export function resolveSchema(
   if (typeof s.$ref === 'string') {
     const ref = s.$ref;
     const targetName = extractRefTargetName(ref);
-
-    // Circular reference check - normalize encoded ref for comparison
-    const canonicalPath = `#/components/schemas/${targetName}`;
+    const cacheKey = getCacheKey(ref, context.basePath);
     const normalizedRef = (() => {
       try {
         return decodeURIComponent(ref);
@@ -97,10 +102,13 @@ export function resolveSchema(
         return ref;
       }
     })();
+    const normalizedKey = getCacheKey(normalizedRef, context.basePath);
+    const canonicalPath = `#/components/schemas/${targetName}`;
+    const canonicalKey = getCacheKey(canonicalPath, context.basePath);
     if (
-      context.visitingPath.has(ref) ||
-      context.visitingPath.has(normalizedRef) ||
-      (targetName && context.visitingPath.has(canonicalPath))
+      context.visitingPath.has(cacheKey) ||
+      context.visitingPath.has(normalizedKey) ||
+      (targetName && context.visitingPath.has(canonicalKey))
     ) {
       return {
         $ref: ref,
@@ -113,8 +121,8 @@ export function resolveSchema(
     }
 
     // Cache lookup - deep clone composed structures to avoid mutation leaking into cache
-    if (context.resolvedCache.has(ref)) {
-      const cached = context.resolvedCache.get(ref)!;
+    if (context.resolvedCache.has(cacheKey)) {
+      const cached = context.resolvedCache.get(cacheKey)!;
       return {
         ...cached,
         properties: cached.properties ? { ...cached.properties } : undefined,
@@ -134,6 +142,8 @@ export function resolveSchema(
     }
 
     let resolvedRaw: unknown = resolveJsonPointer(context.rootDoc, ref);
+    let externalDoc: Record<string, unknown> | null = null;
+    let externalBase: string | undefined;
     if ((!resolvedRaw || typeof resolvedRaw !== 'object') && isExternalRef(ref)) {
       const fileContent = getFileContent(ref);
       if (fileContent) {
@@ -147,10 +157,15 @@ export function resolveSchema(
             typeof parsed === 'object' && parsed !== null
               ? (parsed as Record<string, unknown>)
               : ({ value: parsed } as Record<string, unknown>);
-          resolvedRaw =
+          const candidate =
             pointer === '#/' || pointer === '#' || pointer === ''
               ? doc
               : resolveJsonPointer(doc, pointer.startsWith('#') ? pointer : `#${pointer}`);
+          if (candidate && typeof candidate === 'object') {
+            resolvedRaw = candidate;
+            externalDoc = doc;
+            externalBase = ref.split('#')[0];
+          }
         } catch {
           // ignore parse error
         }
@@ -168,8 +183,16 @@ export function resolveSchema(
       };
     }
 
-    context.visitingPath.add(ref);
-    const resolved = resolveSchema(resolvedRaw, context, targetName);
+    context.visitingPath.add(cacheKey);
+    const childContext: RefResolutionContext = externalDoc
+      ? {
+          rootDoc: externalDoc,
+          resolvedCache: context.resolvedCache,
+          visitingPath: context.visitingPath,
+          basePath: externalBase || '',
+        }
+      : context;
+    const resolved = resolveSchema(resolvedRaw, childContext, targetName);
     const hasSiblings = Object.keys(s).some((k) => k !== '$ref');
     let result: SchemaModel = {
       ...resolved,
@@ -180,7 +203,7 @@ export function resolveSchema(
     if (hasSiblings) {
       const siblingRaw: Record<string, unknown> = { ...s };
       delete siblingRaw.$ref;
-      const siblingModel = resolveSchema(siblingRaw, context, schemaName);
+      const siblingModel = resolveSchema(siblingRaw, childContext, schemaName);
       for (const [k, v] of Object.entries(siblingModel)) {
         if (
           v !== undefined &&
@@ -207,9 +230,9 @@ export function resolveSchema(
         result.allOf = [...(resolved.allOf || []), ...siblingModel.allOf];
       }
     }
-    context.visitingPath.delete(ref);
+    context.visitingPath.delete(cacheKey);
 
-    context.resolvedCache.set(ref, result);
+    context.resolvedCache.set(cacheKey, result);
     return result;
   }
 
