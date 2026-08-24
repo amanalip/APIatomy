@@ -242,7 +242,10 @@ export function App() {
               <EditorPane
                 ref={editorPaneRef}
                 value={rawText}
-                onChange={(newText) => setRawText(newText)}
+                onChange={(newText) => {
+                  setRawText(newText);
+                  if (sourceUrl !== null) setSourceUrl(null);
+                }}
                 format={(() => {
                   // Strip BOM(s) before detection (handles concatenated files)
                   const t = rawText.replace(/^\uFEFF+/, '').trim();
