@@ -27,8 +27,8 @@ export const Onboarding: React.FC = () => {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur">
+      <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl p-5 ring-1 ring-black/10">
         <div className="flex items-start justify-between gap-3 mb-3">
           <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Welcome to APIatomy</h2>
           <button onClick={dismiss} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Close onboarding">
