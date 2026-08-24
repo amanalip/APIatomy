@@ -8,21 +8,43 @@ export interface RefResolutionContext {
 
 export function extractRefTargetName(ref: string): string {
   if (!ref) return '';
-  const parts = ref.split('/');
+  const hashPart = ref.includes('#') ? ref.split('#').pop() as string : ref;
+  const pointer = hashPart.startsWith('/') ? hashPart : `/${hashPart}`;
+  const parts = pointer.split('/');
   const rawTarget = parts[parts.length - 1] || ref;
+  const hashless = rawTarget.split('#')[0] || rawTarget;
   try {
-    return decodeURIComponent(rawTarget.replace(/~1/g, '/').replace(/~0/g, '~'));
+    return decodeURIComponent(hashless.replace(/~1/g, '/').replace(/~0/g, '~'));
   } catch {
-    return rawTarget.replace(/~1/g, '/').replace(/~0/g, '~');
+    return hashless.replace(/~1/g, '/').replace(/~0/g, '~');
   }
 }
 
+export function isExternalRef(ref: string): boolean {
+  if (!ref) return false;
+  if (ref.startsWith('#/')) return false;
+  if (ref.startsWith('#')) return false;
+  return true;
+}
+
 export function resolveJsonPointer(doc: Record<string, unknown>, pointer: string): unknown {
-  if (!pointer || !pointer.startsWith('#/')) {
+  if (!pointer) return undefined;
+  let effectivePointer = pointer;
+  if (pointer.includes('#')) {
+    const hashIdx = pointer.indexOf('#');
+    const after = pointer.slice(hashIdx + 1);
+    if (!after || after === '' || after === '/') return undefined;
+    effectivePointer = after.startsWith('/') ? `#${after}` : `#/${after}`;
+    const filePart = pointer.slice(0, hashIdx);
+    if (filePart && filePart.trim() !== '' && filePart !== '.' && filePart !== './') {
+      return undefined;
+    }
+  }
+  if (!effectivePointer.startsWith('#/')) {
     return undefined;
   }
 
-  const parts = pointer
+  const parts = effectivePointer
     .slice(2)
     .split('/')
     .map((p) => {
@@ -100,24 +122,50 @@ export function resolveSchema(
 
     const resolvedRaw = resolveJsonPointer(context.rootDoc, ref);
     if (!resolvedRaw || typeof resolvedRaw !== 'object') {
+      const external = isExternalRef(ref);
       return {
         $ref: ref,
         refTarget: targetName,
         name: schemaName || targetName,
-        description: `Unresolved reference: ${ref}`,
+        description: external
+          ? `External reference not resolved offline: ${ref}`
+          : `Unresolved reference: ${ref}`,
       };
     }
 
     context.visitingPath.add(ref);
     const resolved = resolveSchema(resolvedRaw, context, targetName);
-    context.visitingPath.delete(ref);
-
-    const result: SchemaModel = {
+    const hasSiblings = Object.keys(s).some((k) => k !== '$ref');
+    let result: SchemaModel = {
       ...resolved,
       $ref: ref,
       refTarget: targetName,
       name: schemaName || targetName,
     };
+    if (hasSiblings) {
+      const siblingRaw: Record<string, unknown> = { ...s };
+      delete siblingRaw.$ref;
+      const siblingModel = resolveSchema(siblingRaw, context, schemaName);
+      for (const [k, v] of Object.entries(siblingModel)) {
+        if (v !== undefined && k !== '$ref' && k !== 'refTarget' && k !== 'name' && k !== 'id' && k !== 'raw') {
+          (result as any)[k] = v;
+        }
+      }
+      result.$ref = ref;
+      result.refTarget = targetName;
+      result.name = schemaName || targetName;
+      if (resolved.properties && siblingModel.properties) {
+        result.properties = { ...resolved.properties, ...siblingModel.properties };
+      }
+      if (resolved.required && siblingModel.required) {
+        const merged = new Set([...(resolved.required || []), ...(siblingModel.required || [])]);
+        result.required = Array.from(merged);
+      }
+      if (siblingModel.allOf) {
+        result.allOf = [...(resolved.allOf || []), ...siblingModel.allOf];
+      }
+    }
+    context.visitingPath.delete(ref);
 
     context.resolvedCache.set(ref, result);
     return result;

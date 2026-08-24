@@ -133,6 +133,7 @@ export function normalizeSpec(
         bearerFormat: typeof s.bearerFormat === 'string' ? s.bearerFormat : undefined,
         flows: typeof s.flows === 'object' ? (s.flows as any) : undefined,
         openIdConnectUrl: typeof s.openIdConnectUrl === 'string' ? s.openIdConnectUrl : undefined,
+        paramName: typeof s.name === 'string' ? s.name : undefined,
       };
     }
   }
@@ -143,9 +144,29 @@ export function normalizeSpec(
 
   const validMethods: readonly HttpMethod[] = VALID_HTTP_METHODS as unknown as HttpMethod[];
 
-  for (const [pathKey, pathItem] of Object.entries(rawPaths)) {
-    if (typeof pathItem !== 'object' || pathItem === null) continue;
-    const pi = pathItem as Record<string, unknown>;
+  for (const [pathKey, rawPathItem] of Object.entries(rawPaths)) {
+    if (typeof rawPathItem !== 'object' || rawPathItem === null) continue;
+    let pi = rawPathItem as Record<string, unknown>;
+    if (typeof pi.$ref === 'string') {
+      const ref = pi.$ref as string;
+      const resolved = resolveJsonPointer(context.rootDoc as Record<string, unknown>, ref);
+      if (resolved && typeof resolved === 'object' && !Array.isArray(resolved)) {
+        pi = resolved as Record<string, unknown>;
+      } else {
+        const isExternal = !ref.startsWith('#/');
+        diagnostics.push({
+          id: `unresolved-pathitem-ref-${pathKey}`,
+          severity: isExternal ? 'warning' : 'error',
+          message: isExternal
+            ? `External path item reference "${ref}" at path "${pathKey}" cannot be resolved in offline mode.`
+            : `Unresolved path item reference "${ref}" at path "${pathKey}".`,
+          path: `/paths/${pathKey}`,
+          line: findLineForPattern(rawText, ref) || findLineForPattern(rawText, pathKey) || 1,
+          source: 'ref',
+        });
+        continue;
+      }
+    }
 
     // Common path-level parameters
     const pathLevelParameters: ParameterModel[] = [];
@@ -155,6 +176,10 @@ export function normalizeSpec(
         if (parsedP) pathLevelParameters.push(parsedP);
       }
     }
+
+    const pathLevelServers: ServerModel[] | undefined = Array.isArray(pi.servers)
+      ? (pi.servers as ServerModel[])
+      : undefined;
 
     for (const [methodKey, opObj] of Object.entries(pi)) {
       const method = methodKey.toLowerCase() as HttpMethod;
@@ -289,22 +314,39 @@ export function normalizeSpec(
         }
       }
 
-      // Security: Inherit root document security requirements when operation-level security is omitted
-      // Explicit [] means no security, undefined means inherit global
+      // Security: preserve OR and AND semantics as alternatives
+      // effectiveSec array where each entry is AND group, OR between entries, {} means optional
       const security: SecurityRequirementModel[] = [];
+      const securityAlternatives: SecurityRequirementModel[][] = [];
       const effectiveSec = op.security !== undefined ? op.security : doc.security;
       if (Array.isArray(effectiveSec)) {
-        for (const secReq of effectiveSec) {
-          if (typeof secReq === 'object' && secReq !== null) {
-            for (const [secKey, scopes] of Object.entries(secReq as Record<string, unknown>)) {
-              security.push({
-                name: secKey,
-                scopes: Array.isArray(scopes) ? (scopes as string[]) : [],
-              });
+        if (effectiveSec.length === 0 && op.security !== undefined) {
+          securityAlternatives.push([]);
+        } else {
+          for (const secReq of effectiveSec) {
+            if (typeof secReq === 'object' && secReq !== null) {
+              const keys = Object.keys(secReq as Record<string, unknown>);
+              if (keys.length === 0) {
+                securityAlternatives.push([]);
+                continue;
+              }
+              const group: SecurityRequirementModel[] = [];
+              for (const [secKey, scopes] of Object.entries(secReq as Record<string, unknown>)) {
+                const entry: SecurityRequirementModel = {
+                  name: secKey,
+                  scopes: Array.isArray(scopes) ? (scopes as string[]) : [],
+                };
+                group.push(entry);
+                security.push(entry);
+              }
+              if (group.length > 0) securityAlternatives.push(group);
             }
           }
         }
       }
+
+      const opServers = Array.isArray(op.servers) ? (op.servers as ServerModel[]) : undefined;
+      const effectiveServers = opServers ?? pathLevelServers;
 
       endpoints.push({
         id: `${method}_${pathKey}`,
@@ -319,7 +361,8 @@ export function normalizeSpec(
         requestBody,
         responses,
         security,
-        servers: Array.isArray(op.servers) ? (op.servers as any) : undefined,
+        securityAlternatives: securityAlternatives.length > 0 ? securityAlternatives : undefined,
+        servers: effectiveServers,
         consumedSchemaRefs: Array.from(consumedSchemaRefs),
         producedSchemaRefs: Array.from(producedSchemaRefs),
       });

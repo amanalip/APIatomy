@@ -45,12 +45,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('apiatomy_theme', theme);
-    } catch {
-      // Ignore storage errors
-    }
-
     const root = document.documentElement;
     if (theme === 'dark') {
       root.classList.add('dark');
@@ -62,10 +56,23 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [theme]);
 
   const toggleTheme = () => {
-    setThemeState((prev) => (prev === 'dark' ? 'light' : 'dark'));
+    setThemeState((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      try {
+        localStorage.setItem('apiatomy_theme', next);
+      } catch {
+        // Ignore storage errors
+      }
+      return next;
+    });
   };
 
   const setTheme = (newTheme: Theme) => {
+    try {
+      localStorage.setItem('apiatomy_theme', newTheme);
+    } catch {
+      // Ignore storage errors
+    }
     setThemeState(newTheme);
   };
 

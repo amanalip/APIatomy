@@ -51,7 +51,8 @@ export interface EndpointModel {
   requestBody?: RequestBodyModel;
   responses: ResponseModel[];
   security: SecurityRequirementModel[];
-  servers?: { url: string; description?: string }[];
+  securityAlternatives?: SecurityRequirementModel[][];
+  servers?: ServerModel[];
   // References to schemas used in this endpoint
   consumedSchemaRefs: string[];
   producedSchemaRefs: string[];
@@ -121,6 +122,7 @@ export interface SecuritySchemeModel {
   bearerFormat?: string;
   flows?: Record<string, unknown>;
   openIdConnectUrl?: string;
+  paramName?: string;
 }
 
 export interface ServerModel {

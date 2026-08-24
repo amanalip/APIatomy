@@ -229,7 +229,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               <Search className="w-5 h-5 text-slate-400" />
             </div>
             <div className="font-medium text-slate-600 dark:text-slate-400">No endpoints found matching your filter criteria.</div>
-            <div className="text-[11px]">Showing 0 of {endpoints.length} endpoints — try adjusting search, method, or tag filters.</div>
+            <div className="text-[11px]">Showing 0 of {endpoints.length} endpoints - try adjusting search, method, or tag filters.</div>
             {(searchQuery || selectedMethod !== 'all' || selectedTag !== 'all') && (
               <button
                 onClick={() => {

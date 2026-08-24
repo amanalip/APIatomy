@@ -17,22 +17,27 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers,
   const [copied, setCopied] = useState(false);
   const [wrap, setWrap] = useState(false);
   const [selectedServerUrl, setSelectedServerUrl] = useState<string>(
-    servers[0]?.url || FALLBACK_SERVER_URL
+    (endpoint.servers && endpoint.servers[0]?.url) || servers[0]?.url || FALLBACK_SERVER_URL
   );
   const copyTimerRef = useRef<number | null>(null);
 
+  const effectiveServers = useMemo(() => {
+    if (endpoint.servers && endpoint.servers.length > 0) return endpoint.servers;
+    return servers;
+  }, [endpoint.servers, servers]);
+
   useEffect(() => {
-    if (servers.length === 0) {
+    if (effectiveServers.length === 0) {
       if (selectedServerUrl !== FALLBACK_SERVER_URL) {
         setSelectedServerUrl(FALLBACK_SERVER_URL);
       }
       return;
     }
-    const exists = servers.some((s) => s.url === selectedServerUrl);
+    const exists = effectiveServers.some((s) => s.url === selectedServerUrl);
     if (!exists) {
-      setSelectedServerUrl(servers[0].url);
+      setSelectedServerUrl(effectiveServers[0].url);
     }
-  }, [servers, selectedServerUrl]);
+  }, [effectiveServers, selectedServerUrl]);
 
   useEffect(() => {
     return () => {
@@ -41,8 +46,8 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers,
   }, []);
 
   const activeServer = useMemo(() => {
-    return servers.find((s) => s.url === selectedServerUrl) || servers[0];
-  }, [servers, selectedServerUrl]);
+    return effectiveServers.find((s) => s.url === selectedServerUrl) || effectiveServers[0];
+  }, [effectiveServers, selectedServerUrl]);
 
   const curlCommand = useMemo(() => {
     return buildCurlCommand(endpoint, selectedServerUrl, activeServer, securitySchemes);
@@ -66,13 +71,13 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers,
         </div>
 
         <div className="flex items-center gap-2">
-          {servers.length > 1 && (
+          {effectiveServers.length > 1 && (
             <select
               value={selectedServerUrl}
               onChange={(e) => setSelectedServerUrl(e.target.value)}
               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] rounded px-2 py-0.5"
             >
-              {servers.map((s) => (
+              {effectiveServers.map((s) => (
                 <option key={s.url} value={s.url}>
                   {s.url}
                 </option>
@@ -121,22 +126,17 @@ function encodeQueryValue(value: string, allowReserved?: boolean): string {
   return encoded
     .replace(/%3A/gi, ':')
     .replace(/%2F/gi, '/')
-    .replace(/%3F/gi, '?')
-    .replace(/%23/gi, '#')
     .replace(/%5B/gi, '[')
     .replace(/%5D/gi, ']')
     .replace(/%40/gi, '@')
     .replace(/%21/gi, '!')
     .replace(/%24/gi, '$')
-    .replace(/%26/gi, '&')
     .replace(/%27/gi, "'")
     .replace(/%28/gi, '(')
     .replace(/%29/gi, ')')
     .replace(/%2A/gi, '*')
-    .replace(/%2B/gi, '+')
     .replace(/%2C/gi, ',')
-    .replace(/%3B/gi, ';')
-    .replace(/%3D/gi, '=');
+    .replace(/%3B/gi, ';');
 }
 
 export function buildCurlCommand(
@@ -179,6 +179,41 @@ export function buildCurlCommand(
   if (queryParams.length > 0) {
     const qParts: string[] = [];
     for (const p of queryParams) {
+      const isObject = p.schema?.type === 'object' || (p.example !== null && typeof p.example === 'object' && !Array.isArray(p.example) && p.schema?.type !== 'array');
+      if (isObject) {
+        const rawVal = (p.example as Record<string, unknown>) ?? (p.schema?.default as Record<string, unknown>) ?? null;
+        let objVal: Record<string, unknown>;
+        if (rawVal && typeof rawVal === 'object' && !Array.isArray(rawVal)) {
+          objVal = rawVal as Record<string, unknown>;
+        } else if (p.schema?.properties) {
+          objVal = Object.fromEntries(Object.keys(p.schema.properties).map((k) => [k, 'value']));
+        } else {
+          objVal = { key: 'value' };
+        }
+        const style = p.style || 'form';
+        const explode = p.explode !== false;
+        if (style === 'deepObject') {
+          for (const [k, v] of Object.entries(objVal)) {
+            qParts.push(`${encodeURIComponent(p.name)}[${encodeURIComponent(k)}]=${encodeQueryValue(String(v), p.allowReserved)}`);
+          }
+        } else if (style === 'form' && explode) {
+          for (const [k, v] of Object.entries(objVal)) {
+            qParts.push(`${encodeURIComponent(k)}=${encodeQueryValue(String(v), p.allowReserved)}`);
+          }
+        } else {
+          let delimiter = ',';
+          if (style === 'spaceDelimited') delimiter = '%20';
+          else if (style === 'pipeDelimited') delimiter = '|';
+          const pairs: string[] = [];
+          for (const [k, v] of Object.entries(objVal)) {
+            pairs.push(encodeURIComponent(k));
+            pairs.push(encodeQueryValue(String(v), p.allowReserved));
+          }
+          const joined = pairs.join(delimiter);
+          qParts.push(`${encodeURIComponent(p.name)}=${joined}`);
+        }
+        continue;
+      }
       if (p.schema?.type === 'array' || Array.isArray(p.example)) {
         const arrVal = Array.isArray(p.example)
           ? p.example
@@ -210,6 +245,9 @@ export function buildCurlCommand(
             else if (p.schema.maximum !== undefined && p.schema.maximum < 1) val = String(p.schema.maximum);
             else val = '1';
           } else val = 'value';
+        }
+        if (typeof val === 'object' && val !== null) {
+          val = JSON.stringify(val);
         }
         qParts.push(`${encodeURIComponent(p.name)}=${encodeQueryValue(String(val), p.allowReserved)}`);
       }
@@ -256,15 +294,23 @@ export function buildCurlCommand(
     lines.push(`  -b "${cookieStr}"`);
   }
 
-  if (endpoint.security.length > 0 && !hasExplicitAuthHeader) {
+  const hasSecurity = (endpoint.securityAlternatives && endpoint.securityAlternatives.length > 0) ? endpoint.securityAlternatives.some((g) => g.length > 0) : endpoint.security.length > 0;
+  if (hasSecurity && !hasExplicitAuthHeader) {
+    let authList: typeof endpoint.security = [];
+    if (endpoint.securityAlternatives && endpoint.securityAlternatives.length > 0) {
+      const firstGroup = endpoint.securityAlternatives[0];
+      authList = firstGroup;
+    } else {
+      authList = endpoint.security;
+    }
     const seen = new Set<string>();
-    for (const sec of endpoint.security) {
+    for (const sec of authList) {
       if (seen.has(sec.name)) continue;
       seen.add(sec.name);
       const scheme = securitySchemes?.[sec.name];
       if (scheme) {
         if (scheme.type === 'apiKey') {
-          const headerName = (scheme as any).name || sec.name;
+          const headerName = (scheme as SecuritySchemeModel).paramName || sec.name;
           if (scheme.in === 'query') {
             const sep = url.includes('?') ? '&' : '?';
             url = `${url}${sep}${encodeURIComponent(headerName)}=YOUR_API_KEY`;

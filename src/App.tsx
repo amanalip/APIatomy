@@ -157,6 +157,14 @@ export function App() {
     setRawText(text);
     editorPaneRef.current?.setContent(text);
     setSelectedEndpoint(null);
+    if (typeof window !== 'undefined' && window.location.hash) {
+      window.location.hash = '';
+      try {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      } catch {
+        window.location.hash = '';
+      }
+    }
   };
 
   const diagTimerRef = useRef<number | null>(null);
