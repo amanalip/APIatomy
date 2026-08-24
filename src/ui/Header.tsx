@@ -218,6 +218,9 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="font-mono">API</span>
                 <span className="font-light">atomy</span>
               </span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                v0.2.0
+              </span>
               {spec.version && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
                   v{spec.version}
