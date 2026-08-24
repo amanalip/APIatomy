@@ -8,6 +8,7 @@ import {
   useNodesState,
   useEdgesState,
   Node,
+  Edge,
   useReactFlow,
   ReactFlowProvider,
   NodeTypes,
@@ -53,6 +54,8 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
 
   const isDark = theme === 'dark';
 
+  // Show layout progress for large graphs
+
   const allTags = useMemo(() => {
     const tags = new Set<string>();
     for (const ep of spec.endpoints) {
@@ -61,13 +64,67 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
     return Array.from(tags).sort();
   }, [spec.endpoints]);
 
-  const { initialNodes, initialEdges } = useMemo(() => {
-    const { nodes, edges } = computeApiTopologyGraph(spec, {
-      direction,
-      nodeWidth: 280,
-      nodeHeight: 90,
-    });
-    return { initialNodes: nodes, initialEdges: edges };
+  const [initialNodes, setInitialNodes] = useState<Node[]>([]);
+  const [initialEdges, setInitialEdges] = useState<Edge[]>([]);
+  const [isLayouting, setIsLayouting] = useState(false);
+
+  useEffect(() => {
+    const total = spec.endpoints.length + Object.keys(spec.schemas).length;
+    if (total > 80) {
+      setIsLayouting(true);
+      try {
+        const worker = new Worker(new URL('../workers/layoutWorker.ts', import.meta.url), {
+          type: 'module',
+        });
+        worker.onmessage = (e: MessageEvent<{ nodes: Node[]; edges: Edge[] } | { error: string }>) => {
+          const data = e.data as { nodes?: Node[]; edges?: Edge[]; error?: string };
+          if (data.nodes && data.edges) {
+            setInitialNodes(data.nodes);
+            setInitialEdges(data.edges);
+          } else {
+            const fallback = computeApiTopologyGraph(spec, {
+              direction,
+              nodeWidth: 280,
+              nodeHeight: 90,
+            });
+            setInitialNodes(fallback.nodes);
+            setInitialEdges(fallback.edges);
+          }
+          setIsLayouting(false);
+          worker.terminate();
+        };
+        worker.onerror = () => {
+          const fallback = computeApiTopologyGraph(spec, {
+            direction,
+            nodeWidth: 280,
+            nodeHeight: 90,
+          });
+          setInitialNodes(fallback.nodes);
+          setInitialEdges(fallback.edges);
+          setIsLayouting(false);
+          worker.terminate();
+        };
+        worker.postMessage({ spec, direction });
+        return () => worker.terminate();
+      } catch {
+        const fallback = computeApiTopologyGraph(spec, {
+          direction,
+          nodeWidth: 280,
+          nodeHeight: 90,
+        });
+        setInitialNodes(fallback.nodes);
+        setInitialEdges(fallback.edges);
+        setIsLayouting(false);
+      }
+    } else {
+      const { nodes, edges } = computeApiTopologyGraph(spec, {
+        direction,
+        nodeWidth: 280,
+        nodeHeight: 90,
+      });
+      setInitialNodes(nodes);
+      setInitialEdges(edges);
+    }
   }, [spec, direction]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
@@ -331,6 +388,9 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
           <FileImage className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span>SVG</span>
         </button>
+        {isLayouting && (
+          <span className="text-[11px] text-slate-500 dark:text-slate-400 px-2">Laying out...</span>
+        )}
       </div>
 
       {initialNodes.length === 0 && (

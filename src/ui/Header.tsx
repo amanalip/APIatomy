@@ -35,6 +35,7 @@ interface HeaderProps {
   onUploadText: (text: string) => void;
   onOpenUrl: () => void;
   onOpenWorkspace: () => void;
+  onShare?: () => void;
   isEditorOpen: boolean;
   setIsEditorOpen: (open: boolean) => void;
   sourceUrl?: string | null;
@@ -49,6 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
   onUploadText,
   onOpenUrl,
   onOpenWorkspace,
+  onShare,
   isEditorOpen,
   setIsEditorOpen,
   sourceUrl,
@@ -113,7 +115,8 @@ export const Header: React.FC<HeaderProps> = ({
   }, [setIsEditorOpen, isSampleDropdownOpen, isMobileNavOpen]);
 
   const handleShare = () => {
-    setIsShareOpen(true);
+    if (onShare) onShare();
+    else setIsShareOpen(true);
   };
 
   const handleCopyJson = async () => {

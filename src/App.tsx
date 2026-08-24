@@ -19,6 +19,7 @@ import { UrlImportDialog } from './ui/UrlImportDialog';
 import { CommandPalette } from './ui/CommandPalette';
 import { DiffView } from './ui/DiffView';
 import { WorkspaceDialog } from './ui/WorkspaceDialog';
+import { ShareDialog } from './ui/ShareDialog';
 const TopologyGraph = React.lazy(() =>
   import('./graph/TopologyGraph').then((m) => ({ default: m.TopologyGraph }))
 );
@@ -44,6 +45,7 @@ export function App() {
   const [diffOldText, setDiffOldText] = useState<string | null>(null);
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
 
   const editorPaneRef = useRef<EditorPaneRef>(null);
@@ -190,6 +192,7 @@ export function App() {
         onUploadText={handleUploadText}
         onOpenUrl={() => setIsUrlDialogOpen(true)}
         onOpenWorkspace={() => setIsWorkspaceOpen(true)}
+        onShare={() => setIsShareOpen(true)}
         isEditorOpen={isEditorOpen}
         setIsEditorOpen={setIsEditorOpen}
         sourceUrl={sourceUrl}
@@ -357,6 +360,15 @@ export function App() {
           onLoad={(text, url) => handleLoadFromUrl(text, url)}
         />
       )}
+      {isShareOpen && (
+        <ShareDialog
+          specText={rawText}
+          specTitle={spec.title}
+          sourceUrl={sourceUrl}
+          appState={{ view: activeView, endpointId: selectedEndpoint?.id, schemaName: selectedSchemaName }}
+          onClose={() => setIsShareOpen(false)}
+        />
+      )}
       {isWorkspaceOpen && (
         <WorkspaceDialog
           currentText={rawText}
@@ -372,13 +384,21 @@ export function App() {
       {isPaletteOpen && (
         <CommandPalette
           onClose={() => setIsPaletteOpen(false)}
-          onSelectSample={() => setIsPaletteOpen(false)}
+          onSelectSample={(sample) => {
+            setIsPaletteOpen(false);
+            if (sample) {
+              handleSelectSample(sample);
+            }
+          }}
           onUpload={() => {
             setIsPaletteOpen(false);
-            setIsEditorOpen(true);
+            const el = document.getElementById('spec-upload-input') as HTMLInputElement | null;
+            if (el) el.click();
+            else setIsEditorOpen(true);
           }}
           onShare={() => {
             setIsPaletteOpen(false);
+            setIsShareOpen(true);
           }}
           onViewChange={(view) => {
             if (view === 'diff' && !diffOldText) setDiffOldText(rawText);
