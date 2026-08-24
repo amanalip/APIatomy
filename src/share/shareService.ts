@@ -51,7 +51,7 @@ export function getShareUrl(specText: string, compact = false): string {
 export function getShareSize(specText: string, compact = false): { bytes: number; kb: string; urlLength: number; isWarn: boolean; isLarge: boolean } {
   const hash = getShareHash(specText, compact);
   const url = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}${hash}` : hash;
-  let bytes = 0;
+  let bytes: number;
   try {
     bytes = new TextEncoder().encode(url).length;
   } catch {

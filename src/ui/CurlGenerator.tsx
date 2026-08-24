@@ -49,9 +49,16 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers,
     return effectiveServers.find((s) => s.url === selectedServerUrl) || effectiveServers[0];
   }, [effectiveServers, selectedServerUrl]);
 
+  const hasAuthAlternatives = (endpoint.securityAlternatives?.length || 0) > 1;
+  const [selectedAuth, setSelectedAuth] = useState(0);
+
+  useEffect(() => {
+    setSelectedAuth(0);
+  }, [endpoint.id]);
+
   const curlCommand = useMemo(() => {
-    return buildCurlCommand(endpoint, selectedServerUrl, activeServer, securitySchemes);
-  }, [endpoint, selectedServerUrl, activeServer, securitySchemes]);
+    return buildCurlCommand(endpoint, selectedServerUrl, activeServer, securitySchemes, selectedAuth);
+  }, [endpoint, selectedServerUrl, activeServer, securitySchemes, selectedAuth]);
 
   const handleCopy = async () => {
     const success = await copyTextToClipboard(curlCommand);
@@ -71,6 +78,24 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers,
         </div>
 
         <div className="flex items-center gap-2">
+          {hasAuthAlternatives && endpoint.securityAlternatives && (
+            <select
+              value={selectedAuth}
+              onChange={(e) => setSelectedAuth(Number(e.target.value))}
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[11px] rounded px-2 py-0.5"
+              title="Authentication alternative"
+              aria-label="Select authentication"
+            >
+              {endpoint.securityAlternatives.map((group, idx) => {
+                const label = group.length === 0 ? 'No auth' : group.map((g) => g.name).join(' + ');
+                return (
+                  <option key={idx} value={idx}>
+                    {label}
+                  </option>
+                );
+              })}
+            </select>
+          )}
           {effectiveServers.length > 1 && (
             <select
               value={selectedServerUrl}
@@ -143,7 +168,8 @@ export function buildCurlCommand(
   endpoint: EndpointModel,
   selectedServerUrl: string,
   activeServer?: ServerModel,
-  securitySchemes?: Record<string, SecuritySchemeModel>
+  securitySchemes?: Record<string, SecuritySchemeModel>,
+  selectedAuthIndex = 0
 ): string {
   let rawUrl = normalizeServerUrl(selectedServerUrl);
 
@@ -296,13 +322,9 @@ export function buildCurlCommand(
 
   const hasSecurity = (endpoint.securityAlternatives && endpoint.securityAlternatives.length > 0) ? endpoint.securityAlternatives.some((g) => g.length > 0) : endpoint.security.length > 0;
   if (hasSecurity && !hasExplicitAuthHeader) {
-    let authList: typeof endpoint.security = [];
-    if (endpoint.securityAlternatives && endpoint.securityAlternatives.length > 0) {
-      const firstGroup = endpoint.securityAlternatives[0];
-      authList = firstGroup;
-    } else {
-      authList = endpoint.security;
-    }
+    const authList: typeof endpoint.security = (endpoint.securityAlternatives && endpoint.securityAlternatives.length > 0)
+      ? (endpoint.securityAlternatives[selectedAuthIndex] ?? endpoint.securityAlternatives[0] ?? [])
+      : endpoint.security;
     const seen = new Set<string>();
     for (const sec of authList) {
       if (seen.has(sec.name)) continue;
