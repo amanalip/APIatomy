@@ -14,6 +14,7 @@ import { EndpointExplorer } from './ui/EndpointExplorer';
 import { EndpointDetails } from './ui/EndpointDetails';
 import { SchemaViewer } from './ui/SchemaViewer';
 import { DiagnosticsBar } from './ui/DiagnosticsBar';
+import { Footer } from './ui/Footer';
 import { Onboarding } from './ui/Onboarding';
 import { UrlImportDialog } from './ui/UrlImportDialog';
 import { CommandPalette } from './ui/CommandPalette';
@@ -354,6 +355,7 @@ export function App() {
 
       {/* Bottom Diagnostics Drawer */}
       <DiagnosticsBar diagnostics={spec.diagnostics} onSelectDiagnostic={handleSelectDiagnostic} />
+      <Footer />
       {isUrlDialogOpen && (
         <UrlImportDialog
           onClose={() => setIsUrlDialogOpen(false)}
