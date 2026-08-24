@@ -35,15 +35,19 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   const overlayRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
+  const [isPreparing, setIsPreparing] = useState(false);
+  const [asyncUrl, setAsyncUrl] = useState<string | null>(null);
   const compactAvailable = getCompactSpecText(specText) !== null;
-  const compactUrl = compactAvailable
+  const syncCompactUrl = compactAvailable
     ? getShareUrl(specText, true, includeState ? appState : undefined)
     : '';
-  const url = getShareUrl(
+  const syncUrl = getShareUrl(
     specText,
     compact && compactAvailable,
     includeState ? appState : undefined
   );
+  const compactUrl = asyncUrl && compact ? asyncUrl : syncCompactUrl;
+  const url = asyncUrl ? asyncUrl : syncUrl;
   const size = getShareSize(
     specText,
     compact && compactAvailable,
@@ -53,6 +57,38 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     ? getShareSize(specText, true, includeState ? appState : undefined)
     : { bytes: 0, kb: '0.0', urlLength: 0, isWarn: false, isLarge: false };
   const isLarge = size.isLarge || size.urlLength > 8000;
+
+  useEffect(() => {
+    if (specText.length < 80000) {
+      setAsyncUrl(null);
+      return;
+    }
+    setIsPreparing(true);
+    const worker = new Worker(new URL('../workers/compressWorker.ts', import.meta.url), {
+      type: 'module',
+    });
+    const id = Date.now();
+    worker.onmessage = (e: MessageEvent<{ id: number; compressed?: string }>) => {
+      if (e.data.compressed) {
+        const hash = `#spec=${e.data.compressed}`;
+        const base = `${window.location.origin}${window.location.pathname}${hash}`;
+        const finalUrl =
+          includeState && appState && Object.keys(appState).length > 0
+            ? `${base}&state=${encodeURIComponent(JSON.stringify(appState))}`
+            : base;
+        setAsyncUrl(finalUrl);
+      }
+      setIsPreparing(false);
+      worker.terminate();
+    };
+    worker.onerror = () => {
+      setIsPreparing(false);
+      worker.terminate();
+    };
+    const textToCompress = compact && compactAvailable ? getCompactSpecText(specText) || specText : specText;
+    worker.postMessage({ id, text: textToCompress });
+    return () => worker.terminate();
+  }, [specText, compact, compactAvailable, appState, includeState]);
 
   useEffect(() => {
     closeBtnRef.current?.focus();
@@ -135,14 +171,15 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
             <div className="flex gap-2">
               <input
                 readOnly
-                value={url}
+                value={isPreparing ? 'Preparing link...' : url}
                 onFocus={(e) => e.currentTarget.select()}
                 className="flex-1 px-2.5 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-700 dark:text-slate-300 truncate"
                 aria-label="Shareable URL"
               />
               <button
                 onClick={() => handleCopy(false)}
-                className="flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition shrink-0"
+                disabled={isPreparing}
+                className="flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition shrink-0 disabled:opacity-50"
               >
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? 'Copied' : 'Copy'}
