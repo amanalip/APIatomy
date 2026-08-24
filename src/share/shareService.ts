@@ -57,8 +57,7 @@ export function decodeAppState(hash: string): Record<string, unknown> | null {
     const params = new URLSearchParams(hash.replace(/^[#?]+/, ''));
     const state = params.get('state');
     if (!state) return null;
-    const json = decodeURIComponent(state);
-    return JSON.parse(json);
+    return JSON.parse(state);
   } catch {
     return null;
   }

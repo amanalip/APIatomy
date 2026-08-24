@@ -66,6 +66,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
       return;
     }
     setIsPreparing(true);
+    setAsyncUrl(null);
     const worker = new Worker(new URL('../workers/compressWorker.ts', import.meta.url), {
       type: 'module',
     });
@@ -265,7 +266,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
                 />
                 <button
                   onClick={() => handleCopy(true)}
-                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  disabled={isPreparing}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
                   {copiedCompact ? (
                     <Check className="w-3 h-3 text-emerald-500" />
