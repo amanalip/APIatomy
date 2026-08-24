@@ -55,7 +55,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
       ) {
         return;
       }
-      if (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key === 'k')) {
+      if (e.key === '/') {
         e.preventDefault();
         searchInputRef.current?.focus();
       }

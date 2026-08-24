@@ -61,7 +61,7 @@ export const ShortcutHelp: React.FC<ShortcutHelpProps> = ({ onClose }) => {
           </div>
           <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-700">
             <span className="text-slate-700 dark:text-slate-200 font-medium">
-              Focus search (alternative)
+              Open command palette
             </span>
             <span className="font-mono px-2 py-1 rounded bg-slate-800 dark:bg-slate-900 text-white border border-slate-700 text-[11px] shadow-sm">
               Ctrl + K / Cmd + K
