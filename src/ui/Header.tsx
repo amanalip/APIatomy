@@ -33,6 +33,7 @@ interface HeaderProps {
   isEditorOpen: boolean;
   setIsEditorOpen: (open: boolean) => void;
   sourceUrl?: string | null;
+  appState?: Record<string, unknown>;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -45,6 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
   isEditorOpen,
   setIsEditorOpen,
   sourceUrl,
+  appState,
 }) => {
   const { theme, toggleTheme } = useTheme();
   const { showToast } = useToast();
@@ -114,27 +116,45 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     const maxBytes = MAX_UPLOAD_SIZE;
-    if (file.size > maxBytes) {
-      showToast(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 5 MB.`, 'error');
-      e.target.value = '';
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (text) {
-        onUploadText(text);
-        showToast('Spec loaded', 'success');
+    if (files.length === 1) {
+      const file = files[0];
+      if (file.size > maxBytes) {
+        showToast(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 5 MB.`, 'error');
+        e.target.value = '';
+        return;
       }
-    };
-    reader.onerror = () => {
-      showToast('Failed to read file. Please try again.', 'error');
-    };
-    reader.readAsText(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        if (text) {
+          onUploadText(text);
+          showToast('Spec loaded', 'success');
+        }
+      };
+      reader.onerror = () => {
+        showToast('Failed to read file. Please try again.', 'error');
+      };
+      reader.readAsText(file);
+    } else {
+      const texts: string[] = [];
+      for (const file of Array.from(files)) {
+        if (file.size > maxBytes) {
+          showToast(`File ${file.name} too large, skipped`, 'warning');
+          continue;
+        }
+        const text = await file.text();
+        texts.push(`# File: ${file.name}\n${text}`);
+      }
+      if (texts.length > 0) {
+        const combined = texts.join('\n\n---\n\n');
+        onUploadText(combined);
+        showToast(`Loaded ${texts.length} files. External refs require bundled spec.`, 'info');
+      }
+    }
     e.target.value = '';
   };
 
@@ -308,6 +328,7 @@ export const Header: React.FC<HeaderProps> = ({
           ref={fileInputRef}
           type="file"
           accept=".yaml,.yml,.json"
+          multiple
           onChange={handleFileChange}
           className="hidden"
           aria-hidden="true"
@@ -373,7 +394,7 @@ export const Header: React.FC<HeaderProps> = ({
           </svg>
         </a>
       </div>
-      {isShareOpen && <ShareDialog specText={spec.rawText} specTitle={spec.title} sourceUrl={sourceUrl} onClose={() => setIsShareOpen(false)} />}
+      {isShareOpen && <ShareDialog specText={spec.rawText} specTitle={spec.title} sourceUrl={sourceUrl} appState={appState} onClose={() => setIsShareOpen(false)} />}
       {isHelpOpen && <ShortcutHelp onClose={() => setIsHelpOpen(false)} />}
     </header>
   );

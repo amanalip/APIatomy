@@ -7,11 +7,13 @@ interface ShareDialogProps {
   specText: string;
   specTitle?: string;
   sourceUrl?: string | null;
+  appState?: Record<string, unknown>;
   onClose: () => void;
 }
 
-export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, sourceUrl, onClose }) => {
+export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, sourceUrl, appState, onClose }) => {
   const [compact, setCompact] = useState(false);
+  const [includeState, setIncludeState] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedCompact, setCopiedCompact] = useState(false);
   const [nativeSupported] = useState(() => canUseNativeShare());
@@ -19,7 +21,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
   const overlayRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
-  const url = getShareUrl(specText, compact);
+  const url = getShareUrl(specText, compact, includeState ? appState : undefined);
   const size = getShareSize(specText, compact);
   const compactSize = getShareSize(specText, true);
   const isLarge = size.isLarge || size.urlLength > 8000;
@@ -40,7 +42,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
   }, []);
 
   const handleCopy = async (useCompact: boolean) => {
-    const targetUrl = getShareUrl(specText, useCompact);
+    const targetUrl = getShareUrl(specText, useCompact, includeState ? appState : undefined);
     const success = await copyTextToClipboard(targetUrl);
     if (success) {
       if (useCompact) {
@@ -130,6 +132,17 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
               </div>
             )}
           </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={includeState}
+              onChange={(e) => setIncludeState(e.target.checked)}
+              className="rounded border-slate-300 dark:border-slate-700"
+            />
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Include current view and selection</span>
+          </label>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">Preserves selected endpoint, schema and active view in the shared link.</p>
 
           <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2 bg-slate-50/50 dark:bg-slate-950/30">
             <label className="flex items-center gap-2 cursor-pointer">

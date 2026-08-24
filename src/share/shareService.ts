@@ -42,10 +42,30 @@ export function getShareHash(specText: string, compact = false): string {
   return compressSpecToHash(text);
 }
 
-export function getShareUrl(specText: string, compact = false): string {
+export function getShareUrl(specText: string, compact = false, appState?: Record<string, unknown>): string {
   if (typeof window === 'undefined') return getShareHash(specText, compact);
   const hash = getShareHash(specText, compact);
+  if (appState && Object.keys(appState).length > 0) {
+    try {
+      const stateStr = btoa(JSON.stringify(appState));
+      return `${window.location.origin}${window.location.pathname}${hash}&state=${stateStr}`;
+    } catch {
+      return `${window.location.origin}${window.location.pathname}${hash}`;
+    }
+  }
   return `${window.location.origin}${window.location.pathname}${hash}`;
+}
+
+export function decodeAppState(hash: string): Record<string, unknown> | null {
+  try {
+    const params = new URLSearchParams(hash.replace(/^[#?]+/, ''));
+    const state = params.get('state');
+    if (!state) return null;
+    const json = atob(state);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
 }
 
 export function getShareSize(specText: string, compact = false): { bytes: number; kb: string; urlLength: number; isWarn: boolean; isLarge: boolean } {

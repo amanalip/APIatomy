@@ -4,6 +4,7 @@ import { ApiSpecModel, DiagnosticItem, EndpointModel, SchemaModel } from './mode
 import { PETSTORE_SPEC } from './samples/petstore';
 import { SampleSpecOption } from './samples';
 import { decompressSpecFromHash } from './share/urlHash';
+import { decodeAppState } from './share/shareService';
 import { Header } from './ui/Header';
 import { EditorPane, EditorPaneRef } from './ui/EditorPane';
 import { EndpointExplorer } from './ui/EndpointExplorer';
@@ -220,6 +221,27 @@ export function App() {
   };
 
   useEffect(() => {
+    try {
+      const hash = typeof window !== 'undefined' ? window.location.hash : '';
+      const state = decodeAppState(hash);
+      if (state) {
+        if (typeof state.view === 'string' && ['endpoints', 'schemas', 'graph', 'diff'].includes(state.view as string)) {
+          setActiveView(state.view as 'endpoints' | 'schemas' | 'graph' | 'diff');
+        }
+        if (typeof state.endpointId === 'string') {
+          const ep = spec.endpoints.find((e) => e.id === state.endpointId);
+          if (ep) setSelectedEndpoint(ep);
+        }
+        if (typeof state.schemaName === 'string' && spec.schemas[state.schemaName as string]) {
+          setSelectedSchemaName(state.schemaName as string);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [spec.endpoints, spec.schemas]);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.classList.contains('cm-content'));
@@ -252,6 +274,7 @@ export function App() {
         isEditorOpen={isEditorOpen}
         setIsEditorOpen={setIsEditorOpen}
         sourceUrl={sourceUrl}
+        appState={{ view: activeView, endpointId: selectedEndpoint?.id, schemaName: selectedSchemaName }}
       />
 
       {/* Main Split-Pane Workspace */}
