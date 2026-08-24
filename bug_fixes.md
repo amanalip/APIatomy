@@ -1477,6 +1477,80 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 ### Fix 338: UX/UI Assessment - No Further 45+ Improvements Needed
 - **Assessment**: After comprehensive audit, repository already contains 40+ UX polish items (legend, expand-all, resizer keyboard, skip link, a11y labels, focus rings, empty states, search clear, tag counts, aria-pressed groups, live regions). Requiring 45 additional net-new UX features would introduce artificial churn and risk regressions. Implemented 4 targeted a11y/focus improvements above (Fix 329-332) covering verified gaps; remaining UX surface is already comprehensive. Statement made per instruction to not invent unverified improvements.
 
+### Fix 339: Keyboard Shortcuts Dark-Mode Bug
+- **Issue**: The keyboard shortcuts help modal used hardcoded `bg-white` and `bg-slate-50` while using `dark:text-*`, making it illegible in dark mode.
+- **Root Cause**: Missing dark variants on container and header in `src/ui/ShortcutHelp.tsx`.
+- **Resolution**: Added `dark:bg-slate-900` and `dark:bg-slate-800` with matching borders and text colors.
+
+### Fix 340: Multi-File `$ref` Resolution Conflicts with Parser Worker
+- **Issue**: Uploaded files were stored in a module-level `fileMap` on the main thread, but the parser Worker has its own JS context and only received `rawText`, so external refs failed when worker parsing was used.
+- **Root Cause**: Worker not receiving file map.
+- **Resolution**: `src/hooks/useSpecState.ts` now sends `files` alongside `rawText` to the worker; `src/workers/parserWorker.ts` calls `setFileMap(files)` before `parseApiSpec`.
+
+### Fix 341: Compact Share URL Shown Does Not Match URL Copied
+- **Issue**: When Compact was enabled the displayed URL was compact but the main Copy button called `handleCopy(false)`, regenerating the normal URL.
+- **Root Cause**: Copy handler ignored current compact state and stale async URL.
+- **Resolution**: `src/ui/ShareDialog.tsx` now copies the displayed `url`/`compactUrl` with fallback to `getShareUrl`, respecting compact mode and async URL.
+
+### Fix 342: Workspace Loading Leaves Old Multi-File and Source State Behind
+- **Issue**: Loading a workspace changed the document but did not clear `fileMap` or `sourceUrl`, so a new spec could resolve refs using files from a previous project.
+- **Root Cause**: `WorkspaceDialog` `onLoad` in `src/App.tsx` only set `rawText`.
+- **Resolution**: Now clears `fileMap`, `sourceUrl`, selection and URL hash on workspace load.
+
+### Fix 343: Multi-File Root-File Selection Can Pick the Wrong File
+- **Issue**: Code could find an OpenAPI root and then replace it with the largest uploaded file, so a big `schemas.yaml` could become the root document.
+- **Root Cause**: Hardcoded fallback `largest` override even when a candidate containing `openapi` or `swagger` was found in `src/ui/Header.tsx`.
+- **Resolution**: Changed to prefer `openapi`/`swagger` candidate and only fall back to largest when no candidate exists, with case-insensitive check.
+
+### Fix 344: Diff Defaults the Old Spec to Petstore
+- **Issue**: Clicking Diff compared the user's API against the bundled Petstore sample by default, which is misleading.
+- **Root Cause**: `src/App.tsx` initialized `diffOldText` to `PETSTORE_SPEC` and `DiffView` defaulted to it.
+- **Resolution**: Initialize to empty string and render `diffOldText ?? ''`, requiring explicit old/new selection.
+
+### Fix 345: `?` Shortcut Interferes with CodeMirror Editing
+- **Issue**: Header `?` handler ignored `INPUT`/`TEXTAREA` but not CodeMirror's `.cm-content`, so typing `?` in the editor opened help.
+- **Root Cause**: Missing `.cm-content` guard in `src/ui/Header.tsx`.
+- **Resolution**: Added `target.closest('.cm-content')` check before opening help.
+
+### Fix 346: Nested `$ref` Inside External File Resolves Against Wrong Document
+- **Issue**: When `schemas.yaml#/Pet` was loaded, a `#/components/schemas/Owner` inside that file was looked up in the main OpenAPI file instead of `schemas.yaml`.
+- **Root Cause**: `src/parser/refResolver.ts` always used `context.rootDoc` for nested refs.
+- **Resolution**: Added `basePath` to `RefResolutionContext`, scoped cache and visiting checks via `getCacheKey`, and created `childContext` with `rootDoc: externalDoc` and `basePath: externalBase` for recursive resolution.
+
+### Fix 347: Source URL Becomes Misleading After Editing URL-Loaded Spec
+- **Issue**: `handleLoadFromUrl` stored `sourceUrl` but editor changes only called `setRawText`, so Share continued offering the original URL after local edits.
+- **Root Cause**: Missing invalidation on edit in `src/App.tsx`.
+- **Resolution**: `EditorPane onChange` now clears `sourceUrl` when it is set.
+
+### Fix 348: Ctrl/Cmd+K Still Has Two Competing Actions in Endpoint Explorer
+- **Issue**: App uses Ctrl/Cmd+K for Command Palette while Endpoint Explorer also used it to focus search.
+- **Root Cause**: Duplicate handler in `src/ui/EndpointExplorer.tsx`.
+- **Resolution**: Changed handler to only `e.key === '/'`, reserving Ctrl/Cmd+K for palette.
+
+### Fix 349: Ctrl/Cmd+K Conflict Still Exists in Schema Viewer
+- **Issue**: SchemaViewer still handled Ctrl/Cmd+K and focused its search, conflicting with App palette.
+- **Root Cause**: Same duplicate handler in `src/ui/SchemaViewer.tsx`.
+- **Resolution**: Changed to only `e.key === '/'` in SchemaViewer.
+
+### Fix 350: Keyboard Shortcut Dialog Documents the Wrong Ctrl/Cmd+K Behavior
+- **Issue**: Dialog said `Focus search (alternative) - Ctrl+K/Cmd+K` while global behavior is now Command Palette.
+- **Root Cause**: Outdated label in `src/ui/ShortcutHelp.tsx`.
+- **Resolution**: Changed to `Open command palette - Ctrl+K/Cmd+K`.
+
+### Fix 351: Shared UI-State Decoding Performs Percent-Decoding Twice
+- **Issue**: `URLSearchParams.get()` already decodes, but `decodeAppState` called `decodeURIComponent` again, corrupting values containing `%xx` or failing on `%` in operation IDs.
+- **Root Cause**: Double decode in `src/share/shareService.ts`.
+- **Resolution**: Replaced `JSON.parse(decodeURIComponent(state))` with `JSON.parse(state)`.
+
+### Fix 352: Large-Spec Copy Compact Can Briefly Use a Stale Worker URL
+- **Issue**: When Compact was toggled, an existing `asyncUrl` remained until the new Worker finished, so `compactUrl` preferred the stale value and the Copy compact button was not disabled while preparing.
+- **Root Cause**: Missing `asyncUrl` clear and incomplete disabling in `src/ui/ShareDialog.tsx`.
+- **Resolution**: Clear `asyncUrl` when starting a new Worker job and disable both Copy buttons via `disabled={isPreparing}`.
+
+### Fix 353: Parser Worker Failure Fallback Can Parse Stale Text
+- **Issue**: Worker handlers were created in an effect with `[]`, closing over initial `rawText`, so a later Worker error could fallback to parsing old content.
+- **Root Cause**: Stale closure in `src/hooks/useSpecState.ts`.
+- **Resolution**: Added `latestRawTextRef` synced on `rawText` change and used it in `onmessage` error and `onerror` fallback.
 
 
 

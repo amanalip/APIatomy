@@ -50,18 +50,34 @@ APIatomy is built and verified as a fully client-side OpenAPI and Swagger visual
 - Dark and light theme toggle saved to `localStorage`.
 
 ### 8. GitHub Actions CI/CD (`.github/workflows/deploy.yml`)
-- Automated build and deployment to GitHub Pages on pushes to `main`.
+- Automated build and deployment to GitHub Pages on pushes to `main` with lint, format check, coverage and deploy steps.
 
 ---
 
 ## Verification Results
 
 ### Automated Tests
-Vitest test suite covering parser, Swagger converter, ref resolver, and URL hash codec:
+Vitest test suite covering parser, Swagger converter, ref resolver, URL hash codec, normalizer, validator, graph layout, curl generator and more:
 ```bash
 npm test
 ```
-Result: **4 test files passed, 10 tests passed (100%)**.
+Result: **24 test files passed, 197 tests passed (100%)**.
+
+### Code Quality
+```bash
+npm run lint
+npm run format:check
+npm run test:coverage
+npm run build
+```
+Result: **Clean lint with max-warnings 0, Prettier formatted, coverage thresholds met and static assets produced in `dist/` with 0 errors**.
+
+### Keyboard and Sharing
+- `/` focuses search in Endpoint Explorer and Schema Viewer; `Ctrl/Cmd+K` opens Command Palette exclusively; `?` help is dark mode correct and does not trigger inside CodeMirror.
+- Share state uses single percent decoding so `%` in IDs survives; large spec `Copy compact` clears stale Worker URL and disables while preparing; source URL clears after local edits; diff requires explicit old/new.
+
+### Parser Workers
+- Worker receives file map for external `$ref`; nested refs inside external files use `basePath` scoping; fallback parses latest text via ref.
 
 ### Production Build
 ```bash

@@ -16,7 +16,8 @@ APIatomy/
 │   ├── parser/                  # Client-side ingestion & resolution
 │   │   ├── yamlJson.ts          # Safe YAML / JSON parser with line mapping
 │   │   ├── swaggerConverter.ts  # Swagger 2.0 to OpenAPI 3.0 converter
-│   │   ├── refResolver.ts       # $ref resolver & circular reference detection
+│   │   ├── refResolver.ts       # $ref resolver with RFC 6901, circular detection and basePath scoped external nested refs
+│   │   ├── fileMap.ts           # In-memory multi-file map shared to Worker for external refs
 │   │   ├── normalizer.ts        # Maps OpenAPI/Swagger AST to internal ApiSpec model
 │   │   ├── validator.ts         # Diagnostics generator (unused schemas, missing docs, etc.)
 │   │   └── index.ts             # Main parser entrypoint
@@ -28,6 +29,14 @@ APIatomy/
 │   │   ├── SchemaNode.tsx       # Custom node for schemas with reuse indicator
 │   │   ├── CustomEdge.tsx       # Custom animated/labeled relationship edge
 │   │   └── exportPng.ts         # PNG export helper via html-to-image
+│   ├── workers/                 # Web Workers for heavy work
+│   │   ├── parserWorker.ts      # Off main thread spec parsing with fileMap sync and stale fallback fix
+│   │   ├── compressWorker.ts    # Off main thread URL compression with stale URL clear
+│   │   └── layoutWorker.ts      # Off main thread Dagre layout
+│   ├── hooks/                   # Extracted App orchestration hooks
+│   │   ├── useSpecState.ts      # Spec state with Worker and latest ref for fallback
+│   │   ├── useResizableEditor.ts # Resizable editor logic
+│   │   └── useDiagnosticNavigation.ts # Diagnostic jump logic
 │   ├── ui/                      # Application UI components
 │   │   ├── Header.tsx           # App navbar, theme toggle, sample selector, share/export buttons
 │   │   ├── EditorPane.tsx       # CodeMirror 6 YAML/JSON editor with sync & debounce
@@ -39,7 +48,8 @@ APIatomy/
 │   │   ├── CurlGenerator.tsx    # Interactive copy-paste curl command builder
 │   │   └── Common/              # Badges, Tabs, SplitPane, Modals, Tooltips
 │   ├── share/                   # Zero-backend URL sharing
-│   │   └── urlHash.ts           # LZ-String URL hash compression & decompression
+│   │   ├── urlHash.ts           # LZ-String URL hash compression & decompression
+│   │   └── shareService.ts      # Share URL, size, state single-decode and large-spec Worker handling
 │   ├── samples/                 # Bundled OpenAPI / Swagger sample specs
 │   │   ├── petstore.ts          # Classic OpenAPI 3.0
 │   │   ├── github.ts            # Nested schemas & pagination
@@ -72,8 +82,10 @@ APIatomy/
 
 - All parsing, ref-resolution, graph calculation, and share-link compression run 100% in the browser with **zero backend dependencies**.
 - **Graph Layout Engine**: Uses `@xyflow/react` (React Flow) combined with `@dagrejs/dagre` for automated hierarchical layout of the API topology graph.
-- **Sharing**: Uses `lz-string` to compress raw specs into URL hash fragments (`#spec=...`) so share links remain compact and serverless.
-- **Editor**: CodeMirror 6 with YAML and JSON language support, syntax highlighting, and line navigation on diagnostic clicks.
+- **Sharing**: Uses `lz-string` to compress raw specs into URL hash fragments (`#spec=...`) so share links remain compact and serverless. App state is single-decoded via `URLSearchParams` and large spec compression clears stale `asyncUrl` and disables Copy while preparing.
+- **Editor**: CodeMirror 6 with YAML and JSON language support, syntax highlighting, and line navigation on diagnostic clicks. `?` help does not trigger inside `.cm-content` and dark mode is correctly styled.
+- **Parser Workers**: Spec parsing can run in a Worker. The main thread file map is sent to the Worker so external `$ref` still resolve; nested refs inside external files use a `basePath` scoped context so `#/components/schemas/Owner` inside `schemas.yaml` resolves against that file. Worker fallback uses latest text ref to avoid stale parse.
+- **Keyboard**: `/` focuses search in Explorer and Schema Viewer; `Ctrl/Cmd+K` is reserved exclusively for the Command Palette and documented as `Open command palette`.
 
 ---
 
