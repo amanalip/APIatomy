@@ -110,7 +110,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
   const handleCopy = async (useCompact: boolean) => {
     const targetUrl = useCompact ? compactUrl : url;
-    const fallback = getShareUrl(specText, useCompact && compactAvailable, includeState ? appState : undefined);
+    const fallback = getShareUrl(
+      specText,
+      useCompact && compactAvailable,
+      includeState ? appState : undefined
+    );
     const finalUrl = targetUrl || fallback;
     const success = await copyTextToClipboard(finalUrl);
     if (success) {

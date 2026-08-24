@@ -97,7 +97,11 @@ export const Header: React.FC<HeaderProps> = ({
         event.preventDefault();
         setIsEditorOpen(!isEditorOpenRef.current);
       }
-      if (event.key === '?' && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement)) {
+      if (
+        event.key === '?' &&
+        !(event.target instanceof HTMLInputElement) &&
+        !(event.target instanceof HTMLTextAreaElement)
+      ) {
         const target = event.target as HTMLElement;
         if (target?.closest?.('.cm-content') || target?.classList?.contains('cm-content')) return;
         event.preventDefault();
