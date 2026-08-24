@@ -16,10 +16,6 @@ export function useSpecState(initialText: string) {
   }, []);
 
   const spec: ApiSpecModel = useMemo(() => {
-    if (workerRef.current) {
-      // fallback to sync for now, worker is async so we still need sync value
-      // worker result will be handled via effect if needed
-    }
     try {
       return parseApiSpec(rawText);
     } catch (err) {

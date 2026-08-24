@@ -13,10 +13,14 @@ export const DiffView: React.FC<DiffViewProps> = ({ oldText, newText }) => {
     let newSpec: ApiSpecModel | null = null;
     try {
       oldSpec = parseApiSpec(oldText);
-    } catch {}
+    } catch {
+      // ignore parse error for diff
+    }
     try {
       newSpec = parseApiSpec(newText);
-    } catch {}
+    } catch {
+      // ignore parse error for diff
+    }
     if (!oldSpec || !newSpec) return { added: [], removed: [], changed: [] };
     const oldIds = new Set(oldSpec.endpoints.map((e) => `${e.method} ${e.path}`));
     const newIds = new Set(newSpec.endpoints.map((e) => `${e.method} ${e.path}`));
