@@ -79,7 +79,11 @@ export function decompressSpecFromHash(hashString: string): string | null {
   try {
     if (specEncoded.length > MAX_SPEC_SIZE) return null;
     const rawLower = specEncoded.toLowerCase();
-    if (specEncoded.trim().startsWith('{') || rawLower.includes('openapi') || rawLower.includes('swagger')) {
+    if (
+      specEncoded.trim().startsWith('{') ||
+      rawLower.includes('openapi') ||
+      rawLower.includes('swagger')
+    ) {
       return specEncoded;
     }
   } catch {
@@ -94,13 +98,25 @@ export function decompressSpecFromHash(hashString: string): string | null {
  * Never throws; resolves to true on success, false otherwise.
  */
 export function copyTextToClipboard(text: string): Promise<boolean> {
-  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof window !== 'undefined' && (window as unknown as { isSecureContext?: boolean }).isSecureContext) {
-    return navigator.clipboard.writeText(text).then(() => true).catch(() => false);
+  if (
+    typeof navigator !== 'undefined' &&
+    navigator.clipboard &&
+    typeof window !== 'undefined' &&
+    (window as unknown as { isSecureContext?: boolean }).isSecureContext
+  ) {
+    return navigator.clipboard
+      .writeText(text)
+      .then(() => true)
+      .catch(() => false);
   }
 
   // Fallback for older environments (handles missing document.body in SSR/tests)
   try {
-    if (typeof document === 'undefined' || !document.body || typeof document.createElement !== 'function') {
+    if (
+      typeof document === 'undefined' ||
+      !document.body ||
+      typeof document.createElement !== 'function'
+    ) {
       return Promise.resolve(false);
     }
     const textArea = document.createElement('textarea');

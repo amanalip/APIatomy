@@ -65,7 +65,9 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
       if (err instanceof DOMException && err.name === 'AbortError') {
         setError('Request timed out or cancelled');
       } else if (msg.includes('Failed to fetch') || msg.includes('CORS')) {
-        setError('Fetch failed. The server may block cross origin requests. Use Upload for local files.');
+        setError(
+          'Fetch failed. The server may block cross origin requests. Use Upload for local files.'
+        );
       } else {
         setError(msg);
       }
@@ -93,12 +95,18 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
             <Link2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             Open from URL
           </span>
-          <button onClick={onClose} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Close">
+          <button
+            onClick={onClose}
+            className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+            aria-label="Close"
+          >
             <X className="w-4 h-4 text-slate-400" />
           </button>
         </div>
         <div className="p-4 space-y-3">
-          <p className="text-xs text-slate-600 dark:text-slate-400">Load a public OpenAPI spec by URL. The spec is fetched directly in your browser.</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            Load a public OpenAPI spec by URL. The spec is fetched directly in your browser.
+          </p>
           <input
             ref={inputRef}
             value={url}
@@ -133,7 +141,11 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
               disabled={loading}
               className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Link2 className="w-3.5 h-3.5" />}
+              {loading ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Link2 className="w-3.5 h-3.5" />
+              )}
               Load
             </button>
           </div>

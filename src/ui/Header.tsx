@@ -67,7 +67,9 @@ export const Header: React.FC<HeaderProps> = ({
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const isEditorOpenRef = useRef(isEditorOpen);
-  useEffect(() => { isEditorOpenRef.current = isEditorOpen; }, [isEditorOpen]);
+  useEffect(() => {
+    isEditorOpenRef.current = isEditorOpen;
+  }, [isEditorOpen]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -93,7 +95,11 @@ export const Header: React.FC<HeaderProps> = ({
         event.preventDefault();
         setIsEditorOpen(!isEditorOpenRef.current);
       }
-      if (event.key === '?' && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLTextAreaElement)) {
+      if (
+        event.key === '?' &&
+        !(event.target instanceof HTMLInputElement) &&
+        !(event.target instanceof HTMLTextAreaElement)
+      ) {
         event.preventDefault();
         setIsHelpOpen(true);
       }
@@ -129,19 +135,22 @@ export const Header: React.FC<HeaderProps> = ({
     if (files.length === 1) {
       const file = files[0];
       if (file.size > maxBytes) {
-        showToast(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 5 MB.`, 'error');
+        showToast(
+          `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 5 MB.`,
+          'error'
+        );
         e.target.value = '';
         return;
       }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (text) {
-        setFileMap({ [file.name]: text });
-        onUploadText(text);
-        showToast('Spec loaded', 'success');
-      }
-    };
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        if (text) {
+          setFileMap({ [file.name]: text });
+          onUploadText(text);
+          showToast('Spec loaded', 'success');
+        }
+      };
       reader.onerror = () => {
         showToast('Failed to read file. Please try again.', 'error');
       };
@@ -161,15 +170,23 @@ export const Header: React.FC<HeaderProps> = ({
         for (const entry of fileEntries) map[entry.name] = entry.text;
         setFileMap(map);
         let root = fileEntries[0];
-        const candidate = fileEntries.find((e) => e.text.includes('openapi') || e.text.includes('swagger'));
+        const candidate = fileEntries.find(
+          (e) => e.text.includes('openapi') || e.text.includes('swagger')
+        );
         if (candidate) root = candidate;
-        if (fileEntries.length > 1 && root.text.length < Math.max(...fileEntries.map((e) => e.text.length)) / 2) {
+        if (
+          fileEntries.length > 1 &&
+          root.text.length < Math.max(...fileEntries.map((e) => e.text.length)) / 2
+        ) {
           const largest = fileEntries.reduce((a, b) => (a.text.length > b.text.length ? a : b));
           root = largest;
         }
         onUploadText(root.text);
         if (fileEntries.length > 1) {
-          showToast(`Loaded ${fileEntries.length} files. Resolving external refs from uploaded set.`, 'info');
+          showToast(
+            `Loaded ${fileEntries.length} files. Resolving external refs from uploaded set.`,
+            'info'
+          );
         } else {
           showToast('Spec loaded', 'success');
         }
@@ -180,7 +197,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="min-h-[3.5rem] border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/90 backdrop-blur-md px-4 flex items-center justify-between flex-wrap gap-2 py-2 text-slate-800 dark:text-slate-100 shrink-0 z-30 select-none transition-colors duration-150">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-blue-600 text-white px-3 py-1 rounded text-xs z-50">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-blue-600 text-white px-3 py-1 rounded text-xs z-50"
+      >
         Skip to content
       </a>
       {/* Brand & Spec Info */}
@@ -191,14 +211,20 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white"><span className="font-mono">API</span><span className="font-light">atomy</span></span>
+              <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">
+                <span className="font-mono">API</span>
+                <span className="font-light">atomy</span>
+              </span>
               {spec.version && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
                   v{spec.version}
                 </span>
               )}
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[160px] sm:max-w-[200px]" title={spec.title || 'Untitled API'}>
+            <div
+              className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-[160px] sm:max-w-[200px]"
+              title={spec.title || 'Untitled API'}
+            >
               {spec.title || 'Untitled API'}
             </div>
           </div>
@@ -206,12 +232,20 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Desktop View Switcher Tabs */}
         <div className="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-900/90 p-1 rounded-xl border border-slate-200 dark:border-slate-800 ml-4">
-          {([
-            { id: 'endpoints' as const, label: `Endpoints (${spec.endpoints.length})`, Icon: Layers },
-            { id: 'schemas' as const, label: `Schemas (${Object.keys(spec.schemas).length})`, Icon: Code2 },
+          {[
+            {
+              id: 'endpoints' as const,
+              label: `Endpoints (${spec.endpoints.length})`,
+              Icon: Layers,
+            },
+            {
+              id: 'schemas' as const,
+              label: `Schemas (${Object.keys(spec.schemas).length})`,
+              Icon: Code2,
+            },
             { id: 'graph' as const, label: 'Topology Graph', Icon: Network },
             { id: 'diff' as const, label: 'Diff', Icon: GitCompare },
-          ]).map(({ id, label, Icon }) => (
+          ].map(({ id, label, Icon }) => (
             <button
               key={id}
               onClick={() => setActiveView(id)}
@@ -242,13 +276,25 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {isMobileNavOpen && (
-            <div id="mobile-nav-menu" role="menu" className="absolute left-0 mt-2 w-44 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 space-y-1 z-50">
-              {([
-                { id: 'endpoints' as const, label: `Endpoints (${spec.endpoints.length})`, Icon: Layers },
-                { id: 'schemas' as const, label: `Schemas (${Object.keys(spec.schemas).length})`, Icon: Code2 },
+            <div
+              id="mobile-nav-menu"
+              role="menu"
+              className="absolute left-0 mt-2 w-44 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 space-y-1 z-50"
+            >
+              {[
+                {
+                  id: 'endpoints' as const,
+                  label: `Endpoints (${spec.endpoints.length})`,
+                  Icon: Layers,
+                },
+                {
+                  id: 'schemas' as const,
+                  label: `Schemas (${Object.keys(spec.schemas).length})`,
+                  Icon: Code2,
+                },
                 { id: 'graph' as const, label: 'Topology Graph', Icon: Network },
                 { id: 'diff' as const, label: 'Diff', Icon: GitCompare },
-              ]).map(({ id, label, Icon }) => (
+              ].map(({ id, label, Icon }) => (
                 <button
                   key={id}
                   role="menuitem"
@@ -257,7 +303,9 @@ export const Header: React.FC<HeaderProps> = ({
                     setIsMobileNavOpen(false);
                   }}
                   className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg text-left ${
-                    activeView === id ? 'bg-blue-600 text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+                    activeView === id
+                      ? 'bg-blue-600 text-white'
+                      : 'hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -301,7 +349,10 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
 
           {isSampleDropdownOpen && (
-            <div role="menu" className="absolute right-0 mt-2 w-64 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 space-y-1 z-50">
+            <div
+              role="menu"
+              className="absolute right-0 mt-2 w-64 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 space-y-1 z-50"
+            >
               <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Preset Specifications
               </div>
@@ -315,7 +366,9 @@ export const Header: React.FC<HeaderProps> = ({
                   }}
                   className="w-full text-left p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/80 transition flex flex-col gap-0.5"
                 >
-                  <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">{sample.name}</div>
+                  <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    {sample.name}
+                  </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
                     {sample.description}
                   </div>
@@ -353,7 +406,9 @@ export const Header: React.FC<HeaderProps> = ({
           <FolderOpen className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span className="hidden sm:inline">Workspaces</span>
         </button>
-        <label htmlFor="spec-upload-input" className="sr-only">Upload OpenAPI spec file</label>
+        <label htmlFor="spec-upload-input" className="sr-only">
+          Upload OpenAPI spec file
+        </label>
         <input
           id="spec-upload-input"
           ref={fileInputRef}
@@ -409,7 +464,11 @@ export const Header: React.FC<HeaderProps> = ({
           className="p-2 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 transition focus-visible:ring-2 focus-visible:ring-blue-500"
           title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         >
-          {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+          {theme === 'dark' ? (
+            <Sun className="w-4 h-4 text-amber-400" />
+          ) : (
+            <Moon className="w-4 h-4 text-slate-700" />
+          )}
         </button>
 
         {/* GitHub Link */}
@@ -421,11 +480,23 @@ export const Header: React.FC<HeaderProps> = ({
           title="View on GitHub"
         >
           <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-            <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+            />
           </svg>
         </a>
       </div>
-      {isShareOpen && <ShareDialog specText={spec.rawText} specTitle={spec.title} sourceUrl={sourceUrl} appState={appState} onClose={() => setIsShareOpen(false)} />}
+      {isShareOpen && (
+        <ShareDialog
+          specText={spec.rawText}
+          specTitle={spec.title}
+          sourceUrl={sourceUrl}
+          appState={appState}
+          onClose={() => setIsShareOpen(false)}
+        />
+      )}
       {isHelpOpen && <ShortcutHelp onClose={() => setIsHelpOpen(false)} />}
     </header>
   );

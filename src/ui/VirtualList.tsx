@@ -8,7 +8,13 @@ interface VirtualListProps<T> {
   overscan?: number;
 }
 
-export function VirtualList<T>({ items, height, itemHeight, renderItem, overscan = 5 }: VirtualListProps<T>) {
+export function VirtualList<T>({
+  items,
+  height,
+  itemHeight,
+  renderItem,
+  overscan = 5,
+}: VirtualListProps<T>) {
   const [scrollTop, setScrollTop] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -22,7 +28,15 @@ export function VirtualList<T>({ items, height, itemHeight, renderItem, overscan
   return (
     <div ref={ref} onScroll={onScroll} style={{ height, overflow: 'auto' }} className="relative">
       <div style={{ height: totalHeight, position: 'relative' }}>
-        <div style={{ transform: `translateY(${start * itemHeight}px)`, position: 'absolute', top: 0, left: 0, right: 0 }}>
+        <div
+          style={{
+            transform: `translateY(${start * itemHeight}px)`,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+          }}
+        >
           {visible.map((item, idx) => (
             <div key={start + idx} style={{ height: itemHeight }}>
               {renderItem(item, start + idx)}

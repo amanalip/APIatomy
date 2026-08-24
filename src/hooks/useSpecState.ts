@@ -17,7 +17,15 @@ function parseSync(rawText: string): ApiSpecModel {
       endpoints: [],
       schemas: {},
       securitySchemes: {},
-      diagnostics: [{ id: 'parse-crash', severity: 'error', message: `Critical parser crash: ${msg}`, line: 1, source: 'syntax' }],
+      diagnostics: [
+        {
+          id: 'parse-crash',
+          severity: 'error',
+          message: `Critical parser crash: ${msg}`,
+          line: 1,
+          source: 'syntax',
+        },
+      ],
       rawText,
     } as ApiSpecModel;
   }
@@ -32,9 +40,13 @@ export function useSpecState(initialText: string) {
 
   useEffect(() => {
     try {
-      workerRef.current = new Worker(new URL('../workers/parserWorker.ts', import.meta.url), { type: 'module' });
+      workerRef.current = new Worker(new URL('../workers/parserWorker.ts', import.meta.url), {
+        type: 'module',
+      });
       const worker = workerRef.current;
-      worker.onmessage = (e: MessageEvent<{ id: number; result?: ApiSpecModel; error?: string }>) => {
+      worker.onmessage = (
+        e: MessageEvent<{ id: number; result?: ApiSpecModel; error?: string }>
+      ) => {
         const { id, result, error } = e.data;
         if (id !== requestIdRef.current) return;
         if (result) {

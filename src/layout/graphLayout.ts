@@ -204,5 +204,3 @@ export function computeApiTopologyGraph(
 
   return { nodes: layoutedNodes, edges };
 }
-
-

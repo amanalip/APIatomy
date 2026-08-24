@@ -35,32 +35,57 @@ export const ShortcutHelp: React.FC<ShortcutHelpProps> = ({ onClose }) => {
             <Keyboard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             Keyboard shortcuts
           </span>
-          <button ref={closeRef} onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600" aria-label="Close">
+          <button
+            ref={closeRef}
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600"
+            aria-label="Close"
+          >
             <X className="w-4 h-4 text-slate-600 dark:text-slate-300" />
           </button>
         </div>
         <div className="p-4 space-y-2 text-xs bg-white dark:bg-slate-800">
           <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-700">
-            <span className="text-slate-700 dark:text-slate-200 font-medium">Focus endpoint search</span>
-            <span className="font-mono px-2 py-1 rounded bg-slate-800 dark:bg-slate-900 text-white border border-slate-700 text-[11px] shadow-sm">/</span>
+            <span className="text-slate-700 dark:text-slate-200 font-medium">
+              Focus endpoint search
+            </span>
+            <span className="font-mono px-2 py-1 rounded bg-slate-800 dark:bg-slate-900 text-white border border-slate-700 text-[11px] shadow-sm">
+              /
+            </span>
           </div>
           <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-700">
-            <span className="text-slate-700 dark:text-slate-200 font-medium">Focus search (alternative)</span>
-            <span className="font-mono px-2 py-1 rounded bg-slate-800 dark:bg-slate-900 text-white border border-slate-700 text-[11px] shadow-sm">Ctrl + K / Cmd + K</span>
+            <span className="text-slate-700 dark:text-slate-200 font-medium">
+              Focus search (alternative)
+            </span>
+            <span className="font-mono px-2 py-1 rounded bg-slate-800 dark:bg-slate-900 text-white border border-slate-700 text-[11px] shadow-sm">
+              Ctrl + K / Cmd + K
+            </span>
           </div>
           <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-700">
             <span className="text-slate-700 dark:text-slate-200 font-medium">Toggle editor</span>
-            <span className="font-mono px-2 py-1 rounded bg-slate-800 dark:bg-slate-900 text-white border border-slate-700 text-[11px] shadow-sm">Alt + E</span>
+            <span className="font-mono px-2 py-1 rounded bg-slate-800 dark:bg-slate-900 text-white border border-slate-700 text-[11px] shadow-sm">
+              Alt + E
+            </span>
           </div>
           <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-700">
-            <span className="text-slate-700 dark:text-slate-200 font-medium">Close dialog or drawer</span>
-            <span className="font-mono px-2 py-1 rounded bg-slate-800 dark:bg-slate-900 text-white border border-slate-700 text-[11px] shadow-sm">Esc</span>
+            <span className="text-slate-700 dark:text-slate-200 font-medium">
+              Close dialog or drawer
+            </span>
+            <span className="font-mono px-2 py-1 rounded bg-slate-800 dark:bg-slate-900 text-white border border-slate-700 text-[11px] shadow-sm">
+              Esc
+            </span>
           </div>
           <div className="flex justify-between items-center py-2">
-            <span className="text-slate-700 dark:text-slate-200 font-medium">Resize editor (when focused)</span>
-            <span className="font-mono px-2 py-1 rounded bg-slate-800 dark:bg-slate-900 text-white border border-slate-700 text-[11px] shadow-sm">Arrows / Home / End</span>
+            <span className="text-slate-700 dark:text-slate-200 font-medium">
+              Resize editor (when focused)
+            </span>
+            <span className="font-mono px-2 py-1 rounded bg-slate-800 dark:bg-slate-900 text-white border border-slate-700 text-[11px] shadow-sm">
+              Arrows / Home / End
+            </span>
           </div>
-          <p className="text-[11px] text-slate-600 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-700 mt-2">Press ? to open this help.</p>
+          <p className="text-[11px] text-slate-600 dark:text-slate-300 pt-2 border-t border-slate-100 dark:border-slate-700 mt-2">
+            Press ? to open this help.
+          </p>
         </div>
       </div>
     </div>

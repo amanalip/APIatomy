@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
 import { EditorState, Compartment, Transaction } from '@codemirror/state';
-import { EditorView, lineNumbers, highlightActiveLine, highlightActiveLineGutter, keymap } from '@codemirror/view';
+import {
+  EditorView,
+  lineNumbers,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  keymap,
+} from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { yaml } from '@codemirror/lang-yaml';
 import { json } from '@codemirror/lang-json';
@@ -30,7 +36,9 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
     const [isDragging, setIsDragging] = useState(false);
     const debounceTimerRef = useRef<number | null>(null);
     const onChangeRef = useRef(onChange);
-    useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+    useEffect(() => {
+      onChangeRef.current = onChange;
+    }, [onChange]);
 
     // Expose jumpToLine and setContent methods via ref
     useImperativeHandle(ref, () => ({
@@ -70,8 +78,8 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
       const updateListener = EditorView.updateListener.of((update) => {
         if (update.docChanged) {
           // Suppress echo when change originated from external sync (annotation)
-          const isExternal = update.transactions.some((tr) =>
-            tr.annotation(Transaction.userEvent) === 'apiatomy-sync'
+          const isExternal = update.transactions.some(
+            (tr) => tr.annotation(Transaction.userEvent) === 'apiatomy-sync'
           );
           if (isExternal) return;
           const docString = update.state.doc.toString();
@@ -211,8 +219,12 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
         {isDragging && (
           <div className="absolute inset-0 bg-blue-600/20 dark:bg-blue-900/60 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-none z-30 border-2 border-blue-500 border-dashed m-2 rounded-xl">
             <Upload className="w-12 h-12 text-blue-600 dark:text-blue-400 mb-2 animate-bounce" />
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">Drop your OpenAPI or Swagger spec file here</p>
-            <p className="text-xs text-slate-700 dark:text-blue-200">Accepts .yaml, .yml, .json - max 5 MB - press Esc to cancel</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+              Drop your OpenAPI or Swagger spec file here
+            </p>
+            <p className="text-xs text-slate-700 dark:text-blue-200">
+              Accepts .yaml, .yml, .json - max 5 MB - press Esc to cancel
+            </p>
           </div>
         )}
       </div>

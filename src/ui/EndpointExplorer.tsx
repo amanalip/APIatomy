@@ -33,7 +33,11 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
       const activeTag = (document.activeElement?.tagName || '').toLowerCase();
-      if (activeTag === 'input' || activeTag === 'textarea' || document.activeElement?.classList.contains('cm-content')) {
+      if (
+        activeTag === 'input' ||
+        activeTag === 'textarea' ||
+        document.activeElement?.classList.contains('cm-content')
+      ) {
         return;
       }
       if (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key === 'k')) {
@@ -124,7 +128,17 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
     setCollapsedTags(nextState);
   };
 
-  const methodsList: (HttpMethod | 'all')[] = ['all', 'get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'];
+  const methodsList: (HttpMethod | 'all')[] = [
+    'all',
+    'get',
+    'post',
+    'put',
+    'patch',
+    'delete',
+    'options',
+    'head',
+    'trace',
+  ];
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-150">
@@ -161,16 +175,25 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
         </div>
 
         {/* Method filter pills - UX: aria-pressed + per-method count + TRACE support */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5" role="toolbar" aria-label="Filter by HTTP method">
+        <div
+          className="flex items-center gap-1.5 overflow-x-auto pb-0.5"
+          role="toolbar"
+          aria-label="Filter by HTTP method"
+        >
           {methodsList.map((m) => {
             const isSelected = selectedMethod === m;
-            const count = m === 'all' ? endpoints.length : endpoints.filter((e) => e.method === m).length;
+            const count =
+              m === 'all' ? endpoints.length : endpoints.filter((e) => e.method === m).length;
             return (
               <button
                 key={m}
                 onClick={() => setSelectedMethod(m)}
                 aria-pressed={isSelected}
-                title={m === 'all' ? `Show all ${count} endpoints` : `Filter ${m.toUpperCase()} (${count})`}
+                title={
+                  m === 'all'
+                    ? `Show all ${count} endpoints`
+                    : `Filter ${m.toUpperCase()} (${count})`
+                }
                 className={`px-2.5 py-1 rounded-md text-[11px] font-mono font-semibold transition ${
                   isSelected
                     ? m === 'all'
@@ -218,7 +241,9 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               className="px-2 py-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 rounded-lg text-[10px] font-medium whitespace-nowrap"
               title="Toggle Expand/Collapse for all tag groups"
             >
-              {Object.keys(groupedEndpoints).every((tag) => collapsedTags[tag]) ? 'Expand All' : 'Collapse All'}
+              {Object.keys(groupedEndpoints).every((tag) => collapsedTags[tag])
+                ? 'Expand All'
+                : 'Collapse All'}
             </button>
           </div>
         )}
@@ -231,8 +256,13 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
             <div className="mx-auto w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
               <Search className="w-5 h-5 text-slate-400" />
             </div>
-            <div className="font-medium text-slate-600 dark:text-slate-400">No endpoints found matching your filter criteria.</div>
-            <div className="text-[11px]">Showing 0 of {endpoints.length} endpoints - try adjusting search, method, or tag filters.</div>
+            <div className="font-medium text-slate-600 dark:text-slate-400">
+              No endpoints found matching your filter criteria.
+            </div>
+            <div className="text-[11px]">
+              Showing 0 of {endpoints.length} endpoints - try adjusting search, method, or tag
+              filters.
+            </div>
             {(searchQuery || selectedMethod !== 'all' || selectedTag !== 'all') && (
               <button
                 onClick={() => {
@@ -252,39 +282,49 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               items={filteredEndpoints}
               height={Math.max(300, listHeight || 600)}
               itemHeight={92}
-            renderItem={(ep) => {
-              const isSelected = selectedEndpoint?.id === ep.id;
-              const methodConfig = HTTP_METHODS[ep.method] || HTTP_METHODS.get;
-              return (
-                <div
-                  key={ep.id}
-                  data-testid="endpoint-card"
-                  ref={isSelected ? activeEndpointRef : undefined}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onSelectEndpoint(ep)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onSelectEndpoint(ep);
-                    }
-                  }}
-                  aria-pressed={isSelected}
-                  className={`mx-1 group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 ${
-                    isSelected
-                      ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/50 shadow-md'
-                      : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded shadow-sm shrink-0 ${methodConfig.badgeBg}`}>{methodConfig.label}</span>
-                    <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate flex-1">{ep.path}</span>
+              renderItem={(ep) => {
+                const isSelected = selectedEndpoint?.id === ep.id;
+                const methodConfig = HTTP_METHODS[ep.method] || HTTP_METHODS.get;
+                return (
+                  <div
+                    key={ep.id}
+                    data-testid="endpoint-card"
+                    ref={isSelected ? activeEndpointRef : undefined}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onSelectEndpoint(ep)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectEndpoint(ep);
+                      }
+                    }}
+                    aria-pressed={isSelected}
+                    className={`mx-1 group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 ${
+                      isSelected
+                        ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/50 shadow-md'
+                        : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded shadow-sm shrink-0 ${methodConfig.badgeBg}`}
+                      >
+                        {methodConfig.label}
+                      </span>
+                      <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate flex-1">
+                        {ep.path}
+                      </span>
+                    </div>
+                    {ep.summary && (
+                      <div className="text-[11px] text-slate-600 dark:text-slate-400 truncate">
+                        {ep.summary}
+                      </div>
+                    )}
                   </div>
-                  {ep.summary && <div className="text-[11px] text-slate-600 dark:text-slate-400 truncate">{ep.summary}</div>}
-                </div>
-              );
-            }}
-          />
+                );
+              }}
+            />
           </div>
         ) : (
           Object.entries(groupedEndpoints).map(([tag, eps]) => {
@@ -307,7 +347,11 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                       {tag}
                     </span>
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
-                      ({eps.length}{totalByTag[tag] && totalByTag[tag] !== eps.length ? ` / ${totalByTag[tag]}` : ''})
+                      ({eps.length}
+                      {totalByTag[tag] && totalByTag[tag] !== eps.length
+                        ? ` / ${totalByTag[tag]}`
+                        : ''}
+                      )
                     </span>
                   </div>
                 </button>
@@ -327,7 +371,12 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                           role="button"
                           tabIndex={0}
                           onClick={() => onSelectEndpoint(ep)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectEndpoint(ep); } }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              onSelectEndpoint(ep);
+                            }
+                          }}
                           aria-pressed={isSelected}
                           aria-label={`${ep.method.toUpperCase()} ${ep.path}${ep.deprecated ? ' deprecated' : ''}`}
                           className={`group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${

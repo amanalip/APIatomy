@@ -13,7 +13,12 @@ import {
   ServerModel,
   TagModel,
 } from '../model';
-import { extractRefTargetName, RefResolutionContext, resolveJsonPointer, resolveSchema } from './refResolver';
+import {
+  extractRefTargetName,
+  RefResolutionContext,
+  resolveJsonPointer,
+  resolveSchema,
+} from './refResolver';
 import { isSwagger2, convertSwagger2ToOpenApi3 } from './swaggerConverter';
 import { validateSpec, findLineForPattern } from './validator';
 import { collectSchemaRefs, VALID_HTTP_METHODS } from '../utils/schemaRefs';
@@ -55,8 +60,16 @@ export function normalizeSpec(
   const version = typeof info.version === 'string' ? info.version : '1.0.0';
   const description = typeof info.description === 'string' ? info.description : undefined;
   const termsOfService = typeof info.termsOfService === 'string' ? info.termsOfService : undefined;
-  const contact = typeof info.contact === 'object' && info.contact !== null && !Array.isArray(info.contact) ? (info.contact as any) : undefined;
-  const license = typeof info.license === 'object' && info.license !== null && !Array.isArray((info as any).license) ? (info.license as any) : undefined;
+  const contact =
+    typeof info.contact === 'object' && info.contact !== null && !Array.isArray(info.contact)
+      ? (info.contact as any)
+      : undefined;
+  const license =
+    typeof info.license === 'object' &&
+    info.license !== null &&
+    !Array.isArray((info as any).license)
+      ? (info.license as any)
+      : undefined;
 
   // 2. Servers
   const servers: ServerModel[] = [];
@@ -65,7 +78,8 @@ export function normalizeSpec(
       if (typeof s === 'object' && s !== null && typeof (s as any).url === 'string') {
         servers.push({
           url: (s as any).url,
-          description: typeof (s as any).description === 'string' ? (s as any).description : undefined,
+          description:
+            typeof (s as any).description === 'string' ? (s as any).description : undefined,
           variables: (s as any).variables,
         });
       }
@@ -79,7 +93,8 @@ export function normalizeSpec(
       if (typeof t === 'object' && t !== null && typeof (t as any).name === 'string') {
         tags.push({
           name: (t as any).name,
-          description: typeof (t as any).description === 'string' ? (t as any).description : undefined,
+          description:
+            typeof (t as any).description === 'string' ? (t as any).description : undefined,
           externalDocs: (t as any).externalDocs,
         });
       }
@@ -88,8 +103,12 @@ export function normalizeSpec(
 
   // 4. Component Schemas
   const schemas: Record<string, SchemaModel> = {};
-  const components = (typeof doc.components === 'object' && doc.components !== null ? doc.components : {}) as Record<string, unknown>;
-  const rawSchemas = (typeof components.schemas === 'object' && components.schemas !== null ? components.schemas : {}) as Record<string, unknown>;
+  const components = (
+    typeof doc.components === 'object' && doc.components !== null ? doc.components : {}
+  ) as Record<string, unknown>;
+  const rawSchemas = (
+    typeof components.schemas === 'object' && components.schemas !== null ? components.schemas : {}
+  ) as Record<string, unknown>;
 
   for (const [schemaName, rawSchema] of Object.entries(rawSchemas)) {
     const canonicalRef = `#/components/schemas/${schemaName}`;
@@ -117,9 +136,11 @@ export function normalizeSpec(
 
   // 5. Security Schemes
   const securitySchemes: Record<string, SecuritySchemeModel> = {};
-  const rawSecSchemes = (typeof components.securitySchemes === 'object' && components.securitySchemes !== null
-    ? components.securitySchemes
-    : {}) as Record<string, unknown>;
+  const rawSecSchemes = (
+    typeof components.securitySchemes === 'object' && components.securitySchemes !== null
+      ? components.securitySchemes
+      : {}
+  ) as Record<string, unknown>;
 
   for (const [secName, secObj] of Object.entries(rawSecSchemes)) {
     if (typeof secObj === 'object' && secObj !== null) {
@@ -140,7 +161,10 @@ export function normalizeSpec(
 
   // 6. Paths & Endpoints
   const endpoints: EndpointModel[] = [];
-  const rawPaths = (typeof doc.paths === 'object' && doc.paths !== null ? doc.paths : {}) as Record<string, unknown>;
+  const rawPaths = (typeof doc.paths === 'object' && doc.paths !== null ? doc.paths : {}) as Record<
+    string,
+    unknown
+  >;
 
   const validMethods: readonly HttpMethod[] = VALID_HTTP_METHODS as unknown as HttpMethod[];
 
@@ -187,10 +211,14 @@ export function normalizeSpec(
       if (typeof opObj !== 'object' || opObj === null) continue;
 
       const op = opObj as Record<string, unknown>;
-      const opId = typeof op.operationId === 'string' ? op.operationId : `${method}_${pathKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const opId =
+        typeof op.operationId === 'string'
+          ? op.operationId
+          : `${method}_${pathKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
 
       // Tags
-      const opTags = Array.isArray(op.tags) && op.tags.length > 0 ? (op.tags as string[]) : ['Default'];
+      const opTags =
+        Array.isArray(op.tags) && op.tags.length > 0 ? (op.tags as string[]) : ['Default'];
 
       // Parameters
       const operationParameters: ParameterModel[] = [];
@@ -204,7 +232,9 @@ export function normalizeSpec(
       // Merge path-level parameters with operation parameters
       const mergedParams = [...pathLevelParameters];
       for (const opParam of operationParameters) {
-        const existingIdx = mergedParams.findIndex((p) => p.name === opParam.name && p.in === opParam.in);
+        const existingIdx = mergedParams.findIndex(
+          (p) => p.name === opParam.name && p.in === opParam.in
+        );
         if (existingIdx >= 0) {
           mergedParams[existingIdx] = opParam;
         } else {
@@ -237,11 +267,11 @@ export function normalizeSpec(
           for (const [cType, mediaObj] of Object.entries(rb.content as Record<string, unknown>)) {
             if (typeof mediaObj === 'object' && mediaObj !== null) {
               const m = mediaObj as Record<string, unknown>;
-               let schema: SchemaModel | undefined;
-                if (m.schema) {
-                  schema = resolveSchema(m.schema, context);
-                  collectSchemaRefs(schema, consumedSchemaRefs);
-                }
+              let schema: SchemaModel | undefined;
+              if (m.schema) {
+                schema = resolveSchema(m.schema, context);
+                collectSchemaRefs(schema, consumedSchemaRefs);
+              }
               contentList.push({
                 contentType: cType,
                 schema,
@@ -309,7 +339,8 @@ export function normalizeSpec(
             statusCode: code,
             description: typeof r.description === 'string' ? r.description : '',
             content: contentList,
-            headers: typeof r.headers === 'object' && r.headers !== null ? (r.headers as any) : undefined,
+            headers:
+              typeof r.headers === 'object' && r.headers !== null ? (r.headers as any) : undefined,
           });
         }
       }
@@ -428,7 +459,12 @@ function parseParameter(p: unknown, context: RefResolutionContext): ParameterMod
     schema = resolveSchema(param.schema, context, name);
   }
 
-  const defaultStyle = (inType === 'query' || inType === 'cookie') ? 'form' : (inType === 'path' || inType === 'header') ? 'simple' : undefined;
+  const defaultStyle =
+    inType === 'query' || inType === 'cookie'
+      ? 'form'
+      : inType === 'path' || inType === 'header'
+        ? 'simple'
+        : undefined;
   const style = typeof param.style === 'string' ? param.style : defaultStyle;
   const defaultExplode = style === 'form';
   const explode = typeof param.explode === 'boolean' ? param.explode : defaultExplode;
@@ -446,5 +482,3 @@ function parseParameter(p: unknown, context: RefResolutionContext): ParameterMod
     allowReserved: typeof param.allowReserved === 'boolean' ? param.allowReserved : undefined,
   };
 }
-
-

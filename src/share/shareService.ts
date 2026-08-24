@@ -33,7 +33,11 @@ export function getShareHash(specText: string, compact = false): string {
   return compressSpecToHash(specText);
 }
 
-export function getShareUrl(specText: string, compact = false, appState?: Record<string, unknown>): string {
+export function getShareUrl(
+  specText: string,
+  compact = false,
+  appState?: Record<string, unknown>
+): string {
   if (typeof window === 'undefined') return getShareHash(specText, compact);
   const hash = getShareHash(specText, compact);
   if (!hash) return '';
@@ -60,7 +64,11 @@ export function decodeAppState(hash: string): Record<string, unknown> | null {
   }
 }
 
-export function getShareSize(specText: string, compact = false, appState?: Record<string, unknown>): { bytes: number; kb: string; urlLength: number; isWarn: boolean; isLarge: boolean } {
+export function getShareSize(
+  specText: string,
+  compact = false,
+  appState?: Record<string, unknown>
+): { bytes: number; kb: string; urlLength: number; isWarn: boolean; isLarge: boolean } {
   const hash = getShareHash(specText, compact);
   const url = typeof window !== 'undefined' ? getShareUrl(specText, compact, appState) : hash;
   if (!hash) return { bytes: 0, kb: '0.0', urlLength: 0, isWarn: false, isLarge: false };
@@ -96,14 +104,25 @@ export function downloadShareFile(specText: string, filename = 'apiatomy-share.y
 }
 
 export function canUseNativeShare(): boolean {
-  return typeof navigator !== 'undefined' && typeof (navigator as unknown as { share?: unknown }).share === 'function';
+  return (
+    typeof navigator !== 'undefined' &&
+    typeof (navigator as unknown as { share?: unknown }).share === 'function'
+  );
 }
 
-export async function nativeShare(specText: string, title = 'APIatomy spec', customUrl?: string): Promise<boolean> {
+export async function nativeShare(
+  specText: string,
+  title = 'APIatomy spec',
+  customUrl?: string
+): Promise<boolean> {
   const url = customUrl || getShareUrl(specText);
   if (!canUseNativeShare()) return false;
   try {
-    await (navigator as unknown as { share: (data: { title: string; text: string; url: string }) => Promise<void> }).share({
+    await (
+      navigator as unknown as {
+        share: (data: { title: string; text: string; url: string }) => Promise<void>;
+      }
+    ).share({
       title,
       text: title,
       url,

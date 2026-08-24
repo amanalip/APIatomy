@@ -13,5 +13,9 @@ export function joinUrl(base: string, path: string): string {
 }
 
 export function sanitizeHeaderValue(val: string): string {
-  return String(val).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$').replace(/`/g, '\\`');
+  return String(val)
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\$/g, '\\$')
+    .replace(/`/g, '\\`');
 }

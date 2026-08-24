@@ -46,7 +46,8 @@ export const SAMPLE_SPECS: readonly SampleSpecOption[] = [
     id: 'broken',
     name: 'Broken / Warning-Heavy',
     category: 'Diagnostics',
-    description: 'Deliberate lint issues, broken refs, and missing success responses for diagnostics.',
+    description:
+      'Deliberate lint issues, broken refs, and missing success responses for diagnostics.',
     spec: BROKEN_SPEC,
   },
   {

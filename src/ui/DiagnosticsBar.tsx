@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
 import { DiagnosticItem } from '../model';
 import { useCopy } from '../utils/useCopy';
-import { AlertTriangle, XCircle, Info, ChevronUp, ChevronDown, CheckCircle2, Copy, Check } from 'lucide-react';
+import {
+  AlertTriangle,
+  XCircle,
+  Info,
+  ChevronUp,
+  ChevronDown,
+  CheckCircle2,
+  Copy,
+  Check,
+} from 'lucide-react';
 
 interface DiagnosticsBarProps {
   diagnostics: DiagnosticItem[];
@@ -12,13 +21,17 @@ function getFix(diag: DiagnosticItem): string | null {
   const id = diag.id.toLowerCase();
   if (id.includes('missing-info')) return 'Add an info object with a non empty title and version.';
   if (id.includes('missing-paths')) return 'Add a top level paths object, even if empty.';
-  if (id.includes('missing-path-param')) return 'Add a parameter with in: path and name matching the template.';
-  if (id.includes('broken-ref') || id.includes('unresolved')) return 'Ensure the $ref target exists and external files are bundled.';
-  if (id.includes('unused-schema')) return 'Remove the unused schema or reference it from an endpoint.';
+  if (id.includes('missing-path-param'))
+    return 'Add a parameter with in: path and name matching the template.';
+  if (id.includes('broken-ref') || id.includes('unresolved'))
+    return 'Ensure the $ref target exists and external files are bundled.';
+  if (id.includes('unused-schema'))
+    return 'Remove the unused schema or reference it from an endpoint.';
   if (id.includes('duplicate')) return 'Rename the duplicate operationId, tag or parameter.';
   if (id.includes('empty-path-param')) return 'Replace {} with a named parameter like {id}.';
   if (id.includes('invalid-path-slash')) return 'Start the path with /.';
-  if (id.includes('path-contains-query')) return 'Move query parameters to the parameters list with in: query.';
+  if (id.includes('path-contains-query'))
+    return 'Move query parameters to the parameters list with in: query.';
   return null;
 }
 
@@ -64,7 +77,10 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
   // Reset filter when diagnostics change drastically (e.g., spec reload) or active filter yields empty results
   React.useEffect(() => {
     if (diagnostics.length === 0) setActiveFilter('all');
-    else if (activeFilter !== 'all' && diagnostics.filter((d) => d.severity === activeFilter).length === 0) {
+    else if (
+      activeFilter !== 'all' &&
+      diagnostics.filter((d) => d.severity === activeFilter).length === 0
+    ) {
       setActiveFilter('all');
     }
   }, [diagnostics, activeFilter]);
@@ -105,14 +121,20 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
               </span>
             )}
             {diagnostics.length === 0 && (
-              <span className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">No issues detected</span>
+              <span className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
+                No issues detected
+              </span>
             )}
           </div>
         </button>
 
         <div className="flex items-center gap-2">
           {isOpen && (
-            <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 p-0.5 rounded text-[11px]" role="group" aria-label="Filter diagnostics by severity">
+            <div
+              className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800/80 p-0.5 rounded text-[11px]"
+              role="group"
+              aria-label="Filter diagnostics by severity"
+            >
               <button
                 aria-pressed={activeFilter === 'all'}
                 onClick={() => setActiveFilter('all')}
@@ -192,7 +214,11 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
 
       {/* Expandable Drawer Content - live region for screen readers */}
       {isOpen && (
-        <div aria-live="polite" aria-atomic="false" className="max-h-48 overflow-y-auto divide-y divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/95 font-mono text-xs">
+        <div
+          aria-live="polite"
+          aria-atomic="false"
+          className="max-h-48 overflow-y-auto divide-y divide-slate-200 dark:divide-slate-800/60 bg-white dark:bg-slate-950/95 font-mono text-xs"
+        >
           {filteredDiagnostics.length === 0 ? (
             <div className="p-4 text-center text-slate-500 dark:text-slate-400 font-sans flex items-center justify-center gap-2">
               {diagnostics.length === 0 ? (
@@ -216,7 +242,12 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
                   onClick={() => onSelectDiagnostic?.(diag)}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectDiagnostic?.(diag); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelectDiagnostic?.(diag);
+                    }
+                  }}
                   aria-label={`Go to ${diag.severity} at line ${diag.line ?? 1}: ${diag.message}`}
                   className="flex flex-col gap-1 p-2.5 hover:bg-slate-100/80 dark:hover:bg-slate-900/80 cursor-pointer transition focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:outline-none"
                 >
@@ -248,7 +279,11 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
                       )}
                     </div>
                   </div>
-                  {fix && <div className="text-[10px] text-slate-500 dark:text-slate-400 pl-6">How to fix: {fix}</div>}
+                  {fix && (
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 pl-6">
+                      How to fix: {fix}
+                    </div>
+                  )}
                 </div>
               );
             })

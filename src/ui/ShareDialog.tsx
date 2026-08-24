@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Copy, Check, Download, Share2, Minimize2, AlertTriangle } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
-import { getShareUrl, getShareSize, getCompactSpecText, downloadShareFile, canUseNativeShare, nativeShare } from '../share/shareService';
+import {
+  getShareUrl,
+  getShareSize,
+  getCompactSpecText,
+  downloadShareFile,
+  canUseNativeShare,
+  nativeShare,
+} from '../share/shareService';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface ShareDialogProps {
@@ -12,7 +19,13 @@ interface ShareDialogProps {
   onClose: () => void;
 }
 
-export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, sourceUrl, appState, onClose }) => {
+export const ShareDialog: React.FC<ShareDialogProps> = ({
+  specText,
+  specTitle,
+  sourceUrl,
+  appState,
+  onClose,
+}) => {
   const [compact, setCompact] = useState(false);
   const [includeState, setIncludeState] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -23,10 +36,22 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
   const compactAvailable = getCompactSpecText(specText) !== null;
-  const compactUrl = compactAvailable ? getShareUrl(specText, true, includeState ? appState : undefined) : '';
-  const url = getShareUrl(specText, compact && compactAvailable, includeState ? appState : undefined);
-  const size = getShareSize(specText, compact && compactAvailable, includeState ? appState : undefined);
-  const compactSize = compactAvailable ? getShareSize(specText, true, includeState ? appState : undefined) : { bytes: 0, kb: '0.0', urlLength: 0, isWarn: false, isLarge: false };
+  const compactUrl = compactAvailable
+    ? getShareUrl(specText, true, includeState ? appState : undefined)
+    : '';
+  const url = getShareUrl(
+    specText,
+    compact && compactAvailable,
+    includeState ? appState : undefined
+  );
+  const size = getShareSize(
+    specText,
+    compact && compactAvailable,
+    includeState ? appState : undefined
+  );
+  const compactSize = compactAvailable
+    ? getShareSize(specText, true, includeState ? appState : undefined)
+    : { bytes: 0, kb: '0.0', urlLength: 0, isWarn: false, isLarge: false };
   const isLarge = size.isLarge || size.urlLength > 8000;
 
   useEffect(() => {
@@ -51,7 +76,10 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
       if (useCompact) {
         setCopiedCompact(true);
         if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-        timerRef.current = window.setTimeout(() => setCopiedCompact(false), 2000) as unknown as number;
+        timerRef.current = window.setTimeout(
+          () => setCopiedCompact(false),
+          2000
+        ) as unknown as number;
       } else {
         setCopied(true);
         if (timerRef.current !== null) window.clearTimeout(timerRef.current);
@@ -101,7 +129,9 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
 
         <div className="p-4 space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">Shareable URL</label>
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Shareable URL
+            </label>
             <div className="flex gap-2">
               <input
                 readOnly
@@ -119,19 +149,22 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
               </button>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              This link contains the full spec in the URL hash. It never leaves your browser except via the URL you share. The address bar is not updated.
+              This link contains the full spec in the URL hash. It never leaves your browser except
+              via the URL you share. The address bar is not updated.
             </p>
             {size.isWarn && (
               <div className="flex items-start gap-2 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>
-                  This link is {size.kb} KB and may be too long for some browsers or chat apps. Consider Compact link or Share File below.
+                  This link is {size.kb} KB and may be too long for some browsers or chat apps.
+                  Consider Compact link or Share File below.
                 </span>
               </div>
             )}
             {isLarge && (
               <div className="p-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs">
-                This spec creates an unusually large URL. We recommend downloading a share file instead.
+                This spec creates an unusually large URL. We recommend downloading a share file
+                instead.
               </div>
             )}
           </div>
@@ -143,12 +176,18 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
               onChange={(e) => setIncludeState(e.target.checked)}
               className="rounded border-slate-300 dark:border-slate-700"
             />
-            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Include current view and selection</span>
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Include current view and selection
+            </span>
           </label>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">Preserves selected endpoint, schema and active view in the shared link.</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            Preserves selected endpoint, schema and active view in the shared link.
+          </p>
 
           <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2 bg-slate-50/50 dark:bg-slate-950/30">
-            <label className={`flex items-center gap-2 ${!compactAvailable ? 'opacity-50' : 'cursor-pointer'}`}>
+            <label
+              className={`flex items-center gap-2 ${!compactAvailable ? 'opacity-50' : 'cursor-pointer'}`}
+            >
               <input
                 type="checkbox"
                 checked={compact}
@@ -158,7 +197,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
               />
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Minimize2 className="w-3 h-3" />
-                Compact Private Link &middot; {compactAvailable ? `${compactSize.kb} KB` : 'unavailable'}
+                Compact Private Link &middot;{' '}
+                {compactAvailable ? `${compactSize.kb} KB` : 'unavailable'}
               </span>
             </label>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -178,7 +218,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
                   onClick={() => handleCopy(true)}
                   className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
                 >
-                  {copiedCompact ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                  {copiedCompact ? (
+                    <Check className="w-3 h-3 text-emerald-500" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
                   {copiedCompact ? 'Copied' : 'Copy compact'}
                 </button>
               </div>
@@ -187,7 +231,9 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
 
           {sourceUrl && (
             <div className="space-y-2 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
-              <div className="text-xs font-medium text-slate-700 dark:text-slate-300">Source URL available</div>
+              <div className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Source URL available
+              </div>
               <p className="text-[11px] text-slate-600 dark:text-slate-400">
                 This spec was loaded from a public URL. You can share the source URL directly.
               </p>

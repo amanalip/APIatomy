@@ -16,7 +16,13 @@ interface CommandPaletteProps {
   onViewChange?: (view: string) => void;
 }
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({ onClose, onSelectSample, onUpload, onShare, onViewChange }) => {
+export const CommandPalette: React.FC<CommandPaletteProps> = ({
+  onClose,
+  onSelectSample,
+  onUpload,
+  onShare,
+  onViewChange,
+}) => {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -31,12 +37,42 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onClose, onSelec
   }, [onClose]);
 
   const commands: Command[] = [
-    { id: 'endpoints', label: 'Go to Endpoints', action: () => onViewChange?.('endpoints'), icon: <Layers className="w-4 h-4" /> },
-    { id: 'schemas', label: 'Go to Schemas', action: () => onViewChange?.('schemas'), icon: <Code2 className="w-4 h-4" /> },
-    { id: 'graph', label: 'Go to Topology Graph', action: () => onViewChange?.('graph'), icon: <Network className="w-4 h-4" /> },
-    { id: 'upload', label: 'Upload spec', action: () => onUpload?.(), icon: <Upload className="w-4 h-4" /> },
-    { id: 'share', label: 'Share spec', action: () => onShare?.(), icon: <Share2 className="w-4 h-4" /> },
-    { id: 'samples', label: 'Open samples', action: () => onSelectSample?.(), icon: <Search className="w-4 h-4" /> },
+    {
+      id: 'endpoints',
+      label: 'Go to Endpoints',
+      action: () => onViewChange?.('endpoints'),
+      icon: <Layers className="w-4 h-4" />,
+    },
+    {
+      id: 'schemas',
+      label: 'Go to Schemas',
+      action: () => onViewChange?.('schemas'),
+      icon: <Code2 className="w-4 h-4" />,
+    },
+    {
+      id: 'graph',
+      label: 'Go to Topology Graph',
+      action: () => onViewChange?.('graph'),
+      icon: <Network className="w-4 h-4" />,
+    },
+    {
+      id: 'upload',
+      label: 'Upload spec',
+      action: () => onUpload?.(),
+      icon: <Upload className="w-4 h-4" />,
+    },
+    {
+      id: 'share',
+      label: 'Share spec',
+      action: () => onShare?.(),
+      icon: <Share2 className="w-4 h-4" />,
+    },
+    {
+      id: 'samples',
+      label: 'Open samples',
+      action: () => onSelectSample?.(),
+      icon: <Search className="w-4 h-4" />,
+    },
   ];
 
   const filtered = commands.filter((c) => c.label.toLowerCase().includes(query.toLowerCase()));

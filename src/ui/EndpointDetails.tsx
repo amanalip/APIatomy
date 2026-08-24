@@ -3,7 +3,18 @@ import { EndpointModel, ServerModel, SchemaModel, SecuritySchemeModel } from '..
 import { HTTP_METHODS, getStatusCategory } from '../model/httpMethods';
 import { CurlGenerator } from './CurlGenerator';
 import { copyTextToClipboard } from '../share/urlHash';
-import { X, Shield, ArrowRight, FileCode, CheckCircle2, ChevronRight, ChevronDown, AlertCircle, Copy, Check } from 'lucide-react';
+import {
+  X,
+  Shield,
+  ArrowRight,
+  FileCode,
+  CheckCircle2,
+  ChevronRight,
+  ChevronDown,
+  AlertCircle,
+  Copy,
+  Check,
+} from 'lucide-react';
 
 interface EndpointDetailsProps {
   endpoint: EndpointModel;
@@ -172,7 +183,9 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                 <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                 <div>
                   <span className="font-semibold">This endpoint is deprecated.</span>
-                  <span className="ml-1 text-slate-600 dark:text-slate-400">It may be removed or replaced in future revisions of this API.</span>
+                  <span className="ml-1 text-slate-600 dark:text-slate-400">
+                    It may be removed or replaced in future revisions of this API.
+                  </span>
                 </div>
               </div>
             )}
@@ -190,10 +203,17 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                     return (
                       <div key={idx} className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-1.5 font-mono">
-                          <span className="text-amber-700 dark:text-amber-300 font-medium">{sec.name}</span>
+                          <span className="text-amber-700 dark:text-amber-300 font-medium">
+                            {sec.name}
+                          </span>
                           {schemeDef && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100/70 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 font-sans border border-amber-200/60 dark:border-amber-500/20">
-                              {schemeDef.type}{schemeDef.scheme ? ` (${schemeDef.scheme})` : schemeDef.in ? ` (${schemeDef.in})` : ''}
+                              {schemeDef.type}
+                              {schemeDef.scheme
+                                ? ` (${schemeDef.scheme})`
+                                : schemeDef.in
+                                  ? ` (${schemeDef.in})`
+                                  : ''}
                             </span>
                           )}
                         </div>
@@ -209,7 +229,9 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                             ))}
                           </div>
                         ) : (
-                          <span className="text-slate-500 text-[11px]">No specific scopes required</span>
+                          <span className="text-slate-500 text-[11px]">
+                            No specific scopes required
+                          </span>
                         )}
                       </div>
                     );
@@ -241,7 +263,10 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                       {sortedParameters.map((p, idx) => (
-                        <tr key={`${p.in}-${p.name}-${idx}`} className="hover:bg-slate-100/60 dark:hover:bg-slate-900/40">
+                        <tr
+                          key={`${p.in}-${p.name}-${idx}`}
+                          className="hover:bg-slate-100/60 dark:hover:bg-slate-900/40"
+                        >
                           <td className="py-2.5 px-3 font-mono font-medium text-slate-800 dark:text-slate-200">
                             <div className="flex items-center gap-1.5">
                               <span>{p.name}</span>
@@ -277,7 +302,8 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                             )}
                             {p.style && (
                               <div className="text-[10px] text-slate-500 font-sans mt-0.5">
-                                style: {p.style}{p.explode ? ' (explode)' : ''}
+                                style: {p.style}
+                                {p.explode ? ' (explode)' : ''}
                               </div>
                             )}
                             {p.allowReserved && (
@@ -287,7 +313,11 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                             )}
                           </td>
                           <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 text-[11px]">
-                            {p.description || <span className="italic text-slate-400 dark:text-slate-600">No description</span>}
+                            {p.description || (
+                              <span className="italic text-slate-400 dark:text-slate-600">
+                                No description
+                              </span>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -316,7 +346,9 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
 
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-3">
                   {endpoint.requestBody.description && (
-                    <p className="text-xs text-slate-600 dark:text-slate-400">{endpoint.requestBody.description}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      {endpoint.requestBody.description}
+                    </p>
                   )}
 
                   {endpoint.requestBody.content.map((c, i) => (
@@ -365,14 +397,18 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                 {endpoint.responses.length > 1 && (
                   <button
                     onClick={() => {
-                      const allExpanded = endpoint.responses.every((r) => expandedResponses[r.statusCode]);
+                      const allExpanded = endpoint.responses.every(
+                        (r) => expandedResponses[r.statusCode]
+                      );
                       const next: Record<string, boolean> = {};
                       for (const r of endpoint.responses) next[r.statusCode] = !allExpanded;
                       setExpandedResponses(next);
                     }}
                     className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                   >
-                    {endpoint.responses.every((r) => expandedResponses[r.statusCode]) ? 'Collapse all' : 'Expand all'}
+                    {endpoint.responses.every((r) => expandedResponses[r.statusCode])
+                      ? 'Collapse all'
+                      : 'Expand all'}
                   </button>
                 )}
               </div>
@@ -397,114 +433,133 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                     const statusInfo = getStatusCategory(resp.statusCode);
                     const isExpanded = expandedResponses[resp.statusCode] ?? false;
 
-                  return (
-                    <div
-                      key={resp.statusCode}
-                      className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 overflow-hidden shadow-sm"
-                    >
-                      <button
-                        onClick={() => toggleResponse(resp.statusCode)}
-                        className="w-full px-3 py-2 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/60 transition text-left"
+                    return (
+                      <div
+                        key={resp.statusCode}
+                        className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 overflow-hidden shadow-sm"
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span
-                            className={`px-2 py-0.5 text-xs font-mono font-bold rounded ${statusInfo.bg} ${statusInfo.color} border ${statusInfo.border}`}
-                          >
-                            {resp.statusCode}
-                          </span>
-                          <span className="text-xs text-slate-800 dark:text-slate-300 truncate font-medium">
-                            {resp.description || (resp.statusCode.toLowerCase() === 'default' ? 'Default Response' : `${statusInfo.label} Response`)}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {resp.content.length > 0 && (
-                            <span className="text-[10px] text-slate-500 font-mono">
-                              {resp.content[0].contentType}
+                        <button
+                          onClick={() => toggleResponse(resp.statusCode)}
+                          className="w-full px-3 py-2 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-900/60 transition text-left"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span
+                              className={`px-2 py-0.5 text-xs font-mono font-bold rounded ${statusInfo.bg} ${statusInfo.color} border ${statusInfo.border}`}
+                            >
+                              {resp.statusCode}
                             </span>
-                          )}
-                          {isExpanded ? (
-                            <ChevronDown className="w-4 h-4 text-slate-400" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4 text-slate-400" />
-                          )}
-                        </div>
-                      </button>
+                            <span className="text-xs text-slate-800 dark:text-slate-300 truncate font-medium">
+                              {resp.description ||
+                                (resp.statusCode.toLowerCase() === 'default'
+                                  ? 'Default Response'
+                                  : `${statusInfo.label} Response`)}
+                            </span>
+                          </div>
 
-                      {isExpanded && (
-                        <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/90 space-y-3">
-                          {resp.headers && Object.keys(resp.headers).length > 0 && (
-                            <div className="space-y-1">
-                              <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
-                                Response Headers
+                          <div className="flex items-center gap-2">
+                            {resp.content.length > 0 && (
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                {resp.content[0].contentType}
                               </span>
-                              <div className="p-2 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono space-y-1.5 divide-y divide-slate-200/60 dark:divide-slate-800/60">
-                                {Object.entries(resp.headers).map(([hKey, hVal]: [string, any]) => (
-                                  <div key={hKey} className="pt-1 first:pt-0">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-slate-800 dark:text-slate-200 font-semibold">{hKey}</span>
-                                      <span className="text-blue-600 dark:text-blue-400 text-[10px]">
-                                        {hVal.schema?.type || (typeof hVal.type === 'string' ? hVal.type : 'string')}
-                                        {hVal.schema?.format ? ` <${hVal.schema.format}>` : hVal.format ? ` <${hVal.format}>` : ''}
-                                      </span>
-                                    </div>
-                                    {hVal.description && (
-                                      <div className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-0.5">
-                                        {hVal.description}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                            )}
+                            {isExpanded ? (
+                              <ChevronDown className="w-4 h-4 text-slate-400" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-slate-400" />
+                            )}
+                          </div>
+                        </button>
 
-                          {resp.content.length === 0 && (!resp.headers || Object.keys(resp.headers).length === 0) && (
-                            <div className="text-xs text-slate-500 italic">
-                              No response body or headers specified.
-                            </div>
-                          )}
-
-                          {resp.content.map((c, idx) => (
-                            <div key={idx} className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-[11px] font-mono font-medium">
-                                  {c.contentType}
+                        {isExpanded && (
+                          <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/90 space-y-3">
+                            {resp.headers && Object.keys(resp.headers).length > 0 && (
+                              <div className="space-y-1">
+                                <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                                  Response Headers
                                 </span>
-                                {c.schema?.refTarget && (
-                                  <button
-                                    onClick={() => {
-                                      const target = schemas[c.schema!.refTarget!];
-                                      if (target) onSelectSchema?.(c.schema!.refTarget!, target);
-                                    }}
-                                    className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-mono"
-                                  >
-                                    <span>Schema: {c.schema.refTarget}</span>
-                                    <ArrowRight className="w-3 h-3" />
-                                  </button>
-                                )}
-                              </div>
-
-                              {c.schema ? (
-                                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
-                                  <SchemaPropertyTree
-                                    schema={c.schema}
-                                    schemas={schemas}
-                                    onSelectSchema={onSelectSchema}
-                                  />
+                                <div className="p-2 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono space-y-1.5 divide-y divide-slate-200/60 dark:divide-slate-800/60">
+                                  {Object.entries(resp.headers).map(
+                                    ([hKey, hVal]: [string, any]) => (
+                                      <div key={hKey} className="pt-1 first:pt-0">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-slate-800 dark:text-slate-200 font-semibold">
+                                            {hKey}
+                                          </span>
+                                          <span className="text-blue-600 dark:text-blue-400 text-[10px]">
+                                            {hVal.schema?.type ||
+                                              (typeof hVal.type === 'string'
+                                                ? hVal.type
+                                                : 'string')}
+                                            {hVal.schema?.format
+                                              ? ` <${hVal.schema.format}>`
+                                              : hVal.format
+                                                ? ` <${hVal.format}>`
+                                                : ''}
+                                          </span>
+                                        </div>
+                                        {hVal.description && (
+                                          <div className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-0.5">
+                                            {hVal.description}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  )}
                                 </div>
-                              ) : c.example ? (
-                                <pre className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
-                                  <code>{typeof c.example === 'object' ? JSON.stringify(c.example, null, 2) : String(c.example)}</code>
-                                </pre>
-                              ) : null}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                              </div>
+                            )}
+
+                            {resp.content.length === 0 &&
+                              (!resp.headers || Object.keys(resp.headers).length === 0) && (
+                                <div className="text-xs text-slate-500 italic">
+                                  No response body or headers specified.
+                                </div>
+                              )}
+
+                            {resp.content.map((c, idx) => (
+                              <div key={idx} className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 text-[11px] font-mono font-medium">
+                                    {c.contentType}
+                                  </span>
+                                  {c.schema?.refTarget && (
+                                    <button
+                                      onClick={() => {
+                                        const target = schemas[c.schema!.refTarget!];
+                                        if (target) onSelectSchema?.(c.schema!.refTarget!, target);
+                                      }}
+                                      className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-mono"
+                                    >
+                                      <span>Schema: {c.schema.refTarget}</span>
+                                      <ArrowRight className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+
+                                {c.schema ? (
+                                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
+                                    <SchemaPropertyTree
+                                      schema={c.schema}
+                                      schemas={schemas}
+                                      onSelectSchema={onSelectSchema}
+                                    />
+                                  </div>
+                                ) : c.example ? (
+                                  <pre className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
+                                    <code>
+                                      {typeof c.example === 'object'
+                                        ? JSON.stringify(c.example, null, 2)
+                                        : String(c.example)}
+                                    </code>
+                                  </pre>
+                                ) : null}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           </>
@@ -533,7 +588,9 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
           return (
             <div key={propName} className="flex items-baseline gap-2 py-0.5 text-xs">
               <span className="text-slate-800 dark:text-slate-200 font-semibold">{propName}</span>
-              {isRequired && <span className="text-red-500 dark:text-red-400 text-[10px] font-bold">*</span>}
+              {isRequired && (
+                <span className="text-red-500 dark:text-red-400 text-[10px] font-bold">*</span>
+              )}
               <span className="text-slate-400 dark:text-slate-500">:</span>
               <span className="text-blue-600 dark:text-blue-400 text-[11px] font-mono">
                 {String(propSchema.type || 'object')}
@@ -551,7 +608,10 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
                 </button>
               )}
               {propSchema.description && (
-                <span className="text-slate-500 text-[11px] truncate" title={propSchema.description}>
+                <span
+                  className="text-slate-500 text-[11px] truncate"
+                  title={propSchema.description}
+                >
                   // {propSchema.description}
                 </span>
               )}
@@ -562,17 +622,24 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
           <div className="flex items-baseline gap-2 py-0.5 text-xs font-mono">
             <span className="text-slate-500">[additionalProperties]:</span>
             {schema.additionalProperties === true ? (
-              <span className="text-blue-600 dark:text-blue-400 text-[11px]">any (free-form map)</span>
+              <span className="text-blue-600 dark:text-blue-400 text-[11px]">
+                any (free-form map)
+              </span>
             ) : typeof schema.additionalProperties === 'object' ? (
               <>
                 <span className="text-blue-600 dark:text-blue-400 text-[11px]">
-                  {String((schema.additionalProperties as any).type || (schema.additionalProperties as any).refTarget || 'any')}
+                  {String(
+                    (schema.additionalProperties as any).type ||
+                      (schema.additionalProperties as any).refTarget ||
+                      'any'
+                  )}
                 </span>
                 {(schema.additionalProperties as any).refTarget && (
                   <button
                     onClick={() => {
                       const target = schemas[(schema.additionalProperties as any).refTarget!];
-                      if (target) onSelectSchema?.((schema.additionalProperties as any).refTarget!, target);
+                      if (target)
+                        onSelectSchema?.((schema.additionalProperties as any).refTarget!, target);
                     }}
                     className="text-indigo-600 dark:text-indigo-400 hover:underline text-[11px]"
                   >
@@ -593,7 +660,9 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
     return (
       <div className="text-xs text-slate-700 dark:text-slate-300">
         <span className="text-slate-500 dark:text-slate-400">Array of </span>
-        <span className="text-blue-600 dark:text-blue-400 font-semibold">{String(schema.items.type || 'object')}</span>
+        <span className="text-blue-600 dark:text-blue-400 font-semibold">
+          {String(schema.items.type || 'object')}
+        </span>
         {schema.items.refTarget && (
           <button
             onClick={() => {
@@ -614,7 +683,11 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
       <div className="text-xs text-slate-700 dark:text-slate-300 space-y-1">
         <span className="text-rose-600 dark:text-rose-400 font-semibold">not:</span>
         <div className="pl-3 border-l border-rose-200 dark:border-rose-800">
-          <SchemaPropertyTree schema={schema.not} schemas={schemas} onSelectSchema={onSelectSchema} />
+          <SchemaPropertyTree
+            schema={schema.not}
+            schemas={schemas}
+            onSelectSchema={onSelectSchema}
+          />
         </div>
       </div>
     );
@@ -622,21 +695,37 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
 
   if (schema.additionalProperties !== undefined) {
     if (schema.additionalProperties === true) {
-      return <div className="text-xs text-slate-700 dark:text-slate-300 font-mono">Map: <span className="text-blue-600 dark:text-blue-400">[string: any]</span> (free-form additional properties)</div>;
+      return (
+        <div className="text-xs text-slate-700 dark:text-slate-300 font-mono">
+          Map: <span className="text-blue-600 dark:text-blue-400">[string: any]</span> (free-form
+          additional properties)
+        </div>
+      );
     }
     if (schema.additionalProperties === false) {
-      return <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">No additional properties allowed.</div>;
+      return (
+        <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+          No additional properties allowed.
+        </div>
+      );
     }
     if (typeof schema.additionalProperties === 'object') {
       return (
         <div className="text-xs text-slate-700 dark:text-slate-300">
           <span className="text-slate-500 dark:text-slate-400">[additionalProperties]: </span>
-          <span className="text-blue-600 dark:text-blue-400 font-mono">{String((schema.additionalProperties as any).type || (schema.additionalProperties as any).refTarget || 'any')}</span>
+          <span className="text-blue-600 dark:text-blue-400 font-mono">
+            {String(
+              (schema.additionalProperties as any).type ||
+                (schema.additionalProperties as any).refTarget ||
+                'any'
+            )}
+          </span>
           {(schema.additionalProperties as any).refTarget && (
             <button
               onClick={() => {
                 const target = schemas[(schema.additionalProperties as any).refTarget!];
-                if (target) onSelectSchema?.((schema.additionalProperties as any).refTarget!, target);
+                if (target)
+                  onSelectSchema?.((schema.additionalProperties as any).refTarget!, target);
               }}
               className="text-indigo-600 dark:text-indigo-400 hover:underline ml-1 font-mono"
             >
@@ -651,8 +740,12 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
   return (
     <div className="text-xs text-slate-500 dark:text-slate-400">
       Type: <span className="text-blue-600 dark:text-blue-400">{String(schema.type || 'any')}</span>
-      {schema.format ? <span className="text-slate-400 dark:text-slate-500 ml-1">&lt;{schema.format}&gt;</span> : null}
-      {schema.enum ? <span className="ml-2 text-slate-500">enum: [{schema.enum.join(', ')}]</span> : null}
+      {schema.format ? (
+        <span className="text-slate-400 dark:text-slate-500 ml-1">&lt;{schema.format}&gt;</span>
+      ) : null}
+      {schema.enum ? (
+        <span className="ml-2 text-slate-500">enum: [{schema.enum.join(', ')}]</span>
+      ) : null}
     </div>
   );
 };

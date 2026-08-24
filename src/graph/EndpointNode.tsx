@@ -48,7 +48,10 @@ export const EndpointNode: React.FC<NodeProps> = memo(({ data, selected }) => {
         </span>
       </div>
 
-      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate leading-snug" title={nodeData.summary}>
+      <div
+        className="text-[11px] text-slate-500 dark:text-slate-400 truncate leading-snug"
+        title={nodeData.summary}
+      >
         {nodeData.summary}
       </div>
 
@@ -63,7 +66,9 @@ export const EndpointNode: React.FC<NodeProps> = memo(({ data, selected }) => {
             </span>
           ))}
           {nodeData.tags.length > 2 && (
-            <span className="text-[10px] text-slate-400 dark:text-slate-500">+{nodeData.tags.length - 2}</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">
+              +{nodeData.tags.length - 2}
+            </span>
           )}
         </div>
       )}

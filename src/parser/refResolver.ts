@@ -10,7 +10,7 @@ export interface RefResolutionContext {
 
 export function extractRefTargetName(ref: string): string {
   if (!ref) return '';
-  const hashPart = ref.includes('#') ? ref.split('#').pop() as string : ref;
+  const hashPart = ref.includes('#') ? (ref.split('#').pop() as string) : ref;
   const pointer = hashPart.startsWith('/') ? hashPart : `/${hashPart}`;
   const parts = pointer.split('/');
   const rawTarget = parts[parts.length - 1] || ref;
@@ -90,8 +90,18 @@ export function resolveSchema(
 
     // Circular reference check - normalize encoded ref for comparison
     const canonicalPath = `#/components/schemas/${targetName}`;
-    const normalizedRef = (() => { try { return decodeURIComponent(ref); } catch { return ref; } })();
-    if (context.visitingPath.has(ref) || context.visitingPath.has(normalizedRef) || (targetName && context.visitingPath.has(canonicalPath))) {
+    const normalizedRef = (() => {
+      try {
+        return decodeURIComponent(ref);
+      } catch {
+        return ref;
+      }
+    })();
+    if (
+      context.visitingPath.has(ref) ||
+      context.visitingPath.has(normalizedRef) ||
+      (targetName && context.visitingPath.has(canonicalPath))
+    ) {
       return {
         $ref: ref,
         refTarget: targetName,
@@ -109,9 +119,10 @@ export function resolveSchema(
         ...cached,
         properties: cached.properties ? { ...cached.properties } : undefined,
         items: cached.items ? { ...cached.items } : undefined,
-        additionalProperties: typeof cached.additionalProperties === 'object' && cached.additionalProperties !== null
-          ? { ...(cached.additionalProperties as Record<string, unknown>) } as any
-          : cached.additionalProperties,
+        additionalProperties:
+          typeof cached.additionalProperties === 'object' && cached.additionalProperties !== null
+            ? ({ ...(cached.additionalProperties as Record<string, unknown>) } as any)
+            : cached.additionalProperties,
         allOf: cached.allOf ? [...cached.allOf] : undefined,
         oneOf: cached.oneOf ? [...cached.oneOf] : undefined,
         anyOf: cached.anyOf ? [...cached.anyOf] : undefined,
@@ -127,11 +138,19 @@ export function resolveSchema(
       const fileContent = getFileContent(ref);
       if (fileContent) {
         try {
-          const parsed = fileContent.trim().startsWith('{') ? JSON.parse(fileContent) : parseYaml(fileContent);
+          const parsed = fileContent.trim().startsWith('{')
+            ? JSON.parse(fileContent)
+            : parseYaml(fileContent);
           const hashIdx = ref.indexOf('#');
           const pointer = hashIdx >= 0 ? ref.slice(hashIdx) : '#/';
-          const doc = typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : { value: parsed } as Record<string, unknown>;
-          resolvedRaw = pointer === '#/' || pointer === '#' || pointer === '' ? doc : resolveJsonPointer(doc, pointer.startsWith('#') ? pointer : `#${pointer}`);
+          const doc =
+            typeof parsed === 'object' && parsed !== null
+              ? (parsed as Record<string, unknown>)
+              : ({ value: parsed } as Record<string, unknown>);
+          resolvedRaw =
+            pointer === '#/' || pointer === '#' || pointer === ''
+              ? doc
+              : resolveJsonPointer(doc, pointer.startsWith('#') ? pointer : `#${pointer}`);
         } catch {
           // ignore parse error
         }
@@ -163,7 +182,14 @@ export function resolveSchema(
       delete siblingRaw.$ref;
       const siblingModel = resolveSchema(siblingRaw, context, schemaName);
       for (const [k, v] of Object.entries(siblingModel)) {
-        if (v !== undefined && k !== '$ref' && k !== 'refTarget' && k !== 'name' && k !== 'id' && k !== 'raw') {
+        if (
+          v !== undefined &&
+          k !== '$ref' &&
+          k !== 'refTarget' &&
+          k !== 'name' &&
+          k !== 'id' &&
+          k !== 'raw'
+        ) {
           (result as any)[k] = v;
         }
       }
@@ -203,8 +229,14 @@ export function resolveSchema(
     example: s.example ?? (Array.isArray(s.examples) ? s.examples[0] : undefined),
     minimum: typeof s.minimum === 'number' ? s.minimum : undefined,
     maximum: typeof s.maximum === 'number' ? s.maximum : undefined,
-    exclusiveMinimum: typeof s.exclusiveMinimum === 'number' || typeof s.exclusiveMinimum === 'boolean' ? s.exclusiveMinimum : undefined,
-    exclusiveMaximum: typeof s.exclusiveMaximum === 'number' || typeof s.exclusiveMaximum === 'boolean' ? s.exclusiveMaximum : undefined,
+    exclusiveMinimum:
+      typeof s.exclusiveMinimum === 'number' || typeof s.exclusiveMinimum === 'boolean'
+        ? s.exclusiveMinimum
+        : undefined,
+    exclusiveMaximum:
+      typeof s.exclusiveMaximum === 'number' || typeof s.exclusiveMaximum === 'boolean'
+        ? s.exclusiveMaximum
+        : undefined,
     multipleOf: typeof s.multipleOf === 'number' ? s.multipleOf : undefined,
     minLength: typeof s.minLength === 'number' ? s.minLength : undefined,
     maxLength: typeof s.maxLength === 'number' ? s.maxLength : undefined,

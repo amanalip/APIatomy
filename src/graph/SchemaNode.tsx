@@ -28,8 +28,8 @@ export const SchemaNode: React.FC<NodeProps> = memo(({ data, selected }) => {
         selected
           ? 'ring-2 ring-indigo-500 border-indigo-500 shadow-indigo-500/20'
           : isHighReuse
-          ? 'border-indigo-400 dark:border-indigo-500/60 shadow-indigo-500/10'
-          : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+            ? 'border-indigo-400 dark:border-indigo-500/60 shadow-indigo-500/10'
+            : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
       }`}
     >
       <Handle

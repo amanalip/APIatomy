@@ -10,7 +10,9 @@ export function isSwagger2(doc: Record<string, unknown>): boolean {
   return false;
 }
 
-export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Record<string, unknown> {
+export function convertSwagger2ToOpenApi3(
+  swagger: Record<string, unknown>
+): Record<string, unknown> {
   const openapi: Record<string, unknown> = {
     openapi: '3.0.3',
     info: swagger.info || { title: 'Converted Swagger API', version: '1.0.0' },
@@ -44,7 +46,10 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
     }
     // Fallback if all schemes were invalid
     if (servers.length === 0 && (host || basePath)) {
-      servers.push({ url: `https://${host || 'localhost'}${basePath}`, description: 'Default HTTPS server' });
+      servers.push({
+        url: `https://${host || 'localhost'}${basePath}`,
+        description: 'Default HTTPS server',
+      });
     }
   } else if (swagger.servers && Array.isArray(swagger.servers)) {
     openapi.servers = swagger.servers;
@@ -91,7 +96,9 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
   // Convert securityDefinitions to components.securitySchemes
   if (swagger.securityDefinitions && typeof swagger.securityDefinitions === 'object') {
     const secSchemes: Record<string, unknown> = {};
-    for (const [key, secDef] of Object.entries(swagger.securityDefinitions as Record<string, unknown>)) {
+    for (const [key, secDef] of Object.entries(
+      swagger.securityDefinitions as Record<string, unknown>
+    )) {
       if (typeof secDef === 'object' && secDef !== null) {
         const sd = secDef as Record<string, unknown>;
         if (sd.type === 'basic') {
@@ -112,10 +119,10 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
             sd.flow === 'accessCode'
               ? 'authorizationCode'
               : sd.flow === 'application'
-              ? 'clientCredentials'
-              : typeof sd.flow === 'string'
-              ? sd.flow
-              : 'implicit';
+                ? 'clientCredentials'
+                : typeof sd.flow === 'string'
+                  ? sd.flow
+                  : 'implicit';
 
           secSchemes[key] = {
             type: 'oauth2',
@@ -140,8 +147,12 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
 
   // Convert paths
   if (swagger.paths && typeof swagger.paths === 'object') {
-    const defaultConsumes = Array.isArray(swagger.consumes) ? (swagger.consumes as string[]) : ['application/json'];
-    const defaultProduces = Array.isArray(swagger.produces) ? (swagger.produces as string[]) : ['application/json'];
+    const defaultConsumes = Array.isArray(swagger.consumes)
+      ? (swagger.consumes as string[])
+      : ['application/json'];
+    const defaultProduces = Array.isArray(swagger.produces)
+      ? (swagger.produces as string[])
+      : ['application/json'];
 
     const newPaths: Record<string, unknown> = {};
 
@@ -153,7 +164,9 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
 
       for (const [methodKey, opObj] of Object.entries(pi)) {
         const method = methodKey.toLowerCase();
-        if (!['get', 'post', 'put', 'delete', 'patch', 'options', 'head', 'trace'].includes(method)) {
+        if (
+          !['get', 'post', 'put', 'delete', 'patch', 'options', 'head', 'trace'].includes(method)
+        ) {
           newPathItem[methodKey] = opObj;
           continue;
         }
@@ -171,7 +184,9 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
         };
 
         if (Array.isArray(op.schemes) && (host || basePath)) {
-          const filteredSchemes = (op.schemes as unknown[]).map((s) => String(s).toLowerCase()).filter((s) => ALLOWED_SCHEMES.has(s));
+          const filteredSchemes = (op.schemes as unknown[])
+            .map((s) => String(s).toLowerCase())
+            .filter((s) => ALLOWED_SCHEMES.has(s));
           const effectiveSchemes = filteredSchemes.length > 0 ? filteredSchemes : ['https'];
           newOp.servers = effectiveSchemes.map((s) => ({
             url: `${s}://${host || 'localhost'}${basePath}`,
@@ -266,9 +281,10 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
           }
 
           const hasFileParam = formDataParams.some((fp) => fp.type === 'file');
-          const formContentType = consumes.includes('multipart/form-data') || hasFileParam
-            ? 'multipart/form-data'
-            : 'application/x-www-form-urlencoded';
+          const formContentType =
+            consumes.includes('multipart/form-data') || hasFileParam
+              ? 'multipart/form-data'
+              : 'application/x-www-form-urlencoded';
 
           newOp.requestBody = {
             content: {
@@ -329,7 +345,11 @@ export function convertSwagger2ToOpenApi3(swagger: Record<string, unknown>): Rec
 
 // Rewrite Swagger `#/definitions/Name` to `#/components/schemas/Name`
 // Only rewrite strings that are $ref target values; preserves example strings that coincidentally look like refs
-function rewriteSwaggerRefs(obj: unknown, seen = new WeakSet<object>(), parentKey?: string): unknown {
+function rewriteSwaggerRefs(
+  obj: unknown,
+  seen = new WeakSet<object>(),
+  parentKey?: string
+): unknown {
   if (typeof obj === 'string') {
     const isRefContext = parentKey === '$ref';
     if (isRefContext) {

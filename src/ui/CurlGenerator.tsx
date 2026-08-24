@@ -13,7 +13,11 @@ interface CurlGeneratorProps {
   securitySchemes?: Record<string, SecuritySchemeModel>;
 }
 
-export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers, securitySchemes }) => {
+export const CurlGenerator: React.FC<CurlGeneratorProps> = ({
+  endpoint,
+  servers,
+  securitySchemes,
+}) => {
   const [copied, setCopied] = useState(false);
   const [wrap, setWrap] = useState(false);
   const [selectedServerUrl, setSelectedServerUrl] = useState<string>(
@@ -57,7 +61,13 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers,
   }, [endpoint.id]);
 
   const curlCommand = useMemo(() => {
-    return buildCurlCommand(endpoint, selectedServerUrl, activeServer, securitySchemes, selectedAuth);
+    return buildCurlCommand(
+      endpoint,
+      selectedServerUrl,
+      activeServer,
+      securitySchemes,
+      selectedAuth
+    );
   }, [endpoint, selectedServerUrl, activeServer, securitySchemes, selectedAuth]);
 
   const handleCopy = async () => {
@@ -74,7 +84,9 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers,
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-          <span className="text-xs font-semibold text-slate-800 dark:text-slate-300">cURL Command</span>
+          <span className="text-xs font-semibold text-slate-800 dark:text-slate-300">
+            cURL Command
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -126,7 +138,9 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers,
             {copied ? (
               <>
                 <Check className="w-3 h-3 text-emerald-500" />
-                <span className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">Copied</span>
+                <span className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
+                  Copied
+                </span>
               </>
             ) : (
               <>
@@ -138,7 +152,12 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers,
         </div>
       </div>
 
-      <pre tabIndex={0} role="region" aria-label="Generated cURL command preview" className={`p-3 rounded-lg bg-slate-900 text-slate-200 text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800 shadow-inner focus-visible:ring-2 focus-visible:ring-blue-500 outline-none ${wrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'}`}>
+      <pre
+        tabIndex={0}
+        role="region"
+        aria-label="Generated cURL command preview"
+        className={`p-3 rounded-lg bg-slate-900 text-slate-200 text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800 shadow-inner focus-visible:ring-2 focus-visible:ring-blue-500 outline-none ${wrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre'}`}
+      >
         <code>{curlCommand}</code>
       </pre>
     </div>
@@ -176,14 +195,21 @@ export function buildCurlCommand(
   if (activeServer?.variables) {
     for (const [varName, varDef] of Object.entries(activeServer.variables)) {
       const defVal = (varDef as any)?.default;
-      let replacementRaw = defVal !== undefined && String(defVal).trim() !== '' ? String(defVal) : (varDef as any)?.enum?.[0] ?? 'default';
+      let replacementRaw =
+        defVal !== undefined && String(defVal).trim() !== ''
+          ? String(defVal)
+          : ((varDef as any)?.enum?.[0] ?? 'default');
       // Sanitize shell specials then URL-encode spaces and unsafe characters while preserving shell escapes
       let replacement = sanitizeHeaderValue(String(replacementRaw));
       // Encode spaces and encode remaining unsafe URL characters except already escaped sequences
       // For URL correctness, encode spaces; other characters keep shell-escaped form for curl double-quoted string
       replacement = replacement.replace(/ /g, '%20');
       // Additionally encode raw unsafe that would break URL but not already escaped
-      try { replacement = replacement.replace(/(?<!\\)%20/g, '%20'); } catch { /* ignore lookbehind unsupported */ }
+      try {
+        replacement = replacement.replace(/(?<!\\)%20/g, '%20');
+      } catch {
+        /* ignore lookbehind unsupported */
+      }
       rawUrl = rawUrl.split(`{${varName}}`).join(replacement);
     }
   }
@@ -193,11 +219,12 @@ export function buildCurlCommand(
   let url = joinUrl(rawUrl, normalizedPath);
 
   for (const param of endpoint.parameters.filter((p) => p.in === 'path')) {
-    const val = param.example !== undefined
-      ? encodeURIComponent(String(param.example))
-      : param.schema?.default !== undefined
-        ? encodeURIComponent(String(param.schema.default))
-        : `:${param.name}`;
+    const val =
+      param.example !== undefined
+        ? encodeURIComponent(String(param.example))
+        : param.schema?.default !== undefined
+          ? encodeURIComponent(String(param.schema.default))
+          : `:${param.name}`;
     url = url.split(`{${param.name}}`).join(val);
   }
 
@@ -205,9 +232,17 @@ export function buildCurlCommand(
   if (queryParams.length > 0) {
     const qParts: string[] = [];
     for (const p of queryParams) {
-      const isObject = p.schema?.type === 'object' || (p.example !== null && typeof p.example === 'object' && !Array.isArray(p.example) && p.schema?.type !== 'array');
+      const isObject =
+        p.schema?.type === 'object' ||
+        (p.example !== null &&
+          typeof p.example === 'object' &&
+          !Array.isArray(p.example) &&
+          p.schema?.type !== 'array');
       if (isObject) {
-        const rawVal = (p.example as Record<string, unknown>) ?? (p.schema?.default as Record<string, unknown>) ?? null;
+        const rawVal =
+          (p.example as Record<string, unknown>) ??
+          (p.schema?.default as Record<string, unknown>) ??
+          null;
         let objVal: Record<string, unknown>;
         if (rawVal && typeof rawVal === 'object' && !Array.isArray(rawVal)) {
           objVal = rawVal as Record<string, unknown>;
@@ -220,7 +255,9 @@ export function buildCurlCommand(
         const explode = p.explode !== false;
         if (style === 'deepObject') {
           for (const [k, v] of Object.entries(objVal)) {
-            qParts.push(`${encodeURIComponent(p.name)}[${encodeURIComponent(k)}]=${encodeQueryValue(String(v), p.allowReserved)}`);
+            qParts.push(
+              `${encodeURIComponent(p.name)}[${encodeURIComponent(k)}]=${encodeQueryValue(String(v), p.allowReserved)}`
+            );
           }
         } else if (style === 'form' && explode) {
           for (const [k, v] of Object.entries(objVal)) {
@@ -248,34 +285,41 @@ export function buildCurlCommand(
             : ['value1', 'value2'];
         if (p.explode !== false) {
           for (const item of arrVal) {
-            qParts.push(`${encodeURIComponent(p.name)}=${encodeQueryValue(String(item), p.allowReserved)}`);
+            qParts.push(
+              `${encodeURIComponent(p.name)}=${encodeQueryValue(String(item), p.allowReserved)}`
+            );
           }
         } else {
           let delimiter = ',';
           if (p.style === 'spaceDelimited') delimiter = '%20';
           else if (p.style === 'pipeDelimited') delimiter = '|';
           const encodedVals = arrVal.map((v) => encodeQueryValue(String(v), p.allowReserved));
-          const joined = delimiter === '%20' ? encodedVals.join('%20') : encodedVals.join(delimiter);
+          const joined =
+            delimiter === '%20' ? encodedVals.join('%20') : encodedVals.join(delimiter);
           qParts.push(`${encodeURIComponent(p.name)}=${joined}`);
         }
       } else {
-        let val = p.example !== undefined
-          ? p.example
-          : p.schema?.default !== undefined
-            ? p.schema.default
-            : undefined;
+        let val =
+          p.example !== undefined
+            ? p.example
+            : p.schema?.default !== undefined
+              ? p.schema.default
+              : undefined;
         if (val === undefined) {
           if (p.schema?.type === 'boolean') val = 'true';
           else if (p.schema?.type === 'integer' || p.schema?.type === 'number') {
             if (p.schema.minimum !== undefined) val = String(p.schema.minimum);
-            else if (p.schema.maximum !== undefined && p.schema.maximum < 1) val = String(p.schema.maximum);
+            else if (p.schema.maximum !== undefined && p.schema.maximum < 1)
+              val = String(p.schema.maximum);
             else val = '1';
           } else val = 'value';
         }
         if (typeof val === 'object' && val !== null) {
           val = JSON.stringify(val);
         }
-        qParts.push(`${encodeURIComponent(p.name)}=${encodeQueryValue(String(val), p.allowReserved)}`);
+        qParts.push(
+          `${encodeURIComponent(p.name)}=${encodeQueryValue(String(val), p.allowReserved)}`
+        );
       }
     }
     if (qParts.length > 0) url += `?${qParts.join('&')}`;
@@ -290,11 +334,12 @@ export function buildCurlCommand(
   );
 
   for (const header of endpoint.parameters.filter((p) => p.in === 'header')) {
-    let val = header.example !== undefined
-      ? header.example
-      : header.schema?.default !== undefined
-        ? header.schema.default
-        : undefined;
+    let val =
+      header.example !== undefined
+        ? header.example
+        : header.schema?.default !== undefined
+          ? header.schema.default
+          : undefined;
     if (val === undefined) {
       if (header.schema?.format === 'uuid') val = '123e4567-e89b-12d3-a456-426614174000';
       else if (header.schema?.type === 'integer' || header.schema?.type === 'number') val = '1';
@@ -309,22 +354,29 @@ export function buildCurlCommand(
   if (cookieParams.length > 0) {
     const cookieStr = cookieParams
       .map((c) => {
-        const val = c.example !== undefined
-          ? c.example
-          : c.schema?.default !== undefined
-            ? c.schema.default
-            : 'value';
+        const val =
+          c.example !== undefined
+            ? c.example
+            : c.schema?.default !== undefined
+              ? c.schema.default
+              : 'value';
         return `${encodeURIComponent(c.name)}=${encodeURIComponent(String(val))}`;
       })
       .join('; ');
     lines.push(`  -b "${cookieStr}"`);
   }
 
-  const hasSecurity = (endpoint.securityAlternatives && endpoint.securityAlternatives.length > 0) ? endpoint.securityAlternatives.some((g) => g.length > 0) : endpoint.security.length > 0;
+  const hasSecurity =
+    endpoint.securityAlternatives && endpoint.securityAlternatives.length > 0
+      ? endpoint.securityAlternatives.some((g) => g.length > 0)
+      : endpoint.security.length > 0;
   if (hasSecurity && !hasExplicitAuthHeader) {
-    const authList: typeof endpoint.security = (endpoint.securityAlternatives && endpoint.securityAlternatives.length > 0)
-      ? (endpoint.securityAlternatives[selectedAuthIndex] ?? endpoint.securityAlternatives[0] ?? [])
-      : endpoint.security;
+    const authList: typeof endpoint.security =
+      endpoint.securityAlternatives && endpoint.securityAlternatives.length > 0
+        ? (endpoint.securityAlternatives[selectedAuthIndex] ??
+          endpoint.securityAlternatives[0] ??
+          [])
+        : endpoint.security;
     const seen = new Set<string>();
     for (const sec of authList) {
       if (seen.has(sec.name)) continue;
@@ -358,8 +410,14 @@ export function buildCurlCommand(
         }
       } else {
         const secNameLower = sec.name.toLowerCase();
-        const isApiKey = secNameLower === 'apikey' || secNameLower.includes('api_key') || secNameLower.includes('api-key');
-        const isBasic = secNameLower === 'basic' || secNameLower.includes('basic_auth') || secNameLower.includes('basic-auth');
+        const isApiKey =
+          secNameLower === 'apikey' ||
+          secNameLower.includes('api_key') ||
+          secNameLower.includes('api-key');
+        const isBasic =
+          secNameLower === 'basic' ||
+          secNameLower.includes('basic_auth') ||
+          secNameLower.includes('basic-auth');
         if (isApiKey) {
           lines.push(`  -H "X-API-Key: YOUR_API_KEY"`);
         } else if (isBasic) {
@@ -373,7 +431,9 @@ export function buildCurlCommand(
 
   if (endpoint.requestBody && endpoint.requestBody.content.length > 0) {
     // Prefer JSON if available, otherwise first content type (case-insensitive per RFC 7231)
-    const primaryMedia = endpoint.requestBody.content.find((c) => c.contentType.toLowerCase().includes('json')) || endpoint.requestBody.content[0];
+    const primaryMedia =
+      endpoint.requestBody.content.find((c) => c.contentType.toLowerCase().includes('json')) ||
+      endpoint.requestBody.content[0];
     const lowerType = primaryMedia.contentType.toLowerCase();
     const isMultipart = lowerType.includes('multipart/form-data');
     const isFormUrlEncoded = lowerType.includes('application/x-www-form-urlencoded');

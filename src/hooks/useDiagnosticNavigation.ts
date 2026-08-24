@@ -2,7 +2,10 @@ import { useRef, useEffect } from 'react';
 import { DiagnosticItem } from '../model';
 import { EditorPaneRef } from '../ui/EditorPane';
 
-export function useDiagnosticNavigation(editorPaneRef: React.RefObject<EditorPaneRef>, setIsEditorOpen: (open: boolean) => void) {
+export function useDiagnosticNavigation(
+  editorPaneRef: React.RefObject<EditorPaneRef>,
+  setIsEditorOpen: (open: boolean) => void
+) {
   const diagTimerRef = useRef<number | null>(null);
 
   const handleSelectDiagnostic = (diag: DiagnosticItem) => {

@@ -58,7 +58,8 @@ export interface EndpointModel {
   producedSchemaRefs: string[];
 }
 
-export type SchemaType = 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object' | 'null' | 'any';
+export type SchemaType =
+  'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object' | 'null' | 'any';
 
 export interface SchemaModel {
   id?: string;

@@ -58,7 +58,8 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
             severity: 'info',
             message: `Contact email "${contact.email}" does not appear to be a valid email address.`,
             path: '/info/contact/email',
-            line: findLineForPattern(rawText, 'email:') || findLineForPattern(rawText, 'contact:') || 1,
+            line:
+              findLineForPattern(rawText, 'email:') || findLineForPattern(rawText, 'contact:') || 1,
             source: 'schema',
           });
         }
@@ -72,7 +73,8 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
           severity: 'warning',
           message: 'The license object must define a non-empty "name" string.',
           path: '/info/license/name',
-          line: findLineForPattern(rawText, 'license:') || findLineForPattern(rawText, 'info:') || 1,
+          line:
+            findLineForPattern(rawText, 'license:') || findLineForPattern(rawText, 'info:') || 1,
           source: 'schema',
         });
       }
@@ -83,7 +85,8 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
             severity: 'info',
             message: `License URL "${license.url}" should be an absolute HTTP/HTTPS URL.`,
             path: '/info/license/url',
-            line: findLineForPattern(rawText, 'url:') || findLineForPattern(rawText, 'license:') || 1,
+            line:
+              findLineForPattern(rawText, 'url:') || findLineForPattern(rawText, 'license:') || 1,
             source: 'schema',
           });
         }
@@ -157,7 +160,16 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       }
     }
 
-    const VALID_HTTP_METHODS = new Set(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);
+    const VALID_HTTP_METHODS = new Set([
+      'get',
+      'put',
+      'post',
+      'delete',
+      'options',
+      'head',
+      'patch',
+      'trace',
+    ]);
     const PATH_LEVEL_KEYS = new Set(['summary', 'description', 'servers', 'parameters', '$ref']);
 
     for (const [pKey, pathObj] of Object.entries(rawDoc.paths as Record<string, unknown>)) {
@@ -208,7 +220,8 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
 
     // Rule: Missing summary and description
     if (!ep.summary && !ep.description) {
-      const line = findLineForPattern(rawText, `${ep.method}:`) || findLineForPattern(rawText, ep.path);
+      const line =
+        findLineForPattern(rawText, `${ep.method}:`) || findLineForPattern(rawText, ep.path);
       diagnostics.push({
         id: `missing-doc-${ep.id}`,
         severity: 'warning',
@@ -236,7 +249,8 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     const seenOpTags = new Set<string>();
     for (const tag of ep.tags) {
       if (typeof tag === 'string' && tag.trim() === '') {
-        const line = findLineForPattern(rawText, `${ep.method}:`) || findLineForPattern(rawText, ep.path);
+        const line =
+          findLineForPattern(rawText, `${ep.method}:`) || findLineForPattern(rawText, ep.path);
         diagnostics.push({
           id: `empty-tag-${ep.id}`,
           severity: 'warning',
@@ -248,7 +262,8 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       } else if (typeof tag === 'string') {
         const normTag = tag.trim();
         if (seenOpTags.has(normTag)) {
-          const line = findLineForPattern(rawText, `${ep.method}:`) || findLineForPattern(rawText, ep.path);
+          const line =
+            findLineForPattern(rawText, `${ep.method}:`) || findLineForPattern(rawText, ep.path);
           diagnostics.push({
             id: `duplicate-op-tag-${ep.id}-${normTag}`,
             severity: 'info',
@@ -339,7 +354,12 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
         checkParams((pathItem as Record<string, unknown>).parameters as unknown[], 'path-level');
       }
       if (opItem && Array.isArray(opItem.parameters)) {
-        checkParams(opItem.parameters as unknown[], pathItem && Array.isArray((pathItem as Record<string, unknown>).parameters) ? 'path vs operation' : 'operation');
+        checkParams(
+          opItem.parameters as unknown[],
+          pathItem && Array.isArray((pathItem as Record<string, unknown>).parameters)
+            ? 'path vs operation'
+            : 'operation'
+        );
       }
     }
 
@@ -385,7 +405,9 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     const hasComposition = schemaObj.allOf || schemaObj.oneOf || schemaObj.anyOf || schemaObj.not;
     const hasItems = schemaObj.items;
     const hasAdditional = !!schemaObj.additionalProperties;
-    const prim = Array.isArray(schemaObj.type) ? (schemaObj.type as unknown as string[]).join(',') : String(schemaObj.type);
+    const prim = Array.isArray(schemaObj.type)
+      ? (schemaObj.type as unknown as string[]).join(',')
+      : String(schemaObj.type);
     const isPrimitive = ['string', 'number', 'integer', 'boolean'].some((t) => prim.includes(t));
     const hasRef = !!(schemaObj.$ref || schemaObj.refTarget);
 
@@ -418,9 +440,11 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
   }
 
   // Rule: Unused security schemes
-  const rawSecSchemes = (typeof rawDoc.components === 'object' && rawDoc.components !== null
-    ? (rawDoc.components as Record<string, unknown>).securitySchemes
-    : rawDoc.securityDefinitions) as Record<string, unknown> | undefined;
+  const rawSecSchemes = (
+    typeof rawDoc.components === 'object' && rawDoc.components !== null
+      ? (rawDoc.components as Record<string, unknown>).securitySchemes
+      : rawDoc.securityDefinitions
+  ) as Record<string, unknown> | undefined;
 
   if (rawSecSchemes && typeof rawSecSchemes === 'object') {
     const referencedSecSchemes = new Set<string>();
@@ -458,7 +482,11 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       for (const t of ep.tags) usedTags.add(t);
     }
     for (const tagItem of rawDoc.tags) {
-      if (typeof tagItem === 'object' && tagItem !== null && typeof (tagItem as any).name === 'string') {
+      if (
+        typeof tagItem === 'object' &&
+        tagItem !== null &&
+        typeof (tagItem as any).name === 'string'
+      ) {
         const tagName = (tagItem as any).name;
         if (seenRootTags.has(tagName)) {
           const line = findLineForPattern(rawText, tagName);
@@ -494,8 +522,6 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
 
   return diagnostics;
 }
-
-
 
 function findBrokenRefsInDoc(
   doc: unknown,

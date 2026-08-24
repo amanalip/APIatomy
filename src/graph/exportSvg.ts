@@ -1,4 +1,7 @@
-export async function exportGraphSvg(element: HTMLElement, filename = 'apiatomy-graph.svg'): Promise<void> {
+export async function exportGraphSvg(
+  element: HTMLElement,
+  filename = 'apiatomy-graph.svg'
+): Promise<void> {
   const svg = element.querySelector('svg');
   if (!svg) throw new Error('No SVG found');
   const clone = svg.cloneNode(true) as SVGElement;

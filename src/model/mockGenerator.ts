@@ -13,7 +13,8 @@ export function generateMockData(
   depth = 0
 ): unknown {
   // Normalize type checks for OpenAPI 3.1 array types (e.g. ['string','null'])
-  const normalizeType = (t: unknown): string | undefined => Array.isArray(t) ? (t as string[]).find((v) => v !== 'null') : t as string | undefined;
+  const normalizeType = (t: unknown): string | undefined =>
+    Array.isArray(t) ? (t as string[]).find((v) => v !== 'null') : (t as string | undefined);
   const normType = normalizeType(schema.type);
 
   // Prioritize explicit values even at recursion depth limit
@@ -61,7 +62,9 @@ export function generateMockData(
   if (schema.not) {
     // For not schemas, generate a placeholder that intentionally violates the negated type
     const notSchema = schema.not as SchemaModel;
-    const notType = Array.isArray(notSchema.type) ? (notSchema.type as string[]).find((v) => v !== 'null') : (notSchema.type as string | undefined);
+    const notType = Array.isArray(notSchema.type)
+      ? (notSchema.type as string[]).find((v) => v !== 'null')
+      : (notSchema.type as string | undefined);
     if (notType === 'string') return 12345;
     if (notType === 'number' || notType === 'integer') return 'not-a-number';
     if (notType === 'boolean') return 'not-boolean';
@@ -103,7 +106,10 @@ export function generateMockData(
   }
 
   if (normType === 'array' || schema.items) {
-    const count = typeof schema.minItems === 'number' && schema.minItems > 0 ? Math.min(schema.minItems, MAX_MOCK_ARRAY_ITEMS) : 1;
+    const count =
+      typeof schema.minItems === 'number' && schema.minItems > 0
+        ? Math.min(schema.minItems, MAX_MOCK_ARRAY_ITEMS)
+        : 1;
     // Generate distinct object per index to avoid shared reference mutation
     return Array.from({ length: count }, () => {
       const item = schema.items ? generateMockData(schema.items, allSchemas, depth + 1) : 'item';
@@ -120,13 +126,23 @@ export function generateMockData(
     }
     // Include sample for additionalProperties map types
     if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
-      obj['additionalProp'] = generateMockData(schema.additionalProperties as SchemaModel, allSchemas, depth + 1);
+      obj['additionalProp'] = generateMockData(
+        schema.additionalProperties as SchemaModel,
+        allSchemas,
+        depth + 1
+      );
     }
     return obj;
   }
 
   if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
-    return { additionalProp: generateMockData(schema.additionalProperties as SchemaModel, allSchemas, depth + 1) };
+    return {
+      additionalProp: generateMockData(
+        schema.additionalProperties as SchemaModel,
+        allSchemas,
+        depth + 1
+      ),
+    };
   }
 
   return {};

@@ -1,10 +1,5 @@
 import React, { memo } from 'react';
-import {
-  BaseEdge,
-  EdgeLabelRenderer,
-  EdgeProps,
-  getBezierPath,
-} from '@xyflow/react';
+import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from '@xyflow/react';
 
 export const CustomEdge: React.FC<EdgeProps<any>> = memo(
   ({
@@ -48,8 +43,8 @@ export const CustomEdge: React.FC<EdgeProps<any>> = memo(
       edgeType === 'consumes'
         ? 'bg-blue-50 dark:bg-blue-950/90 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/80 shadow-blue-500/5'
         : edgeType === 'produces'
-        ? 'bg-emerald-50 dark:bg-emerald-950/90 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80 shadow-emerald-500/5'
-        : 'bg-slate-50 dark:bg-slate-900/90 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700/80';
+          ? 'bg-emerald-50 dark:bg-emerald-950/90 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80 shadow-emerald-500/5'
+          : 'bg-slate-50 dark:bg-slate-900/90 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700/80';
 
     return (
       <>

@@ -30,8 +30,14 @@ export const Onboarding: React.FC = () => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur">
       <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl p-5 ring-1 ring-black/10">
         <div className="flex items-start justify-between gap-3 mb-3">
-          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Welcome to APIatomy</h2>
-          <button onClick={dismiss} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Close onboarding">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Welcome to APIatomy
+          </h2>
+          <button
+            onClick={dismiss}
+            className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+            aria-label="Close onboarding"
+          >
             <X className="w-4 h-4 text-slate-400" />
           </button>
         </div>
@@ -41,7 +47,10 @@ export const Onboarding: React.FC = () => {
               <Upload className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             </span>
             <span>
-              <span className="font-medium text-slate-800 dark:text-slate-200">Paste or upload</span> your OpenAPI YAML or JSON
+              <span className="font-medium text-slate-800 dark:text-slate-200">
+                Paste or upload
+              </span>{' '}
+              your OpenAPI YAML or JSON
             </span>
           </li>
           <li className="flex gap-2 items-center">
@@ -49,7 +58,10 @@ export const Onboarding: React.FC = () => {
               <Layers className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
             </span>
             <span>
-              <span className="font-medium text-slate-800 dark:text-slate-200">Explore endpoints</span> by tag and method
+              <span className="font-medium text-slate-800 dark:text-slate-200">
+                Explore endpoints
+              </span>{' '}
+              by tag and method
             </span>
           </li>
           <li className="flex gap-2 items-center">
@@ -57,7 +69,10 @@ export const Onboarding: React.FC = () => {
               <Code2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             </span>
             <span>
-              <span className="font-medium text-slate-800 dark:text-slate-200">Inspect schemas</span> with mock data
+              <span className="font-medium text-slate-800 dark:text-slate-200">
+                Inspect schemas
+              </span>{' '}
+              with mock data
             </span>
           </li>
           <li className="flex gap-2 items-center">
@@ -65,15 +80,24 @@ export const Onboarding: React.FC = () => {
               <Network className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
             </span>
             <span>
-              <span className="font-medium text-slate-800 dark:text-slate-200">Visualize graph</span> of endpoint and schema links
+              <span className="font-medium text-slate-800 dark:text-slate-200">
+                Visualize graph
+              </span>{' '}
+              of endpoint and schema links
             </span>
           </li>
         </ol>
         <div className="mt-4 flex items-start gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400">
           <Shield className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-          <span>Privacy: specs stay in your browser. Sharing creates a private link with the spec in the URL hash. No backend.</span>
+          <span>
+            Privacy: specs stay in your browser. Sharing creates a private link with the spec in the
+            URL hash. No backend.
+          </span>
         </div>
-        <button onClick={dismiss} className="mt-4 w-full py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-500">
+        <button
+          onClick={dismiss}
+          className="mt-4 w-full py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-500"
+        >
           Get started
         </button>
       </div>

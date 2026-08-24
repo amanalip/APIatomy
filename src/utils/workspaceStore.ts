@@ -23,20 +23,26 @@ export async function saveWorkspace(id: string, specText: string, title?: string
   });
 }
 
-export async function loadWorkspace(id: string): Promise<{ specText: string; title?: string } | null> {
+export async function loadWorkspace(
+  id: string
+): Promise<{ specText: string; title?: string } | null> {
   const db = await openDb();
   const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(id);
   return new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result ? { specText: req.result.specText, title: req.result.title } : null);
+    req.onsuccess = () =>
+      resolve(req.result ? { specText: req.result.specText, title: req.result.title } : null);
     req.onerror = () => reject(req.error);
   });
 }
 
-export async function listWorkspaces(): Promise<Array<{ id: string; title?: string; savedAt: number }>> {
+export async function listWorkspaces(): Promise<
+  Array<{ id: string; title?: string; savedAt: number }>
+> {
   const db = await openDb();
   const req = db.transaction(STORE, 'readonly').objectStore(STORE).getAll();
   return new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result.map((r: unknown) => r as { id: string; title?: string; savedAt: number }));
+    req.onsuccess = () =>
+      resolve(req.result.map((r: unknown) => r as { id: string; title?: string; savedAt: number }));
     req.onerror = () => reject(req.error);
   });
 }

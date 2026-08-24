@@ -31,11 +31,17 @@ export async function exportGraphToPng(
       if (document.body && typeof document.body.appendChild === 'function') {
         document.body.appendChild(link);
       }
-    } catch { /* ignore append errors in test env */ }
+    } catch {
+      /* ignore append errors in test env */
+    }
     link.click();
     // Cleanup after trigger
     setTimeout(() => {
-      try { document.body?.removeChild(link); } catch { /* ignore */ }
+      try {
+        document.body?.removeChild(link);
+      } catch {
+        /* ignore */
+      }
     }, 100);
     return true;
   } catch (err) {

@@ -30,6 +30,9 @@ export function isNonEmptyString(value: unknown): value is string {
 }
 
 /** Assert a value is a plain record (non-array object). */
-export function assertRecord(value: unknown, label = 'value'): asserts value is Record<string, unknown> {
+export function assertRecord(
+  value: unknown,
+  label = 'value'
+): asserts value is Record<string, unknown> {
   if (!isRecord(value)) throw new TypeError(`${label} must be a plain object`);
 }

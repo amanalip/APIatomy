@@ -19,7 +19,9 @@ import { UrlImportDialog } from './ui/UrlImportDialog';
 import { CommandPalette } from './ui/CommandPalette';
 import { DiffView } from './ui/DiffView';
 import { WorkspaceDialog } from './ui/WorkspaceDialog';
-const TopologyGraph = React.lazy(() => import('./graph/TopologyGraph').then((m) => ({ default: m.TopologyGraph })) );
+const TopologyGraph = React.lazy(() =>
+  import('./graph/TopologyGraph').then((m) => ({ default: m.TopologyGraph }))
+);
 
 export function App() {
   const initialText = (() => {
@@ -31,7 +33,9 @@ export function App() {
   })();
   const { rawText, setRawText, spec } = useSpecState(initialText);
 
-  const [activeView, setActiveView] = useState<'endpoints' | 'schemas' | 'graph' | 'diff'>('endpoints');
+  const [activeView, setActiveView] = useState<'endpoints' | 'schemas' | 'graph' | 'diff'>(
+    'endpoints'
+  );
   const [isEditorOpen, setIsEditorOpen] = useState(true);
   const [selectedEndpoint, setSelectedEndpoint] = useState<EndpointModel | null>(null);
   const [selectedSchemaName, setSelectedSchemaName] = useState<string | undefined>(undefined);
@@ -54,7 +58,9 @@ export function App() {
 
   // Keep latest rawText in ref to avoid stale closure on hashchange
   const rawTextRef = useRef(rawText);
-  useEffect(() => { rawTextRef.current = rawText; }, [rawText]);
+  useEffect(() => {
+    rawTextRef.current = rawText;
+  }, [rawText]);
 
   // Listen to hash changes in browser
   useEffect(() => {
@@ -74,8 +80,6 @@ export function App() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
-
-
 
   const handleSelectSample = (sample: SampleSpecOption) => {
     setRawText(sample.spec);
@@ -131,7 +135,10 @@ export function App() {
       const hash = typeof window !== 'undefined' ? window.location.hash : '';
       const state = decodeAppState(hash);
       if (state) {
-        if (typeof state.view === 'string' && ['endpoints', 'schemas', 'graph', 'diff'].includes(state.view as string)) {
+        if (
+          typeof state.view === 'string' &&
+          ['endpoints', 'schemas', 'graph', 'diff'].includes(state.view as string)
+        ) {
           setActiveView(state.view as 'endpoints' | 'schemas' | 'graph' | 'diff');
         }
         if (typeof state.endpointId === 'string') {
@@ -151,7 +158,11 @@ export function App() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.classList.contains('cm-content'));
+      const isInput =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.classList.contains('cm-content'));
       if (!isInput && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsPaletteOpen(true);
@@ -182,19 +193,31 @@ export function App() {
         isEditorOpen={isEditorOpen}
         setIsEditorOpen={setIsEditorOpen}
         sourceUrl={sourceUrl}
-        appState={{ view: activeView, endpointId: selectedEndpoint?.id, schemaName: selectedSchemaName }}
+        appState={{
+          view: activeView,
+          endpointId: selectedEndpoint?.id,
+          schemaName: selectedSchemaName,
+        }}
       />
 
       {/* Main Split-Pane Workspace */}
       <div id="main-content" className="flex-1 flex overflow-hidden relative">
         {/* Mobile backdrop */}
         {isEditorOpen && (
-          <div className="fixed inset-0 z-10 bg-slate-900/30 backdrop-blur-sm lg:hidden" onClick={() => setIsEditorOpen(false)} aria-hidden="true" />
+          <div
+            className="fixed inset-0 z-10 bg-slate-900/30 backdrop-blur-sm lg:hidden"
+            onClick={() => setIsEditorOpen(false)}
+            aria-hidden="true"
+          />
         )}
         {/* Left: Code Editor Pane - full screen drawer on mobile, side pane on large */}
         {isEditorOpen && (
           <div
-            style={typeof window !== 'undefined' && window.innerWidth >= 1024 ? { width: `${editorWidth}px` } : undefined}
+            style={
+              typeof window !== 'undefined' && window.innerWidth >= 1024
+                ? { width: `${editorWidth}px` }
+                : undefined
+            }
             className="absolute inset-0 z-20 flex flex-col bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 lg:static lg:inset-auto lg:z-auto lg:h-full lg:shrink-0 lg:relative transition-colors duration-150 w-full lg:w-auto"
           >
             <button
@@ -234,12 +257,16 @@ export function App() {
               aria-label="Resize editor pane"
               tabIndex={0}
               aria-valuemin={280}
-              aria-valuemax={Math.max(280, typeof window !== 'undefined' ? window.innerWidth - 360 : 800)}
+              aria-valuemax={Math.max(
+                280,
+                typeof window !== 'undefined' ? window.innerWidth - 360 : 800
+              )}
               aria-valuenow={editorWidth}
               aria-valuetext={`${editorWidth}px editor width`}
               onKeyDown={(e) => {
                 if (e.key === 'ArrowLeft') setEditorWidth((w) => Math.max(280, w - 20));
-                else if (e.key === 'ArrowRight') setEditorWidth((w) => Math.min(Math.max(280, window.innerWidth - 360), w + 20));
+                else if (e.key === 'ArrowRight')
+                  setEditorWidth((w) => Math.min(Math.max(280, window.innerWidth - 360), w + 20));
                 else if (e.key === 'Home') setEditorWidth(280);
                 else if (e.key === 'End') setEditorWidth(Math.max(280, window.innerWidth - 360));
                 else if (e.key === 'Enter') setEditorWidth(420);
@@ -257,7 +284,9 @@ export function App() {
           {/* View 1: Endpoints Explorer */}
           {activeView === 'endpoints' && (
             <div className="flex-1 flex h-full overflow-hidden">
-              <div className={`${selectedEndpoint ? 'hidden lg:block lg:w-1/2' : 'w-full'} h-full transition-all duration-150`}>
+              <div
+                className={`${selectedEndpoint ? 'hidden lg:block lg:w-1/2' : 'w-full'} h-full transition-all duration-150`}
+              >
                 <EndpointExplorer
                   endpoints={spec.endpoints}
                   selectedEndpoint={selectedEndpoint}
@@ -294,7 +323,9 @@ export function App() {
           {/* View 3: API Topology Graph - lazy loaded */}
           {activeView === 'graph' && (
             <div className="flex-1 h-full">
-              <React.Suspense fallback={<div className="p-4 text-xs text-slate-500">Loading graph...</div>}>
+              <React.Suspense
+                fallback={<div className="p-4 text-xs text-slate-500">Loading graph...</div>}
+              >
                 <TopologyGraph
                   spec={spec}
                   onSelectEndpoint={(ep) => {
@@ -319,10 +350,7 @@ export function App() {
       </div>
 
       {/* Bottom Diagnostics Drawer */}
-      <DiagnosticsBar
-        diagnostics={spec.diagnostics}
-        onSelectDiagnostic={handleSelectDiagnostic}
-      />
+      <DiagnosticsBar diagnostics={spec.diagnostics} onSelectDiagnostic={handleSelectDiagnostic} />
       {isUrlDialogOpen && (
         <UrlImportDialog
           onClose={() => setIsUrlDialogOpen(false)}
