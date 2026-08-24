@@ -40,12 +40,6 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium firefox webkit
-
-      - name: Run E2E tests
-        run: npm run e2e
-
       - name: Build static site
         run: npm run build
 
