@@ -2,8 +2,6 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EndpointModel, HttpMethod } from '../model';
 import { HTTP_METHODS } from '../model/httpMethods';
 import { Search, ChevronDown, ChevronRight, Tag, Shield, X } from 'lucide-react';
-import { VirtualList } from './VirtualList';
-import { useResizeObserver } from '../hooks/useResizeObserver';
 
 interface EndpointExplorerProps {
   endpoints: EndpointModel[];
@@ -22,7 +20,6 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
   const [collapsedTags, setCollapsedTags] = useState<Record<string, boolean>>({});
   const searchInputRef = useRef<HTMLInputElement>(null);
   const activeEndpointRef = useRef<HTMLDivElement>(null);
-  const [listContainerRef, listHeight] = useResizeObserver<HTMLDivElement>();
 
   useEffect(() => {
     if (selectedEndpoint && activeEndpointRef.current) {
@@ -282,55 +279,80 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               Showing 100 of {filteredEndpoints.length} endpoints. Use search or tag filter to
               narrow.
             </div>
-            <div ref={listContainerRef} className="flex-1 min-h-[300px]">
-              <VirtualList
-                items={filteredEndpoints.slice(0, 100)}
-                height={Math.max(300, listHeight || 600)}
-                itemHeight={92}
-                renderItem={(ep) => {
-                  const isSelected = selectedEndpoint?.id === ep.id;
-                  const methodConfig = HTTP_METHODS[ep.method] || HTTP_METHODS.get;
-                  return (
-                    <div
-                      key={ep.id}
-                      data-testid="endpoint-card"
-                      ref={isSelected ? activeEndpointRef : undefined}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => onSelectEndpoint(ep)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          onSelectEndpoint(ep);
-                        }
-                      }}
-                      aria-pressed={isSelected}
-                      className={`mx-1 group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 ${
-                        isSelected
-                          ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/50 shadow-md'
-                          : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm'
-                      }`}
+            {Object.entries(groupedEndpoints)
+              .slice(0, 10)
+              .map(([tag, eps]) => {
+                const isCollapsed = collapsedTags[tag] ?? false;
+                const visible = eps.slice(0, 20);
+                return (
+                  <div key={tag} className="space-y-2">
+                    <button
+                      onClick={() => toggleTagCollapse(tag)}
+                      className="w-full flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 transition text-left"
                     >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded shadow-sm shrink-0 ${methodConfig.badgeBg}`}
-                        >
-                          {methodConfig.label}
+                      <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-800 dark:text-slate-200">
+                        <span className="uppercase tracking-wider text-[11px] text-slate-600 dark:text-slate-400 font-mono">
+                          {tag}
                         </span>
-                        <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate flex-1">
-                          {ep.path}
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                          ({eps.length}
+                          {totalByTag[tag] && totalByTag[tag] !== eps.length
+                            ? ` / ${totalByTag[tag]}`
+                            : ''}
+                          )
                         </span>
                       </div>
-                      {ep.summary && (
-                        <div className="text-[11px] text-slate-600 dark:text-slate-400 truncate">
-                          {ep.summary}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }}
-              />
-            </div>
+                    </button>
+                    {!isCollapsed && (
+                      <div className="space-y-1.5 pl-2">
+                        {visible.map((ep) => {
+                          const isSelected = selectedEndpoint?.id === ep.id;
+                          const methodConfig = HTTP_METHODS[ep.method] || HTTP_METHODS.get;
+                          return (
+                            <div
+                              key={ep.id}
+                              data-testid="endpoint-card"
+                              ref={isSelected ? activeEndpointRef : undefined}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => onSelectEndpoint(ep)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  onSelectEndpoint(ep);
+                                }
+                              }}
+                              aria-pressed={isSelected}
+                              className={`group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 ${isSelected ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/50 shadow-md' : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm'}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded shadow-sm shrink-0 ${methodConfig.badgeBg}`}
+                                >
+                                  {methodConfig.label}
+                                </span>
+                                <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate flex-1">
+                                  {ep.path}
+                                </span>
+                              </div>
+                              {ep.summary && (
+                                <div className="text-[11px] text-slate-600 dark:text-slate-400 truncate">
+                                  {ep.summary}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                        {eps.length > 20 && (
+                          <div className="text-[10px] text-slate-500">
+                            and {eps.length - 20} more in this tag...
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         ) : (
           Object.entries(groupedEndpoints).map(([tag, eps]) => {

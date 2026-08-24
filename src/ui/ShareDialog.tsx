@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Copy, Check, Download, Share2, Minimize2, AlertTriangle } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
@@ -135,13 +136,13 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     downloadShareFile(specText, `apiatomy-share.${ext}`);
   };
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur"
       role="dialog"
       aria-modal="true"
       aria-label="Share spec"
@@ -325,6 +326,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

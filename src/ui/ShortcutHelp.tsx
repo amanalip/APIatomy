@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Keyboard } from 'lucide-react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
@@ -20,13 +21,13 @@ export const ShortcutHelp: React.FC<ShortcutHelpProps> = ({ onClose }) => {
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Keyboard shortcuts"
@@ -93,6 +94,7 @@ export const ShortcutHelp: React.FC<ShortcutHelpProps> = ({ onClose }) => {
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

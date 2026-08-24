@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useEffect, useState } from 'react';
 import { Upload, Layers, Code2, Network, X, Shield } from 'lucide-react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
@@ -29,8 +30,8 @@ export const Onboarding: React.FC = () => {
 
   if (!visible) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur">
       <div
         ref={trapRef}
         className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl p-5 ring-1 ring-black/10"
@@ -107,6 +108,7 @@ export const Onboarding: React.FC = () => {
           Get started
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

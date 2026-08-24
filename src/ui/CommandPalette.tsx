@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useEffect, useState, useRef } from 'react';
 import { Search, Layers, Code2, Network, Upload, Share2, GitCompare } from 'lucide-react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
@@ -95,13 +96,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   useEffect(() => setHighlighted(0), [query]);
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-slate-900/75 backdrop-blur"
+      className="fixed inset-0 z-[100] flex items-start justify-center pt-20 p-4 bg-slate-900/75 backdrop-blur"
       role="dialog"
       aria-modal="true"
       aria-label="Command palette"
@@ -153,6 +154,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           {filtered.length === 0 && <div className="p-3 text-xs text-slate-500">No results</div>}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Link2, Loader2, AlertTriangle } from 'lucide-react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
@@ -80,13 +81,13 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
     }
   };
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur"
       role="dialog"
       aria-modal="true"
       aria-label="Load from URL"
@@ -156,6 +157,7 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

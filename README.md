@@ -19,7 +19,7 @@ Zero backend, no accounts, no specs leaving your machine. The entire application
 ## Core Features
 
 - **Multi Spec Normalization**: Broad OpenAPI 3.0/3.1 support with automatic conversion of Swagger 2.0 specs including `host`/`basePath`/`schemes`, `collectionFormat`, file uploads and OAuth2 flow mapping. External file refs and full JSON Schema 2020-12 require bundling.
-- **Interactive Topology Graph**: Powered by React Flow and Dagre with lazy loading. Maps relationships between HTTP endpoints, consumed request payloads, produced response models and nested component schemas with layout direction controls, tag filtering, PNG and SVG export and virtualized rendering for large specs.
+- **Interactive Topology Graph**: Powered by React Flow and Dagre with lazy loading. Maps relationships between HTTP endpoints, consumed request payloads, produced response models and nested component schemas with layout direction controls, tag filtering, PNG and SVG export and efficient rendering for large specs.
 - **Endpoint Explorer**: Color coded HTTP method badges, filterable by path, method and tag, with search, method pills and tag grouping, virtualized lists for hundreds of entries and detailed drawer with parameters, bodies, responses and security.
 - **Schema Viewer**: Expandable tree view for component schemas with composition support (`allOf`, `oneOf`, `anyOf`, `not`), circular reference protection, clickable `$ref` navigation, additionalProperties maps, mock data generator with JSON and YAML toggle and virtualized list.
 - **Diagnostics and Validation**: Syntax checking and spec linting for missing info and paths, invalid paths, duplicate operationIds, missing path params, broken refs, unused schemas and security schemes, tag checks and more, with click to jump navigation and how to fix guidance.
@@ -27,7 +27,7 @@ Zero backend, no accounts, no specs leaving your machine. The entire application
 - **Zero Backend Sharing**: Private link sharing via URL hash with LZ String compression that does not pollute the address bar, share dialog with size display and warnings, compact link via minified normalization, file fallback for large specs, source URL sharing when loaded from URL, app state preservation, native system share and clipboard toast feedback.
 - **Import and Workspaces**: Upload single or multiple files for multi file projects, load from public URL with CORS handling, optional IndexedDB workspaces for explicit saves, and onboarding for first use with privacy notice.
 - **Mobile and UX**: Full screen drawer editor on phones, command palette via Ctrl or Cmd K, keyboard shortcut help via ?, theme toggle with system sync that persists only explicit choice.
-- **Performance and Architecture**: Parsing, compression and Dagre layout can run off the main thread via workers, shared code extracted to hooks and services, strong TypeScript typing and reusable guards.
+- **Performance and Architecture**: Parsing, compression and Dagre layout can run off the main thread via experimental workers, shared code extracted to hooks and services, strong TypeScript typing and reusable guards.
 - **Dark and Light Theme**: Theme toggle with localStorage persistence for explicit preference and system preference sync.
 
 ---
@@ -37,8 +37,8 @@ Zero backend, no accounts, no specs leaving your machine. The entire application
 - **Framework**: React 18 + TypeScript + Vite 6
 - **Graph Canvas**: `@xyflow/react` (React Flow) + `@dagrejs/dagre` lazily loaded
 - **Code Editor**: CodeMirror 6 with YAML and JSON syntax support
-- **Parsing**: `yaml` for YAML AST and native `JSON.parse` with optional worker
-- **Sharing Codec**: `lz-string` URL hash compression with optional worker
+- **Parsing**: `yaml` for YAML AST and native `JSON.parse` with experimental optional worker
+- **Sharing Codec**: `lz-string` URL hash compression with experimental optional worker
 - **Image Export**: `html-to-image` for PNG and native SVG export
 - **Styling**: Tailwind CSS + Lucide Icons
 - **Testing**: Vitest + jsdom, Playwright for E2E, Axe for accessibility, coverage thresholds
@@ -81,7 +81,7 @@ APIatomy/
 │   │   ├── compressWorker.ts    # Off main thread URL compression
 │   │   └── layoutWorker.ts      # Off main thread Dagre layout
 │   ├── hooks/                   # Extracted App orchestration hooks
-│   │   ├── useSpecState.ts      # Spec state with optional worker
+│   │   ├── useSpecState.ts      # Spec state with experimental optional worker
 │   │   ├── useResizableEditor.ts # Resizable editor logic
 │   │   └── useDiagnosticNavigation.ts # Diagnostic jump logic
 │   ├── ui/                      # Application UI components
@@ -147,7 +147,7 @@ APIatomy/
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20.19+
 - npm or pnpm or yarn
 
 ### Installation

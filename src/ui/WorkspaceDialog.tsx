@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import React, { useEffect, useState, useRef } from 'react';
 import { X, Save, FolderOpen, Trash2, Edit2 } from 'lucide-react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
@@ -69,13 +70,13 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
     refresh();
   };
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur"
       role="dialog"
       aria-modal="true"
       aria-label="Workspaces"
@@ -163,6 +164,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
