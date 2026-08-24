@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Link2, Loader2, AlertTriangle } from 'lucide-react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface UrlImportDialogProps {
   onClose: () => void;
@@ -12,6 +13,7 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const trapRef = useFocusTrap(true);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -89,7 +91,7 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
       aria-modal="true"
       aria-label="Load from URL"
     >
-      <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden ring-1 ring-black/10">
+      <div ref={trapRef} className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden ring-1 ring-black/10">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
           <span className="text-sm font-semibold flex items-center gap-2 text-slate-900 dark:text-slate-100">
             <Link2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />

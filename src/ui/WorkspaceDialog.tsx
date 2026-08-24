@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { X, Save, FolderOpen, Trash2, Edit2 } from 'lucide-react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import { listWorkspaces, saveWorkspace, loadWorkspace } from '../utils/workspaceStore';
 
 interface WorkspaceDialogProps {
@@ -20,6 +21,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
   >([]);
   const [saving, setSaving] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const trapRef = useFocusTrap(true);
 
   const refresh = async () => {
     const list = await listWorkspaces();
@@ -78,7 +80,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
       aria-modal="true"
       aria-label="Workspaces"
     >
-      <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden ring-1 ring-black/10">
+      <div ref={trapRef} className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden ring-1 ring-black/10">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
           <span className="text-sm font-semibold flex items-center gap-2 text-slate-900 dark:text-slate-100">
             <FolderOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />

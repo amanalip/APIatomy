@@ -34,6 +34,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   const timerRef = useRef<number | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const trapRef = useFocusTrap(true);
 
   const [isPreparing, setIsPreparing] = useState(false);
   const [asyncUrl, setAsyncUrl] = useState<string | null>(null);
@@ -144,7 +145,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
       aria-modal="true"
       aria-label="Share spec"
     >
-      <div className="w-full max-w-lg rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden ring-1 ring-black/10">
+      <div ref={trapRef} className="w-full max-w-lg rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden ring-1 ring-black/10">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <Share2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />

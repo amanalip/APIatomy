@@ -19,3 +19,17 @@ export function useResizeObserver<T extends HTMLElement>(): [React.RefObject<T>,
 
   return [ref as React.RefObject<T>, height];
 }
+
+export function useIsDesktop(breakpoint = 1024): boolean {
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= breakpoint : false
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(`(min-width: ${breakpoint}px)`);
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    setIsDesktop(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, [breakpoint]);
+  return isDesktop;
+}

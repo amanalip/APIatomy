@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { X, Keyboard } from 'lucide-react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface ShortcutHelpProps {
   onClose: () => void;
@@ -8,6 +9,7 @@ interface ShortcutHelpProps {
 export const ShortcutHelp: React.FC<ShortcutHelpProps> = ({ onClose }) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const trapRef = useFocusTrap(true);
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -29,7 +31,7 @@ export const ShortcutHelp: React.FC<ShortcutHelpProps> = ({ onClose }) => {
       aria-modal="true"
       aria-label="Keyboard shortcuts"
     >
-      <div className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden ring-1 ring-black/5">
+      <div ref={trapRef} className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden ring-1 ring-black/5">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
           <span className="text-sm font-semibold flex items-center gap-2 text-slate-900 dark:text-slate-100">
             <Keyboard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
