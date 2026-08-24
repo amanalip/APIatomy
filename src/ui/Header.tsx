@@ -357,7 +357,7 @@ export const Header: React.FC<HeaderProps> = ({
           {isSampleDropdownOpen && (
             <div
               role="menu"
-              className="absolute right-0 mt-2 w-64 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 space-y-1 z-50"
+              className="absolute right-0 mt-2 w-64 max-h-[70vh] overflow-auto rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-1.5 space-y-1 z-50"
             >
               <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Preset Specifications

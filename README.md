@@ -104,14 +104,23 @@ APIatomy/
 │   ├── share/                   # Zero backend URL sharing
 │   │   ├── urlHash.ts           # LZ String URL hash compression and decompression
 │   │   └── shareService.ts      # Share size, compact, file fallback, native share and state handling
-│   ├── samples/                 # Bundled OpenAPI and Swagger sample specs
+│   ├── samples/                 # Bundled OpenAPI and Swagger sample specs (15 presets)
 │   │   ├── petstore.ts          # Classic OpenAPI 3.0
 │   │   ├── github.ts            # Nested schemas and pagination
 │   │   ├── stripe.ts            # Polymorphism with oneOf and anyOf
 │   │   ├── ecommerce.ts         # Multi auth, complex CRUD and error schemas
 │   │   ├── broken.ts            # Deliberate errors and warnings for diagnostics
 │   │   ├── minimal.ts           # Minimal valid spec
-│   │   └── index.ts             # Sample registry
+│   │   ├── swaggerLegacy.ts     # Swagger 2.0 with host, basePath, collectionFormat and file params
+│   │   ├── webhooks.ts          # OpenAPI 3.1 webhooks, callbacks and binary payloads
+│   │   ├── discriminator.ts     # allOf inheritance with discriminator and oneOf
+│   │   ├── iot.ts               # IoT fleet with server variables, maps and header and cookie params
+│   │   ├── geo.ts               # GeoJSON with array and object query styles and path level servers
+│   │   ├── financial.ts         # Open Banking with multiple auth, idempotency and pagination links
+│   │   ├── circular.ts          # Circular and self referencing User, Team and Project schemas
+│   │   ├── multipart.ts         # multipart, urlencoded and octet-stream with binary and byte
+│   │   ├── jsonapi.ts           # JSON API with sparse fieldsets, included and relationships
+│   │   └── index.ts             # Sample registry (15 presets)
 │   ├── theme/                   # Theme provider and color tokens
 │   │   └── ThemeContext.tsx     # Dark and light theme with explicit preference persistence
 │   ├── utils/                   # Shared helpers
