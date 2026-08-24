@@ -3,6 +3,7 @@ import { EndpointModel, HttpMethod } from '../model';
 import { HTTP_METHODS } from '../model/httpMethods';
 import { Search, ChevronDown, ChevronRight, Tag, Shield, X } from 'lucide-react';
 import { VirtualList } from './VirtualList';
+import { useResizeObserver } from '../hooks/useResizeObserver';
 
 interface EndpointExplorerProps {
   endpoints: EndpointModel[];
@@ -21,6 +22,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
   const [collapsedTags, setCollapsedTags] = useState<Record<string, boolean>>({});
   const searchInputRef = useRef<HTMLInputElement>(null);
   const activeEndpointRef = useRef<HTMLDivElement>(null);
+  const [listContainerRef, listHeight] = useResizeObserver<HTMLDivElement>();
 
   useEffect(() => {
     if (selectedEndpoint && activeEndpointRef.current) {
@@ -245,10 +247,11 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
             )}
           </div>
         ) : filteredEndpoints.length > 100 ? (
-          <VirtualList
-            items={filteredEndpoints}
-            height={600}
-            itemHeight={92}
+          <div ref={listContainerRef} className="flex-1 min-h-[300px]">
+            <VirtualList
+              items={filteredEndpoints}
+              height={Math.max(300, listHeight || 600)}
+              itemHeight={92}
             renderItem={(ep) => {
               const isSelected = selectedEndpoint?.id === ep.id;
               const methodConfig = HTTP_METHODS[ep.method] || HTTP_METHODS.get;
@@ -282,6 +285,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               );
             }}
           />
+          </div>
         ) : (
           Object.entries(groupedEndpoints).map(([tag, eps]) => {
             const isCollapsed = collapsedTags[tag] ?? false;

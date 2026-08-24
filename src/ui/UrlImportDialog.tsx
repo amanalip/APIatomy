@@ -22,6 +22,8 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  const abortRef = useRef<AbortController | null>(null);
+
   const handleFetch = async () => {
     const trimmed = url.trim();
     if (!trimmed) {
@@ -36,24 +38,41 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
     }
     setLoading(true);
     setError(null);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
     try {
-      const res = await fetch(trimmed);
+      const res = await fetch(trimmed, { signal: controller.signal });
       if (!res.ok) {
         throw new Error(`Request failed ${res.status} ${res.statusText}`);
       }
+      const lenHeader = res.headers.get('content-length');
+      if (lenHeader) {
+        const len = parseInt(lenHeader, 10);
+        if (!isNaN(len) && len > 5 * 1024 * 1024) {
+          throw new Error('Remote file too large (over 5 MB)');
+        }
+      }
       const text = await res.text();
+      if (text.length > 5 * 1024 * 1024) {
+        throw new Error('Remote file too large (over 5 MB)');
+      }
       if (!text.trim()) throw new Error('Empty response');
       onLoad(text, trimmed);
       onClose();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes('Failed to fetch') || msg.includes('CORS')) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        setError('Request timed out or cancelled');
+      } else if (msg.includes('Failed to fetch') || msg.includes('CORS')) {
         setError('Fetch failed. The server may block cross origin requests. Use Upload for local files.');
       } else {
         setError(msg);
       }
     } finally {
+      window.clearTimeout(timeout);
       setLoading(false);
+      abortRef.current = null;
     }
   };
 
@@ -97,8 +116,17 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
             </div>
           )}
           <div className="flex justify-end gap-2">
-            <button onClick={onClose} className="px-3 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-              Cancel
+            <button
+              onClick={() => {
+                if (loading && abortRef.current) {
+                  abortRef.current.abort();
+                } else {
+                  onClose();
+                }
+              }}
+              className="px-3 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+            >
+              {loading ? 'Cancel' : 'Close'}
             </button>
             <button
               onClick={handleFetch}

@@ -5,6 +5,7 @@ import { Search, Box, ChevronRight, ChevronDown, AlertCircle, Copy, Check, X } f
 import { copyTextToClipboard } from '../share/urlHash';
 import YAML from 'yaml';
 import { VirtualList } from './VirtualList';
+import { useResizeObserver } from '../hooks/useResizeObserver';
 
 interface SchemaViewerProps {
   schemas: Record<string, SchemaModel>;
@@ -27,6 +28,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
   const [copiedSchemaAst, setCopiedSchemaAst] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const activeSchemaRef = useRef<HTMLButtonElement>(null);
+  const [schemaListRef, schemaListHeight] = useResizeObserver<HTMLDivElement>();
 
   const handleCopySchemaAst = async () => {
     if (!activeSchema) return;
@@ -159,10 +161,11 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
               {searchQuery && (<button onClick={() => setSearchQuery('')} className="text-blue-600 dark:text-blue-400 hover:underline text-[11px] px-2 py-1 rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40">Clear search</button>)}
             </div>
           ) : schemaNames.length > 100 ? (
-            <VirtualList
-              items={schemaNames}
-              height={500}
-              itemHeight={36}
+            <div ref={schemaListRef} className="flex-1 min-h-[300px]">
+              <VirtualList
+                items={schemaNames}
+                height={Math.max(300, schemaListHeight || 500)}
+                itemHeight={36}
               renderItem={(name) => {
                 const isSelected = activeSchemaName === name;
                 const s = schemas[name];
@@ -189,6 +192,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                 );
               }}
             />
+            </div>
           ) : (
             schemaNames.map((name) => {
               const isSelected = activeSchemaName === name;

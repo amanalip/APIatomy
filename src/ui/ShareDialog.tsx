@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Copy, Check, Download, Share2, Minimize2, AlertTriangle } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
-import { getShareUrl, getShareSize, downloadShareFile, canUseNativeShare, nativeShare } from '../share/shareService';
+import { getShareUrl, getShareSize, getCompactSpecText, downloadShareFile, canUseNativeShare, nativeShare } from '../share/shareService';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface ShareDialogProps {
   specText: string;
@@ -21,9 +22,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
   const overlayRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
-  const url = getShareUrl(specText, compact, includeState ? appState : undefined);
-  const size = getShareSize(specText, compact);
-  const compactSize = getShareSize(specText, true);
+  const compactAvailable = getCompactSpecText(specText) !== null;
+  const compactUrl = compactAvailable ? getShareUrl(specText, true, includeState ? appState : undefined) : '';
+  const url = getShareUrl(specText, compact && compactAvailable, includeState ? appState : undefined);
+  const size = getShareSize(specText, compact && compactAvailable, includeState ? appState : undefined);
+  const compactSize = compactAvailable ? getShareSize(specText, true, includeState ? appState : undefined) : { bytes: 0, kb: '0.0', urlLength: 0, isWarn: false, isLarge: false };
   const isLarge = size.isLarge || size.urlLength > 8000;
 
   useEffect(() => {
@@ -58,7 +61,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
   };
 
   const handleNativeShare = async () => {
-    await nativeShare(specText, specTitle || 'APIatomy spec');
+    await nativeShare(specText, specTitle || 'APIatomy spec', url);
   };
 
   const handleDownload = () => {
@@ -145,26 +148,29 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, s
           <p className="text-[11px] text-slate-500 dark:text-slate-400">Preserves selected endpoint, schema and active view in the shared link.</p>
 
           <div className="rounded-lg border border-slate-200 dark:border-slate-800 p-3 space-y-2 bg-slate-50/50 dark:bg-slate-950/30">
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className={`flex items-center gap-2 ${!compactAvailable ? 'opacity-50' : 'cursor-pointer'}`}>
               <input
                 type="checkbox"
                 checked={compact}
+                disabled={!compactAvailable}
                 onChange={(e) => setCompact(e.target.checked)}
                 className="rounded border-slate-300 dark:border-slate-700"
               />
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Minimize2 className="w-3 h-3" />
-                Compact Private Link &middot; {compactSize.kb} KB
+                Compact Private Link &middot; {compactAvailable ? `${compactSize.kb} KB` : 'unavailable'}
               </span>
             </label>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Minifies and normalizes the spec before compression. Comments and original formatting will not be preserved. Useful when the normal link is large.
+              {compactAvailable
+                ? 'Minifies and normalizes the spec before compression. Comments and original formatting will not be preserved. Useful when the normal link is large.'
+                : 'Compact mode disabled because the spec could not be parsed and minified safely. Fix syntax errors to enable it.'}
             </p>
-            {compact && (
+            {compact && compactAvailable && (
               <div className="flex gap-2">
                 <input
                   readOnly
-                  value={getShareUrl(specText, true)}
+                  value={compactUrl}
                   onFocus={(e) => e.currentTarget.select()}
                   className="flex-1 px-2 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded text-slate-700 dark:text-slate-300 truncate"
                 />

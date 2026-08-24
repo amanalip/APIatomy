@@ -7,6 +7,7 @@ import { ShortcutHelp } from './ShortcutHelp';
 import { useTheme } from '../theme/ThemeContext';
 import { useToast } from './Toast';
 import { MAX_UPLOAD_SIZE } from '../utils/schemaRefs';
+import { setFileMap } from '../parser/fileMap';
 import {
   Share2,
   Upload,
@@ -21,6 +22,8 @@ import {
   Menu,
   Link2,
   HelpCircle,
+  GitCompare,
+  FolderOpen,
 } from 'lucide-react';
 import { LogoMark } from './Logo';
 
@@ -31,6 +34,7 @@ interface HeaderProps {
   onSelectSample: (sample: SampleSpecOption) => void;
   onUploadText: (text: string) => void;
   onOpenUrl: () => void;
+  onOpenWorkspace: () => void;
   isEditorOpen: boolean;
   setIsEditorOpen: (open: boolean) => void;
   sourceUrl?: string | null;
@@ -44,6 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectSample,
   onUploadText,
   onOpenUrl,
+  onOpenWorkspace,
   isEditorOpen,
   setIsEditorOpen,
   sourceUrl,
@@ -128,32 +133,46 @@ export const Header: React.FC<HeaderProps> = ({
         e.target.value = '';
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target?.result as string;
-        if (text) {
-          onUploadText(text);
-          showToast('Spec loaded', 'success');
-        }
-      };
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (text) {
+        setFileMap({ [file.name]: text });
+        onUploadText(text);
+        showToast('Spec loaded', 'success');
+      }
+    };
       reader.onerror = () => {
         showToast('Failed to read file. Please try again.', 'error');
       };
       reader.readAsText(file);
     } else {
-      const texts: string[] = [];
+      const fileEntries: Array<{ name: string; text: string }> = [];
       for (const file of Array.from(files)) {
         if (file.size > maxBytes) {
           showToast(`File ${file.name} too large, skipped`, 'warning');
           continue;
         }
         const text = await file.text();
-        texts.push(`# File: ${file.name}\n${text}`);
+        fileEntries.push({ name: file.name, text });
       }
-      if (texts.length > 0) {
-        const combined = texts.join('\n\n---\n\n');
-        onUploadText(combined);
-        showToast(`Loaded ${texts.length} files. External refs require bundled spec.`, 'info');
+      if (fileEntries.length > 0) {
+        const map: Record<string, string> = {};
+        for (const entry of fileEntries) map[entry.name] = entry.text;
+        setFileMap(map);
+        let root = fileEntries[0];
+        const candidate = fileEntries.find((e) => e.text.includes('openapi') || e.text.includes('swagger'));
+        if (candidate) root = candidate;
+        if (fileEntries.length > 1 && root.text.length < Math.max(...fileEntries.map((e) => e.text.length)) / 2) {
+          const largest = fileEntries.reduce((a, b) => (a.text.length > b.text.length ? a : b));
+          root = largest;
+        }
+        onUploadText(root.text);
+        if (fileEntries.length > 1) {
+          showToast(`Loaded ${fileEntries.length} files. Resolving external refs from uploaded set.`, 'info');
+        } else {
+          showToast('Spec loaded', 'success');
+        }
       }
     }
     e.target.value = '';
@@ -191,6 +210,7 @@ export const Header: React.FC<HeaderProps> = ({
             { id: 'endpoints' as const, label: `Endpoints (${spec.endpoints.length})`, Icon: Layers },
             { id: 'schemas' as const, label: `Schemas (${Object.keys(spec.schemas).length})`, Icon: Code2 },
             { id: 'graph' as const, label: 'Topology Graph', Icon: Network },
+            { id: 'diff' as const, label: 'Diff', Icon: GitCompare },
           ]).map(({ id, label, Icon }) => (
             <button
               key={id}
@@ -227,6 +247,7 @@ export const Header: React.FC<HeaderProps> = ({
                 { id: 'endpoints' as const, label: `Endpoints (${spec.endpoints.length})`, Icon: Layers },
                 { id: 'schemas' as const, label: `Schemas (${Object.keys(spec.schemas).length})`, Icon: Code2 },
                 { id: 'graph' as const, label: 'Topology Graph', Icon: Network },
+                { id: 'diff' as const, label: 'Diff', Icon: GitCompare },
               ]).map(({ id, label, Icon }) => (
                 <button
                   key={id}
@@ -322,6 +343,15 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Link2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span className="hidden sm:inline">URL</span>
+        </button>
+        <button
+          onClick={onOpenWorkspace}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 transition"
+          title="Workspaces - save and open locally"
+          aria-label="Workspaces"
+        >
+          <FolderOpen className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+          <span className="hidden sm:inline">Workspaces</span>
         </button>
         <label htmlFor="spec-upload-input" className="sr-only">Upload OpenAPI spec file</label>
         <input

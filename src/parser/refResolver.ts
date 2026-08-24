@@ -1,4 +1,6 @@
 import { SchemaModel } from '../model';
+import { getFileContent } from './fileMap';
+import { parse as parseYaml } from 'yaml';
 
 export interface RefResolutionContext {
   rootDoc: Record<string, unknown>;
@@ -120,7 +122,21 @@ export function resolveSchema(
       };
     }
 
-    const resolvedRaw = resolveJsonPointer(context.rootDoc, ref);
+    let resolvedRaw: unknown = resolveJsonPointer(context.rootDoc, ref);
+    if ((!resolvedRaw || typeof resolvedRaw !== 'object') && isExternalRef(ref)) {
+      const fileContent = getFileContent(ref);
+      if (fileContent) {
+        try {
+          const parsed = fileContent.trim().startsWith('{') ? JSON.parse(fileContent) : parseYaml(fileContent);
+          const hashIdx = ref.indexOf('#');
+          const pointer = hashIdx >= 0 ? ref.slice(hashIdx) : '#/';
+          const doc = typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : { value: parsed } as Record<string, unknown>;
+          resolvedRaw = pointer === '#/' || pointer === '#' || pointer === '' ? doc : resolveJsonPointer(doc, pointer.startsWith('#') ? pointer : `#${pointer}`);
+        } catch {
+          // ignore parse error
+        }
+      }
+    }
     if (!resolvedRaw || typeof resolvedRaw !== 'object') {
       const external = isExternalRef(ref);
       return {

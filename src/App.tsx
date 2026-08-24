@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { parseApiSpec } from './parser';
-import { ApiSpecModel, DiagnosticItem, EndpointModel, SchemaModel } from './model';
+import React, { useState, useEffect, useRef } from 'react';
+import { EndpointModel, SchemaModel } from './model';
 import { PETSTORE_SPEC } from './samples/petstore';
 import { SampleSpecOption } from './samples';
 import { decompressSpecFromHash } from './share/urlHash';
 import { decodeAppState } from './share/shareService';
+import { useSpecState } from './hooks/useSpecState';
+import { setFileMap } from './parser/fileMap';
+import { useResizableEditor } from './hooks/useResizableEditor';
+import { useDiagnosticNavigation } from './hooks/useDiagnosticNavigation';
 import { Header } from './ui/Header';
 import { EditorPane, EditorPaneRef } from './ui/EditorPane';
 import { EndpointExplorer } from './ui/EndpointExplorer';
@@ -15,75 +18,31 @@ import { Onboarding } from './ui/Onboarding';
 import { UrlImportDialog } from './ui/UrlImportDialog';
 import { CommandPalette } from './ui/CommandPalette';
 import { DiffView } from './ui/DiffView';
+import { WorkspaceDialog } from './ui/WorkspaceDialog';
 const TopologyGraph = React.lazy(() => import('./graph/TopologyGraph').then((m) => ({ default: m.TopologyGraph })) );
 
 export function App() {
-  const [rawText, setRawText] = useState<string>(() => {
+  const initialText = (() => {
     if (typeof window !== 'undefined' && window.location.hash) {
       const decompressed = decompressSpecFromHash(window.location.hash);
       if (decompressed) return decompressed;
     }
     return PETSTORE_SPEC;
-  });
+  })();
+  const { rawText, setRawText, spec } = useSpecState(initialText);
 
   const [activeView, setActiveView] = useState<'endpoints' | 'schemas' | 'graph' | 'diff'>('endpoints');
   const [isEditorOpen, setIsEditorOpen] = useState(true);
   const [selectedEndpoint, setSelectedEndpoint] = useState<EndpointModel | null>(null);
   const [selectedSchemaName, setSelectedSchemaName] = useState<string | undefined>(undefined);
-  const [editorWidth, setEditorWidth] = useState(420); // default px width for left pane
-  const isResizingRef = useRef(false);
+  const { editorWidth, setEditorWidth, handleMouseDownResize } = useResizableEditor(420);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
   const [diffOldText, setDiffOldText] = useState<string | null>(null);
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
+  const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
 
   const editorPaneRef = useRef<EditorPaneRef>(null);
-
-  // Parse OpenAPI spec from text with error boundary + diagnostics surfacing
-  const spec: ApiSpecModel = useMemo(() => {
-    try {
-      return parseApiSpec(rawText);
-    } catch (err) {
-      console.error('parseApiSpec crashed', err);
-      const msg = err instanceof Error ? err.message : String(err);
-      let fallback: ApiSpecModel;
-      try {
-        fallback = parseApiSpec('openapi: 3.0.0\ninfo:\n  title: Parse Error\n  version: 0.0.0\npaths: {}');
-      } catch {
-        fallback = {
-          title: 'Parse Error',
-          version: '0.0.0',
-          description: undefined,
-          termsOfService: undefined,
-          contact: undefined,
-          license: undefined,
-          openApiVersion: '3.0.0',
-          originalFormat: 'openapi3',
-          servers: [],
-          tags: [],
-          endpoints: [],
-          schemas: {},
-          securitySchemes: {},
-          diagnostics: [],
-          rawText,
-        } as ApiSpecModel;
-      }
-      return {
-        ...fallback,
-        diagnostics: [
-          {
-            id: 'parse-crash',
-            severity: 'error',
-            message: `Critical parser crash: ${msg}`,
-            line: 1,
-            source: 'syntax',
-          },
-          ...fallback.diagnostics,
-        ],
-        rawText,
-      };
-    }
-  }, [rawText]);
 
   // Keep selected endpoint in sync when spec changes
   useEffect(() => {
@@ -116,50 +75,14 @@ export function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Split-pane resizing logic with unmount cleanup and tiny viewport guard
-  const activeMoveRef = useRef<((e: MouseEvent) => void) | null>(null);
-  const activeUpRef = useRef<(() => void) | null>(null);
-  const handleMouseDownResize = (e: React.MouseEvent) => {
-    e.preventDefault();
-    isResizingRef.current = true;
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!isResizingRef.current) return;
-      const minWidth = 280;
-      const maxWidth = Math.max(minWidth, window.innerWidth - 360);
-      // Clamp correctly even on tiny viewports (e.g. 320px)
-      const raw = moveEvent.clientX;
-      const newWidth = Math.max(minWidth, Math.min(raw, maxWidth));
-      setEditorWidth(newWidth);
-    };
-
-    const handleMouseUp = () => {
-      isResizingRef.current = false;
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      activeMoveRef.current = null;
-      activeUpRef.current = null;
-    };
-
-    activeMoveRef.current = handleMouseMove;
-    activeUpRef.current = handleMouseUp;
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-  };
-
-  useEffect(() => {
-    return () => {
-      isResizingRef.current = false;
-      if (activeMoveRef.current) window.removeEventListener('mousemove', activeMoveRef.current);
-      if (activeUpRef.current) window.removeEventListener('mouseup', activeUpRef.current);
-    };
-  }, []);
 
   const handleSelectSample = (sample: SampleSpecOption) => {
     setRawText(sample.spec);
     editorPaneRef.current?.setContent(sample.spec);
     setSelectedEndpoint(null);
     setSourceUrl(null);
+    setFileMap({});
     window.location.hash = '';
   };
 
@@ -183,6 +106,7 @@ export function App() {
     editorPaneRef.current?.setContent(text);
     setSelectedEndpoint(null);
     setSourceUrl(url);
+    setFileMap({});
     if (typeof window !== 'undefined' && window.location.hash) {
       window.location.hash = '';
       try {
@@ -193,34 +117,16 @@ export function App() {
     }
   };
 
-  const diagTimerRef = useRef<number | null>(null);
-  const handleSelectDiagnostic = (diag: DiagnosticItem) => {
-    setIsEditorOpen(true);
-    const targetLine = diag.line ?? 1;
-    if (diagTimerRef.current) window.clearTimeout(diagTimerRef.current);
-    // 150ms + retry ensures editor has mounted after isEditorOpen toggle (React async render)
-    diagTimerRef.current = window.setTimeout(() => {
-      if (editorPaneRef.current) {
-        editorPaneRef.current.jumpToLine(targetLine);
-      } else {
-        const retry = window.setTimeout(() => editorPaneRef.current?.jumpToLine(targetLine), 150);
-        // allow outer cleanup to clear retry if unmounted quickly
-        diagTimerRef.current = retry;
-      }
-    }, 150);
-  };
-  useEffect(() => {
-    return () => {
-      if (diagTimerRef.current) window.clearTimeout(diagTimerRef.current);
-    };
-  }, []);
+  const { handleSelectDiagnostic } = useDiagnosticNavigation(editorPaneRef, setIsEditorOpen);
 
   const handleNavigateToSchema = (schemaName: string, _schema: SchemaModel) => {
     setSelectedSchemaName(schemaName);
     setActiveView('schemas');
   };
 
+  const hasRestoredStateRef = useRef(false);
   useEffect(() => {
+    if (hasRestoredStateRef.current) return;
     try {
       const hash = typeof window !== 'undefined' ? window.location.hash : '';
       const state = decodeAppState(hash);
@@ -235,6 +141,7 @@ export function App() {
         if (typeof state.schemaName === 'string' && spec.schemas[state.schemaName as string]) {
           setSelectedSchemaName(state.schemaName as string);
         }
+        hasRestoredStateRef.current = true;
       }
     } catch {
       // ignore
@@ -271,6 +178,7 @@ export function App() {
         onSelectSample={handleSelectSample}
         onUploadText={handleUploadText}
         onOpenUrl={() => setIsUrlDialogOpen(true)}
+        onOpenWorkspace={() => setIsWorkspaceOpen(true)}
         isEditorOpen={isEditorOpen}
         setIsEditorOpen={setIsEditorOpen}
         sourceUrl={sourceUrl}
@@ -419,6 +327,18 @@ export function App() {
         <UrlImportDialog
           onClose={() => setIsUrlDialogOpen(false)}
           onLoad={(text, url) => handleLoadFromUrl(text, url)}
+        />
+      )}
+      {isWorkspaceOpen && (
+        <WorkspaceDialog
+          currentText={rawText}
+          currentTitle={spec.title}
+          onClose={() => setIsWorkspaceOpen(false)}
+          onLoad={(text) => {
+            setRawText(text);
+            editorPaneRef.current?.setContent(text);
+            setIsWorkspaceOpen(false);
+          }}
         />
       )}
       {isPaletteOpen && (

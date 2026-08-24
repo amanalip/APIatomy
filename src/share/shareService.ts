@@ -4,7 +4,7 @@ import { parse as parseYaml } from 'yaml';
 export const SHARE_WARN_BYTES = 100 * 1024;
 export const SHARE_LARGE_BYTES = 200 * 1024;
 
-export function getCompactSpecText(specText: string): string {
+export function getCompactSpecText(specText: string): string | null {
   const trimmed = specText.trim();
   if (!trimmed) return specText;
   try {
@@ -21,33 +21,25 @@ export function getCompactSpecText(specText: string): string {
   } catch {
     // ignore
   }
-  const withoutComments = trimmed
-    .split('\n')
-    .map((line) => {
-      const hashIdx = line.indexOf('#');
-      if (hashIdx >= 0) {
-        const before = line.slice(0, hashIdx);
-        if (before.trim() === '') return '';
-        return before.trimEnd();
-      }
-      return line;
-    })
-    .filter((l) => l.trim() !== '')
-    .join('\n');
-  return withoutComments.replace(/\s+/g, ' ').trim();
+  return null;
 }
 
 export function getShareHash(specText: string, compact = false): string {
-  const text = compact ? getCompactSpecText(specText) : specText;
-  return compressSpecToHash(text);
+  if (compact) {
+    const compactText = getCompactSpecText(specText);
+    if (compactText === null) return '';
+    return compressSpecToHash(compactText);
+  }
+  return compressSpecToHash(specText);
 }
 
 export function getShareUrl(specText: string, compact = false, appState?: Record<string, unknown>): string {
   if (typeof window === 'undefined') return getShareHash(specText, compact);
   const hash = getShareHash(specText, compact);
+  if (!hash) return '';
   if (appState && Object.keys(appState).length > 0) {
     try {
-      const stateStr = btoa(JSON.stringify(appState));
+      const stateStr = encodeURIComponent(JSON.stringify(appState));
       return `${window.location.origin}${window.location.pathname}${hash}&state=${stateStr}`;
     } catch {
       return `${window.location.origin}${window.location.pathname}${hash}`;
@@ -61,16 +53,17 @@ export function decodeAppState(hash: string): Record<string, unknown> | null {
     const params = new URLSearchParams(hash.replace(/^[#?]+/, ''));
     const state = params.get('state');
     if (!state) return null;
-    const json = atob(state);
+    const json = decodeURIComponent(state);
     return JSON.parse(json);
   } catch {
     return null;
   }
 }
 
-export function getShareSize(specText: string, compact = false): { bytes: number; kb: string; urlLength: number; isWarn: boolean; isLarge: boolean } {
+export function getShareSize(specText: string, compact = false, appState?: Record<string, unknown>): { bytes: number; kb: string; urlLength: number; isWarn: boolean; isLarge: boolean } {
   const hash = getShareHash(specText, compact);
-  const url = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}${hash}` : hash;
+  const url = typeof window !== 'undefined' ? getShareUrl(specText, compact, appState) : hash;
+  if (!hash) return { bytes: 0, kb: '0.0', urlLength: 0, isWarn: false, isLarge: false };
   let bytes: number;
   try {
     bytes = new TextEncoder().encode(url).length;
@@ -106,8 +99,8 @@ export function canUseNativeShare(): boolean {
   return typeof navigator !== 'undefined' && typeof (navigator as unknown as { share?: unknown }).share === 'function';
 }
 
-export async function nativeShare(specText: string, title = 'APIatomy spec'): Promise<boolean> {
-  const url = getShareUrl(specText);
+export async function nativeShare(specText: string, title = 'APIatomy spec', customUrl?: string): Promise<boolean> {
+  const url = customUrl || getShareUrl(specText);
   if (!canUseNativeShare()) return false;
   try {
     await (navigator as unknown as { share: (data: { title: string; text: string; url: string }) => Promise<void> }).share({
