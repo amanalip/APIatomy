@@ -32,7 +32,7 @@ export const Footer: React.FC = () => {
 
         <div className="flex items-center justify-between sm:justify-end gap-4 text-[11px]">
           <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap">
-            © {year} APIatomy by Aman Ali. v0.2.0. Open source under GPL-3.0.
+            © {year} APIatomy v0.2.0 by Aman Ali. Open source under GPL-3.0.
           </span>
           <nav aria-label="Footer" className="flex items-center gap-3 sm:gap-4 shrink-0">
             <a
