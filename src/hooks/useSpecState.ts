@@ -38,6 +38,11 @@ export function useSpecState(initialText: string) {
   const workerRef = useRef<Worker | null>(null);
   const requestIdRef = useRef(0);
   const debounceRef = useRef<number | null>(null);
+  const latestRawTextRef = useRef(rawText);
+
+  useEffect(() => {
+    latestRawTextRef.current = rawText;
+  }, [rawText]);
 
   useEffect(() => {
     try {
@@ -53,15 +58,15 @@ export function useSpecState(initialText: string) {
         if (result) {
           setSpec(result);
         } else if (error) {
-          setSpec(parseSync(rawText));
+          setSpec(parseSync(latestRawTextRef.current));
         }
       };
       worker.onerror = () => {
-        setSpec(parseSync(rawText));
+        setSpec(parseSync(latestRawTextRef.current));
       };
     } catch {
       workerRef.current = null;
-      setSpec(parseSync(rawText));
+      setSpec(parseSync(latestRawTextRef.current));
     }
     return () => {
       if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
