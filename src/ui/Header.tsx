@@ -22,6 +22,7 @@ import {
   Link2,
   HelpCircle,
 } from 'lucide-react';
+import { LogoMark } from './Logo';
 
 interface HeaderProps {
   spec: ApiSpecModel;
@@ -166,12 +167,12 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Brand & Spec Info */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20">
-            <Network className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded-lg overflow-hidden shadow-md shadow-slate-900/10 shrink-0">
+            <LogoMark size={32} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">APIatomy</span>
+              <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white"><span className="font-mono">API</span><span className="font-light">atomy</span></span>
               {spec.version && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
                   v{spec.version}

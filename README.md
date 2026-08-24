@@ -1,6 +1,14 @@
-# APIatomy
+<p align="center">
+  <img src="public/logo.svg" width="72" height="72" alt="APIatomy specimen logo" />
+</p>
 
-> See inside your API.
+<h1 align="center">APIatomy</h1>
+
+<p align="center">See inside your API.</p>
+
+<p align="center">
+  <img src="public/logo-horizontal.svg" width="360" alt="APIatomy horizontal logo" />
+</p>
 
 APIatomy is a client side visual explorer that turns OpenAPI 3.x and Swagger 2.0 specifications (YAML and JSON) into interactive endpoint explorers, recursive schema viewers, and dynamic topology graphs.
 
