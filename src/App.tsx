@@ -383,6 +383,17 @@ export function App() {
           onLoad={(text) => {
             setRawText(text);
             editorPaneRef.current?.setContent(text);
+            setSourceUrl(null);
+            setFileMap({});
+            setSelectedEndpoint(null);
+            if (typeof window !== 'undefined' && window.location.hash) {
+              window.location.hash = '';
+              try {
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+              } catch {
+                window.location.hash = '';
+              }
+            }
             setIsWorkspaceOpen(false);
           }}
         />

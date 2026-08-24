@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { parseApiSpec } from '../parser';
 import { ApiSpecModel } from '../model';
+import { getFileMap } from '../parser/fileMap';
 
 function parseSync(rawText: string): ApiSpecModel {
   try {
@@ -77,7 +78,13 @@ export function useSpecState(initialText: string) {
     if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
       try {
-        workerRef.current?.postMessage({ id, rawText });
+        const files: Record<string, string> = {};
+        try {
+          for (const [k, v] of getFileMap().entries()) files[k] = v;
+        } catch {
+          // ignore
+        }
+        workerRef.current?.postMessage({ id, rawText, files });
       } catch {
         setSpec(parseSync(rawText));
       }

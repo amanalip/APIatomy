@@ -171,16 +171,14 @@ export const Header: React.FC<HeaderProps> = ({
         for (const entry of fileEntries) map[entry.name] = entry.text;
         setFileMap(map);
         let root = fileEntries[0];
-        const candidate = fileEntries.find(
-          (e) => e.text.includes('openapi') || e.text.includes('swagger')
-        );
-        if (candidate) root = candidate;
-        if (
-          fileEntries.length > 1 &&
-          root.text.length < Math.max(...fileEntries.map((e) => e.text.length)) / 2
-        ) {
-          const largest = fileEntries.reduce((a, b) => (a.text.length > b.text.length ? a : b));
-          root = largest;
+        const candidates = fileEntries.filter((e) => {
+          const lower = e.text.toLowerCase();
+          return lower.includes('openapi') || lower.includes('swagger');
+        });
+        if (candidates.length > 0) {
+          root = candidates[0];
+        } else if (fileEntries.length > 1) {
+          root = fileEntries.reduce((a, b) => (a.text.length > b.text.length ? a : b));
         }
         onUploadText(root.text);
         if (fileEntries.length > 1) {
