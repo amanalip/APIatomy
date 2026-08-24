@@ -182,6 +182,7 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
   return (
     <div
       id="api-topology-flow-container"
+      data-testid="graph"
       className="w-full h-full relative bg-slate-50 dark:bg-slate-950 transition-colors duration-150"
     >
       {/* Floating Toolbar */}

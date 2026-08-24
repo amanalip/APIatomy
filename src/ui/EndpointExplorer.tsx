@@ -255,6 +255,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               return (
                 <div
                   key={ep.id}
+                  data-testid="endpoint-card"
                   ref={isSelected ? activeEndpointRef : undefined}
                   role="button"
                   tabIndex={0}
@@ -317,6 +318,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                       return (
                         <div
                           key={ep.id}
+                          data-testid="endpoint-card"
                           ref={isSelected ? activeEndpointRef : undefined}
                           role="button"
                           tabIndex={0}
