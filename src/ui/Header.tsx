@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ApiSpecModel } from '../model';
 import { SAMPLE_SPECS, SampleSpecOption } from '../samples';
-import { compressSpecToHash, copyTextToClipboard } from '../share/urlHash';
+import { copyTextToClipboard } from '../share/urlHash';
+import { ShareDialog } from './ShareDialog';
 import { useTheme } from '../theme/ThemeContext';
 import { MAX_UPLOAD_SIZE } from '../utils/schemaRefs';
 import {
@@ -43,10 +44,10 @@ export const Header: React.FC<HeaderProps> = ({
   const mobileNavRef = useRef<HTMLDivElement>(null);
   const sampleBtnRef = useRef<HTMLButtonElement>(null);
   const mobileBtnRef = useRef<HTMLButtonElement>(null);
-  const [copiedShare, setCopiedShare] = useState(false);
   const [copiedJson, setCopiedJson] = useState(false);
   const [isSampleDropdownOpen, setIsSampleDropdownOpen] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const isEditorOpenRef = useRef(isEditorOpen);
   useEffect(() => { isEditorOpenRef.current = isEditorOpen; }, [isEditorOpen]);
 
@@ -83,21 +84,8 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, [setIsEditorOpen, isSampleDropdownOpen, isMobileNavOpen]);
 
-  const handleShare = async () => {
-    const hash = compressSpecToHash(spec.rawText);
-    const fullUrl = `${window.location.origin}${window.location.pathname}${hash}`;
-    // Use replaceState to avoid polluting browser history (back button)
-    try {
-      history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
-    } catch {
-      window.location.hash = hash;
-    }
-
-    const success = await copyTextToClipboard(fullUrl);
-    if (success) {
-      setCopiedShare(true);
-      setTimeout(() => setCopiedShare(false), 2500);
-    }
+  const handleShare = () => {
+    setIsShareOpen(true);
   };
 
   const handleCopyJson = async () => {
@@ -311,25 +299,15 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="hidden md:inline">{copiedJson ? 'Copied' : 'JSON'}</span>
         </button>
 
-        {/* Share Link - live region announces copy success */}
+        {/* Share Link - opens dialog instead of instantly copying */}
         <button
           onClick={handleShare}
           aria-live="polite"
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 transition focus-visible:ring-2 focus-visible:ring-white"
-          title="Create shareable compressed link (encoded in URL hash with zero backend)"
+          title="Open sharing options"
         >
-          {copiedShare ? (
-            <>
-              <Check className="w-3.5 h-3.5 text-white" aria-hidden="true" />
-              <span className="hidden xs:inline">Link Copied</span>
-              <span className="sr-only">Link copied to clipboard</span>
-            </>
-          ) : (
-            <>
-              <Share2 className="w-3.5 h-3.5 text-white" aria-hidden="true" />
-              <span className="hidden xs:inline">Share</span>
-            </>
-          )}
+          <Share2 className="w-3.5 h-3.5 text-white" aria-hidden="true" />
+          <span className="hidden xs:inline">Share</span>
         </button>
 
         {/* Theme Toggle */}
@@ -356,6 +334,7 @@ export const Header: React.FC<HeaderProps> = ({
           </svg>
         </a>
       </div>
+      {isShareOpen && <ShareDialog specText={spec.rawText} specTitle={spec.title} onClose={() => setIsShareOpen(false)} />}
     </header>
   );
 };
