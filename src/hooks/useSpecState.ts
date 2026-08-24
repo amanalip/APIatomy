@@ -5,7 +5,6 @@ import { ApiSpecModel } from '../model';
 export function useSpecState(initialText: string) {
   const [rawText, setRawText] = useState(initialText);
   const workerRef = useRef<Worker | null>(null);
-  const [isParsing, setIsParsing] = useState(false);
 
   useEffect(() => {
     try {
@@ -41,5 +40,5 @@ export function useSpecState(initialText: string) {
     }
   }, [rawText]);
 
-  return { rawText, setRawText, spec, isParsing };
+  return { rawText, setRawText, spec };
 }

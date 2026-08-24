@@ -8,6 +8,20 @@ interface DiagnosticsBarProps {
   onSelectDiagnostic?: (diag: DiagnosticItem) => void;
 }
 
+function getFix(diag: DiagnosticItem): string | null {
+  const id = diag.id.toLowerCase();
+  if (id.includes('missing-info')) return 'Add an info object with a non empty title and version.';
+  if (id.includes('missing-paths')) return 'Add a top level paths object, even if empty.';
+  if (id.includes('missing-path-param')) return 'Add a parameter with in: path and name matching the template.';
+  if (id.includes('broken-ref') || id.includes('unresolved')) return 'Ensure the $ref target exists and external files are bundled.';
+  if (id.includes('unused-schema')) return 'Remove the unused schema or reference it from an endpoint.';
+  if (id.includes('duplicate')) return 'Rename the duplicate operationId, tag or parameter.';
+  if (id.includes('empty-path-param')) return 'Replace {} with a named parameter like {id}.';
+  if (id.includes('invalid-path-slash')) return 'Start the path with /.';
+  if (id.includes('path-contains-query')) return 'Move query parameters to the parameters list with in: query.';
+  return null;
+}
+
 export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
   diagnostics,
   onSelectDiagnostic,
@@ -195,6 +209,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
               const isError = diag.severity === 'error';
               const isWarning = diag.severity === 'warning';
 
+              const fix = getFix(diag);
               return (
                 <div
                   key={`${diag.id}-${index}`}
@@ -203,34 +218,37 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
                   tabIndex={0}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectDiagnostic?.(diag); } }}
                   aria-label={`Go to ${diag.severity} at line ${diag.line ?? 1}: ${diag.message}`}
-                  className="flex items-center justify-between p-2.5 hover:bg-slate-100/80 dark:hover:bg-slate-900/80 cursor-pointer transition focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:outline-none"
+                  className="flex flex-col gap-1 p-2.5 hover:bg-slate-100/80 dark:hover:bg-slate-900/80 cursor-pointer transition focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:outline-none"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0 pr-4">
-                    {isError ? (
-                      <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                    ) : isWarning ? (
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    ) : (
-                      <Info className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-                    )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 min-w-0 pr-4">
+                      {isError ? (
+                        <XCircle className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                      ) : isWarning ? (
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      ) : (
+                        <Info className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                      )}
 
-                    <span className="text-slate-800 dark:text-slate-200 truncate font-sans text-xs">
-                      {diag.message}
-                    </span>
-                  </div>
+                      <span className="text-slate-800 dark:text-slate-200 truncate font-sans text-xs">
+                        {diag.message}
+                      </span>
+                    </div>
 
-                  <div className="flex items-center gap-3 shrink-0 text-[11px] text-slate-500 dark:text-slate-400">
-                    {diag.path && (
-                      <span className="text-slate-400 dark:text-slate-500 text-[10px] truncate max-w-xs">
-                        {diag.path}
-                      </span>
-                    )}
-                    {diag.line && (
-                      <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] border border-slate-200 dark:border-slate-700">
-                        Line {diag.line}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-3 shrink-0 text-[11px] text-slate-500 dark:text-slate-400">
+                      {diag.path && (
+                        <span className="text-slate-400 dark:text-slate-500 text-[10px] truncate max-w-xs">
+                          {diag.path}
+                        </span>
+                      )}
+                      {diag.line && (
+                        <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] border border-slate-200 dark:border-slate-700">
+                          Line {diag.line}
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  {fix && <div className="text-[10px] text-slate-500 dark:text-slate-400 pl-6">How to fix: {fix}</div>}
                 </div>
               );
             })

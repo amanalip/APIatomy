@@ -4,6 +4,7 @@ import { generateMockData } from '../model/mockGenerator';
 import { Search, Box, ChevronRight, ChevronDown, AlertCircle, Copy, Check, X } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
 import YAML from 'yaml';
+import { VirtualList } from './VirtualList';
 
 interface SchemaViewerProps {
   schemas: Record<string, SchemaModel>;
@@ -157,6 +158,37 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
               <div className="text-[11px] leading-relaxed">{searchQuery ? 'Try a different search term or clear the filter.' : 'This specification has no component schemas. Add schemas in the editor or load a sample spec.'}</div>
               {searchQuery && (<button onClick={() => setSearchQuery('')} className="text-blue-600 dark:text-blue-400 hover:underline text-[11px] px-2 py-1 rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40">Clear search</button>)}
             </div>
+          ) : schemaNames.length > 100 ? (
+            <VirtualList
+              items={schemaNames}
+              height={500}
+              itemHeight={36}
+              renderItem={(name) => {
+                const isSelected = activeSchemaName === name;
+                const s = schemas[name];
+                return (
+                  <button
+                    key={name}
+                    ref={isSelected ? activeSchemaRef : undefined}
+                    onClick={() => {
+                      setActiveSchemaName(name);
+                      onSelectSchema?.(name, s);
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono transition text-left mx-1 ${
+                      isSelected
+                        ? 'bg-indigo-600 text-white font-semibold shadow'
+                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <Box className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-indigo-500 dark:text-indigo-400'}`} />
+                      <span className="truncate">{name}</span>
+                    </div>
+                    {s.isCircular && <span className="text-[9px] px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-500/30 text-amber-700 dark:text-amber-300">loop</span>}
+                  </button>
+                );
+              }}
+            />
           ) : (
             schemaNames.map((name) => {
               const isSelected = activeSchemaName === name;

@@ -20,9 +20,8 @@ import { computeApiTopologyGraph } from '../layout/graphLayout';
 import { EndpointNode } from './EndpointNode';
 import { SchemaNode } from './SchemaNode';
 import { CustomEdge } from './CustomEdge';
-import { exportGraphToPng } from './exportPng';
 import { useTheme } from '../theme/ThemeContext';
-import { Download, LayoutGrid, Search, Network, Maximize2 } from 'lucide-react';
+import { Download, LayoutGrid, Search, Network, Maximize2, FileImage } from 'lucide-react';
 
 const nodeTypes: NodeTypes = {
   endpointNode: EndpointNode as any,
@@ -158,9 +157,23 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
     try {
       setIsExporting(true);
       const bg = isDark ? '#020617' : '#f8fafc';
+      const { exportGraphToPng } = await import('./exportPng');
       await exportGraphToPng('api-topology-flow-container', `${spec.title || 'api-topology'}.png`, bg);
     } catch (err) {
       console.error('Failed to export graph to PNG', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportSvg = async () => {
+    try {
+      setIsExporting(true);
+      const { exportGraphSvg } = await import('./exportSvg');
+      const container = document.getElementById('api-topology-flow-container');
+      if (container) await exportGraphSvg(container as HTMLElement, `${spec.title || 'api-topology'}.svg`);
+    } catch (err) {
+      console.error('Failed to export graph to SVG', err);
     } finally {
       setIsExporting(false);
     }
@@ -276,7 +289,7 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
           <span>{direction === 'LR' ? 'Horizontal Flow' : 'Vertical Flow'}</span>
         </button>
 
-        {/* Export PNG */}
+        {/* Export PNG and SVG - lazy loaded */}
         <button
           aria-label="Export topology diagram as PNG"
           onClick={handleExportPng}
@@ -285,7 +298,17 @@ const TopologyCanvas: React.FC<TopologyGraphProps> = ({
           title="Export topology diagram as PNG"
         >
           <Download className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-          <span>{isExporting ? 'Exporting...' : 'Export PNG'}</span>
+          <span>{isExporting ? 'Exporting...' : 'PNG'}</span>
+        </button>
+        <button
+          aria-label="Export topology diagram as SVG"
+          onClick={handleExportSvg}
+          disabled={isExporting || nodes.length === 0}
+          className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition disabled:opacity-50"
+          title="Export topology diagram as SVG"
+        >
+          <FileImage className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+          <span>SVG</span>
         </button>
       </div>
 

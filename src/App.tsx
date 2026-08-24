@@ -9,10 +9,12 @@ import { EditorPane, EditorPaneRef } from './ui/EditorPane';
 import { EndpointExplorer } from './ui/EndpointExplorer';
 import { EndpointDetails } from './ui/EndpointDetails';
 import { SchemaViewer } from './ui/SchemaViewer';
-import { TopologyGraph } from './graph/TopologyGraph';
 import { DiagnosticsBar } from './ui/DiagnosticsBar';
 import { Onboarding } from './ui/Onboarding';
 import { UrlImportDialog } from './ui/UrlImportDialog';
+import { CommandPalette } from './ui/CommandPalette';
+import { DiffView } from './ui/DiffView';
+const TopologyGraph = React.lazy(() => import('./graph/TopologyGraph').then((m) => ({ default: m.TopologyGraph })) );
 
 export function App() {
   const [rawText, setRawText] = useState<string>(() => {
@@ -23,12 +25,14 @@ export function App() {
     return PETSTORE_SPEC;
   });
 
-  const [activeView, setActiveView] = useState<'endpoints' | 'schemas' | 'graph'>('endpoints');
+  const [activeView, setActiveView] = useState<'endpoints' | 'schemas' | 'graph' | 'diff'>('endpoints');
   const [isEditorOpen, setIsEditorOpen] = useState(true);
   const [selectedEndpoint, setSelectedEndpoint] = useState<EndpointModel | null>(null);
   const [selectedSchemaName, setSelectedSchemaName] = useState<string | undefined>(undefined);
   const [editorWidth, setEditorWidth] = useState(420); // default px width for left pane
   const isResizingRef = useRef(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [diffOldText, setDiffOldText] = useState<string | null>(null);
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
 
@@ -215,6 +219,25 @@ export function App() {
     setActiveView('schemas');
   };
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.classList.contains('cm-content'));
+      if (!isInput && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  useEffect(() => {
+    if (activeView === 'diff' && diffOldText === null) {
+      setDiffOldText(PETSTORE_SPEC);
+    }
+  }, [activeView, diffOldText]);
+
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-150">
       <Onboarding />
@@ -337,19 +360,28 @@ export function App() {
             </div>
           )}
 
-          {/* View 3: API Topology Graph */}
+          {/* View 3: API Topology Graph - lazy loaded */}
           {activeView === 'graph' && (
             <div className="flex-1 h-full">
-              <TopologyGraph
-                spec={spec}
-                onSelectEndpoint={(ep) => {
-                  setSelectedEndpoint(ep);
-                  setActiveView('endpoints');
-                }}
-                onSelectSchema={(schemaName, schema) => {
-                  handleNavigateToSchema(schemaName, schema);
-                }}
-              />
+              <React.Suspense fallback={<div className="p-4 text-xs text-slate-500">Loading graph...</div>}>
+                <TopologyGraph
+                  spec={spec}
+                  onSelectEndpoint={(ep) => {
+                    setSelectedEndpoint(ep);
+                    setActiveView('endpoints');
+                  }}
+                  onSelectSchema={(schemaName, schema) => {
+                    handleNavigateToSchema(schemaName, schema);
+                  }}
+                />
+              </React.Suspense>
+            </div>
+          )}
+
+          {/* View 4: Diff */}
+          {activeView === 'diff' && (
+            <div className="flex-1 h-full overflow-auto bg-white dark:bg-slate-950">
+              <DiffView oldText={diffOldText ?? PETSTORE_SPEC} newText={rawText} />
             </div>
           )}
         </div>
@@ -364,6 +396,23 @@ export function App() {
         <UrlImportDialog
           onClose={() => setIsUrlDialogOpen(false)}
           onLoad={(text, url) => handleLoadFromUrl(text, url)}
+        />
+      )}
+      {isPaletteOpen && (
+        <CommandPalette
+          onClose={() => setIsPaletteOpen(false)}
+          onSelectSample={() => setIsPaletteOpen(false)}
+          onUpload={() => {
+            setIsPaletteOpen(false);
+            setIsEditorOpen(true);
+          }}
+          onShare={() => {
+            setIsPaletteOpen(false);
+          }}
+          onViewChange={(view) => {
+            if (view === 'diff' && !diffOldText) setDiffOldText(rawText);
+            setActiveView(view as 'endpoints' | 'schemas' | 'graph' | 'diff');
+          }}
         />
       )}
     </div>

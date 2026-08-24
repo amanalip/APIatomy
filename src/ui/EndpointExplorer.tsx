@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EndpointModel, HttpMethod } from '../model';
 import { HTTP_METHODS } from '../model/httpMethods';
 import { Search, ChevronDown, ChevronRight, Tag, Shield, X } from 'lucide-react';
+import { VirtualList } from './VirtualList';
 
 interface EndpointExplorerProps {
   endpoints: EndpointModel[];
@@ -221,7 +222,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
         )}
       </div>
 
-      {/* Endpoint Cards Grouped by Tag */}
+      {/* Endpoint Cards Grouped by Tag - virtualized for large APIs */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {filteredEndpoints.length === 0 ? (
           <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-xs space-y-3">
@@ -243,6 +244,43 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               </button>
             )}
           </div>
+        ) : filteredEndpoints.length > 100 ? (
+          <VirtualList
+            items={filteredEndpoints}
+            height={600}
+            itemHeight={92}
+            renderItem={(ep) => {
+              const isSelected = selectedEndpoint?.id === ep.id;
+              const methodConfig = HTTP_METHODS[ep.method] || HTTP_METHODS.get;
+              return (
+                <div
+                  key={ep.id}
+                  ref={isSelected ? activeEndpointRef : undefined}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onSelectEndpoint(ep)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelectEndpoint(ep);
+                    }
+                  }}
+                  aria-pressed={isSelected}
+                  className={`mx-1 group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 ${
+                    isSelected
+                      ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/50 shadow-md'
+                      : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded shadow-sm shrink-0 ${methodConfig.badgeBg}`}>{methodConfig.label}</span>
+                    <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate flex-1">{ep.path}</span>
+                  </div>
+                  {ep.summary && <div className="text-[11px] text-slate-600 dark:text-slate-400 truncate">{ep.summary}</div>}
+                </div>
+              );
+            }}
+          />
         ) : (
           Object.entries(groupedEndpoints).map(([tag, eps]) => {
             const isCollapsed = collapsedTags[tag] ?? false;

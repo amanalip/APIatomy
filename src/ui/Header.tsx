@@ -25,8 +25,8 @@ import {
 
 interface HeaderProps {
   spec: ApiSpecModel;
-  activeView: 'endpoints' | 'schemas' | 'graph';
-  setActiveView: (view: 'endpoints' | 'schemas' | 'graph') => void;
+  activeView: 'endpoints' | 'schemas' | 'graph' | 'diff';
+  setActiveView: (view: 'endpoints' | 'schemas' | 'graph' | 'diff') => void;
   onSelectSample: (sample: SampleSpecOption) => void;
   onUploadText: (text: string) => void;
   onOpenUrl: () => void;
