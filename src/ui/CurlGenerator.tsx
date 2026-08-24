@@ -1,44 +1,59 @@
-import React, { useState, useMemo } from 'react';
-import { EndpointModel, ServerModel, SchemaModel } from '../model';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { EndpointModel, ServerModel, SchemaModel, SecuritySchemeModel } from '../model';
 import { generateMockData } from '../model/mockGenerator';
 import { Copy, Check, Terminal } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
 import { joinUrl, normalizeServerUrl, sanitizeHeaderValue } from '../utils/serverUrl';
 
+const FALLBACK_SERVER_URL = 'https://api.example.com';
+
 interface CurlGeneratorProps {
   endpoint: EndpointModel;
   servers: ServerModel[];
+  securitySchemes?: Record<string, SecuritySchemeModel>;
 }
 
-export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers }) => {
+export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers, securitySchemes }) => {
   const [copied, setCopied] = useState(false);
   const [wrap, setWrap] = useState(false);
   const [selectedServerUrl, setSelectedServerUrl] = useState<string>(
-    servers[0]?.url || 'https://api.example.com'
+    servers[0]?.url || FALLBACK_SERVER_URL
   );
+  const copyTimerRef = useRef<number | null>(null);
 
-  // Sync selected server when available servers change (e.g., new spec loaded)
-  React.useEffect(() => {
-    if (servers.length === 0) return;
+  useEffect(() => {
+    if (servers.length === 0) {
+      if (selectedServerUrl !== FALLBACK_SERVER_URL) {
+        setSelectedServerUrl(FALLBACK_SERVER_URL);
+      }
+      return;
+    }
     const exists = servers.some((s) => s.url === selectedServerUrl);
     if (!exists) {
       setSelectedServerUrl(servers[0].url);
     }
   }, [servers, selectedServerUrl]);
 
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
   const activeServer = useMemo(() => {
     return servers.find((s) => s.url === selectedServerUrl) || servers[0];
   }, [servers, selectedServerUrl]);
 
   const curlCommand = useMemo(() => {
-    return buildCurlCommand(endpoint, selectedServerUrl, activeServer);
-  }, [endpoint, selectedServerUrl, activeServer]);
+    return buildCurlCommand(endpoint, selectedServerUrl, activeServer, securitySchemes);
+  }, [endpoint, selectedServerUrl, activeServer, securitySchemes]);
 
   const handleCopy = async () => {
     const success = await copyTextToClipboard(curlCommand);
     if (success) {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = window.setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -100,10 +115,35 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({ endpoint, servers 
   );
 };
 
+function encodeQueryValue(value: string, allowReserved?: boolean): string {
+  const encoded = encodeURIComponent(value);
+  if (!allowReserved) return encoded;
+  return encoded
+    .replace(/%3A/gi, ':')
+    .replace(/%2F/gi, '/')
+    .replace(/%3F/gi, '?')
+    .replace(/%23/gi, '#')
+    .replace(/%5B/gi, '[')
+    .replace(/%5D/gi, ']')
+    .replace(/%40/gi, '@')
+    .replace(/%21/gi, '!')
+    .replace(/%24/gi, '$')
+    .replace(/%26/gi, '&')
+    .replace(/%27/gi, "'")
+    .replace(/%28/gi, '(')
+    .replace(/%29/gi, ')')
+    .replace(/%2A/gi, '*')
+    .replace(/%2B/gi, '+')
+    .replace(/%2C/gi, ',')
+    .replace(/%3B/gi, ';')
+    .replace(/%3D/gi, '=');
+}
+
 export function buildCurlCommand(
   endpoint: EndpointModel,
   selectedServerUrl: string,
-  activeServer?: ServerModel
+  activeServer?: ServerModel,
+  securitySchemes?: Record<string, SecuritySchemeModel>
 ): string {
   let rawUrl = normalizeServerUrl(selectedServerUrl);
 
@@ -147,14 +187,13 @@ export function buildCurlCommand(
             : ['value1', 'value2'];
         if (p.explode !== false) {
           for (const item of arrVal) {
-            qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(String(item))}`);
+            qParts.push(`${encodeURIComponent(p.name)}=${encodeQueryValue(String(item), p.allowReserved)}`);
           }
         } else {
           let delimiter = ',';
           if (p.style === 'spaceDelimited') delimiter = '%20';
           else if (p.style === 'pipeDelimited') delimiter = '|';
-          // Encode each value individually and keep delimiter unencoded per OpenAPI spec
-          const encodedVals = arrVal.map((v) => encodeURIComponent(String(v)));
+          const encodedVals = arrVal.map((v) => encodeQueryValue(String(v), p.allowReserved));
           const joined = delimiter === '%20' ? encodedVals.join('%20') : encodedVals.join(delimiter);
           qParts.push(`${encodeURIComponent(p.name)}=${joined}`);
         }
@@ -172,7 +211,7 @@ export function buildCurlCommand(
             else val = '1';
           } else val = 'value';
         }
-        qParts.push(`${encodeURIComponent(p.name)}=${encodeURIComponent(String(val))}`);
+        qParts.push(`${encodeURIComponent(p.name)}=${encodeQueryValue(String(val), p.allowReserved)}`);
       }
     }
     if (qParts.length > 0) url += `?${qParts.join('&')}`;
@@ -222,15 +261,44 @@ export function buildCurlCommand(
     for (const sec of endpoint.security) {
       if (seen.has(sec.name)) continue;
       seen.add(sec.name);
-      const secNameLower = sec.name.toLowerCase();
-      const isApiKey = secNameLower === 'apikey' || secNameLower.includes('api_key') || secNameLower.includes('api-key');
-      const isBasic = secNameLower === 'basic' || secNameLower.includes('basic_auth') || secNameLower.includes('basic-auth');
-      if (isApiKey) {
-        lines.push(`  -H "X-API-Key: YOUR_API_KEY"`);
-      } else if (isBasic) {
-        lines.push(`  -u "username:password"`);
+      const scheme = securitySchemes?.[sec.name];
+      if (scheme) {
+        if (scheme.type === 'apiKey') {
+          const headerName = (scheme as any).name || sec.name;
+          if (scheme.in === 'query') {
+            const sep = url.includes('?') ? '&' : '?';
+            url = `${url}${sep}${encodeURIComponent(headerName)}=YOUR_API_KEY`;
+            lines[0] = `curl -X ${endpoint.method.toUpperCase()} "${url}"`;
+          } else if (scheme.in === 'cookie') {
+            lines.push(`  -b "${headerName}=YOUR_API_KEY"`);
+          } else {
+            lines.push(`  -H "${headerName}: YOUR_API_KEY"`);
+          }
+        } else if (scheme.type === 'http') {
+          const s = (scheme.scheme || '').toLowerCase();
+          if (s === 'basic') {
+            lines.push(`  -u "username:password"`);
+          } else if (s === 'bearer') {
+            lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
+          } else {
+            lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
+          }
+        } else if (scheme.type === 'oauth2' || scheme.type === 'openIdConnect') {
+          lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
+        } else {
+          lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
+        }
       } else {
-        lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
+        const secNameLower = sec.name.toLowerCase();
+        const isApiKey = secNameLower === 'apikey' || secNameLower.includes('api_key') || secNameLower.includes('api-key');
+        const isBasic = secNameLower === 'basic' || secNameLower.includes('basic_auth') || secNameLower.includes('basic-auth');
+        if (isApiKey) {
+          lines.push(`  -H "X-API-Key: YOUR_API_KEY"`);
+        } else if (isBasic) {
+          lines.push(`  -u "username:password"`);
+        } else {
+          lines.push(`  -H "Authorization: Bearer YOUR_TOKEN"`);
+        }
       }
     }
   }
@@ -263,10 +331,14 @@ export function buildCurlCommand(
         lines.push(`  -d '${sampleBody}'`);
       } else if (isFormUrlEncoded) {
         if (primaryMedia.schema?.properties) {
-          const formFields = Object.keys(primaryMedia.schema.properties)
-            .map((k) => `${k}=value`)
-            .join('&');
-          lines.push(`  --data-urlencode "${formFields || 'field=value'}"`);
+          const fieldNames = Object.keys(primaryMedia.schema.properties);
+          if (fieldNames.length > 0) {
+            for (const k of fieldNames) {
+              lines.push(`  --data-urlencode "${k}=value"`);
+            }
+          } else {
+            lines.push(`  --data-urlencode "field=value"`);
+          }
         } else {
           lines.push(`  -d "field=value"`);
         }

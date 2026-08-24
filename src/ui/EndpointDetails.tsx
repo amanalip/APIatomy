@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EndpointModel, ServerModel, SchemaModel, SecuritySchemeModel } from '../model';
 import { HTTP_METHODS, getStatusCategory } from '../model/httpMethods';
 import { CurlGenerator } from './CurlGenerator';
@@ -28,6 +28,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
     '200': true,
     '201': true,
   });
+  const copyPathTimerRef = useRef<number | null>(null);
 
   const sortedParameters = useMemo(() => {
     const locationOrder: Record<string, number> = { path: 0, query: 1, header: 2, cookie: 3 };
@@ -43,9 +44,16 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
     const success = await copyTextToClipboard(endpoint.path);
     if (success) {
       setCopiedPath(true);
-      setTimeout(() => setCopiedPath(false), 2000);
+      if (copyPathTimerRef.current !== null) window.clearTimeout(copyPathTimerRef.current);
+      copyPathTimerRef.current = window.setTimeout(() => setCopiedPath(false), 2000);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (copyPathTimerRef.current !== null) window.clearTimeout(copyPathTimerRef.current);
+    };
+  }, []);
 
   const methodConfig = HTTP_METHODS[endpoint.method] || HTTP_METHODS.get;
 
@@ -155,7 +163,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
       {/* Body Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {activeTab === 'curl' ? (
-          <CurlGenerator endpoint={endpoint} servers={servers} />
+          <CurlGenerator endpoint={endpoint} servers={servers} securitySchemes={securitySchemes} />
         ) : (
           <>
             {/* Deprecation Warning */}
