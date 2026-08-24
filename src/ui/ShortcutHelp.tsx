@@ -26,30 +26,30 @@ export const ShortcutHelp: React.FC<ShortcutHelpProps> = ({ onClose }) => {
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-label="Keyboard shortcuts"
     >
       <div
         ref={trapRef}
-        className="w-full max-w-md rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden ring-1 ring-black/5"
+        className="w-full max-w-md rounded-xl bg-white border-2 border-blue-500 shadow-2xl overflow-hidden ring-4 ring-blue-500/20"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800">
-          <span className="text-sm font-semibold flex items-center gap-2 text-slate-900 dark:text-slate-100">
-            <Keyboard className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
+          <span className="text-sm font-semibold flex items-center gap-2 text-slate-900">
+            <Keyboard className="w-4 h-4 text-blue-600" />
             Keyboard shortcuts
           </span>
           <button
             ref={closeRef}
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600"
+            className="p-1.5 rounded-lg hover:bg-slate-100 border border-transparent hover:border-slate-200"
             aria-label="Close"
           >
-            <X className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+            <X className="w-4 h-4 text-slate-700" />
           </button>
         </div>
-        <div className="p-4 space-y-2 text-xs bg-white dark:bg-slate-800">
+        <div className="p-4 space-y-2 text-xs bg-white">
           <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-700">
             <span className="text-slate-700 dark:text-slate-200 font-medium">
               Focus endpoint search
