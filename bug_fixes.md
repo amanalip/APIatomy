@@ -1552,5 +1552,35 @@ This document tracks all bug fixes, UI/UX corrections, and performance adjustmen
 - **Root Cause**: Stale closure in `src/hooks/useSpecState.ts`.
 - **Resolution**: Added `latestRawTextRef` synced on `rawText` change and used it in `onmessage` error and `onerror` fallback.
 
+### Fix 354: Security Scheme Changes Ignored in Diff
+- **Issue**: Changing `api_key`, `Bearer` or `OAuth` config, scopes or header name did not appear under Changed.
+- **Root Cause**: `src/ui/DiffView.tsx` only diffed endpoints via `JSON.stringify` and never compared `securitySchemes`.
+- **Resolution**: Added security scheme diff via `Object.keys` and `JSON.stringify` comparison for added, removed and changed, rendered in dedicated Security Schemes section.
+
+### Fix 355: Schema Content Changes Ignored When Count Same
+- **Issue**: Changing a property type, required field, enum or constraint did not show as a change when schema count remained same.
+- **Root Cause**: Only schema counts were compared.
+- **Resolution**: Added schema diff that compares each schema's `JSON.stringify` for added, removed and changed, shown in Schemas section.
+
+### Fix 356: Server Changes Only Show Counts
+- **Issue**: Changing `https://old.api.com` to `https://new.api.com` still gave `Servers: 1 to 1` with no detail.
+- **Root Cause**: Summary only displayed counts.
+- **Resolution**: Added server diff via stringified server objects, showing Added and Removed URLs explicitly.
+
+### Fix 357: Global Metadata Changes Not Detected
+- **Issue**: `info.version`, `title`, `tags`, `description`, `contact`, `license`, `openApiVersion` and global security changes were not reported.
+- **Root Cause**: No global comparison in `DiffView`.
+- **Resolution**: Added `globalChanges` array comparing title, version, description, termsOfService, contact, license, openApiVersion, tags and global security, rendered in Global Metadata section.
+
+### Fix 358: Parse Problems Silently Swallowed as Zero Changes
+- **Issue**: `catch {}` made an invalid edited spec look like `0 changes` instead of showing errors.
+- **Root Cause**: Early return swallowed parse failures and did not surface diagnostics.
+- **Resolution**: Added `hasParseError` check for `Invalid Spec`, `Parse Error` and syntax diagnostics, showing `Old spec has parse errors` and `New spec has parse errors` banners with diagnostics.
+
+### Fix 359: Diff Should Update Live with Small Debounce
+- **Issue**: Diff did a full parse on every keystroke, causing jank for large specs.
+- **Root Cause**: `useMemo` on `oldText`/`newText` without debounce.
+- **Resolution**: Added debounced state for old and new text with 150 ms for small specs and 300 ms for large specs (over 80k), updating live with roughly 150 to 300 ms delay.
+
 
 

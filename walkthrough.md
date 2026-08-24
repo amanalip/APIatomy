@@ -57,11 +57,11 @@ APIatomy is built and verified as a fully client-side OpenAPI and Swagger visual
 ## Verification Results
 
 ### Automated Tests
-Vitest test suite covering parser, Swagger converter, ref resolver, URL hash codec, normalizer, validator, graph layout, curl generator and more:
+Vitest test suite covering parser, Swagger converter, ref resolver, URL hash codec, normalizer, validator, graph layout, curl generator, diff regression and more:
 ```bash
 npm test
 ```
-Result: **24 test files passed, 197 tests passed (100%)**.
+Result: **25 test files passed, 207 tests passed (100%)**.
 
 ### Code Quality
 ```bash
@@ -78,6 +78,9 @@ Result: **Clean lint with max-warnings 0, Prettier formatted, coverage threshold
 
 ### Parser Workers
 - Worker receives file map for external `$ref`; nested refs inside external files use `basePath` scoping; fallback parses latest text via ref.
+
+### Diff
+- Live semantic diff with 150 to 300 ms debounce across endpoints, schemas, security schemes, servers and global metadata; parse errors shown as banners.
 
 ### Production Build
 ```bash

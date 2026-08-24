@@ -26,6 +26,7 @@ Zero backend, no accounts, no specs leaving your machine. The entire application
 - **cURL Generator**: Builds copy ready cURL commands with server URL normalization including operation and path level servers, template variable substitution, path and query encoding, array explode and delimited styles, `allowReserved` handling, header and cookie support, object query serialization, auth aware headers with selector for OR alternatives and correct `multipart` and `urlencoded` bodies.
 - **Zero Backend Sharing**: Private link sharing via URL hash with LZ String compression that does not pollute the address bar, share dialog with size display and warnings, compact link via minified normalization (with correct per-file scoping for large specs), file fallback for large specs, source URL sharing when loaded from URL (cleared automatically after local edits), app state preservation with correct single percent decoding including `%` in IDs, native system share and clipboard toast feedback.
 - **Import and Workspaces**: Upload single or multiple files for multi file projects with correct root selection and cross-file `$ref` resolution including nested refs inside external files, parser Worker correctly receives file map, load from public URL with CORS handling, optional IndexedDB workspaces for explicit saves (clearing stale file state on load), and onboarding for first use with privacy notice.
+- **API Diff**: Live semantic diff across endpoints, schemas, security schemes, servers and global metadata with 150 to 300 ms debounce, parse error banners instead of silent zero changes and regression tests per category.
 - **Mobile and UX**: Full screen drawer editor on phones, command palette via Ctrl/Cmd+K, quick search via `/` in Explorer and Schema Viewer, keyboard shortcut help via `?` (with correct dark mode styling and no interference in CodeMirror), theme toggle with system sync that persists only explicit choice.
 - **Performance and Architecture**: Parsing, compression and Dagre layout can run off the main thread via experimental workers, shared code extracted to hooks and services, strong TypeScript typing and reusable guards.
 - **Dark and Light Theme**: Theme toggle with localStorage persistence for explicit preference and system preference sync.
@@ -96,8 +97,8 @@ APIatomy/
 │   │   ├── UrlImportDialog.tsx  # Load from URL dialog
 │   │   ├── Onboarding.tsx       # First use onboarding
 │   │   ├── CommandPalette.tsx   # Ctrl K palette for navigation
-│   │   ├── ShortcutHelp.tsx     # Keyboard shortcut help
-│   │   ├── DiffView.tsx         # API diff view for added, removed and changed endpoints
+│   │   ├── ShortcutHelp.tsx     # Keyboard shortcut help with correct palette docs
+│   │   ├── DiffView.tsx         # API diff with live debounce, parse error banners and full semantic diff for endpoints, schemas, security, servers and global metadata
 │   │   ├── VirtualList.tsx      # Simple virtualization for large lists
 │   │   ├── Toast.tsx            # In app toast notifications
 │   │   └── ErrorBoundary.tsx    # React error boundary

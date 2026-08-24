@@ -122,11 +122,12 @@ APIatomy/
 - Zoom, pan, minimap, fullscreen, and node focus highlighting.
 
 ### Milestone 5: Polish, Sharing, PNG Export & Diagnostics
-- Compression & URL hash encoding/decoding for instant 1-click sharing.
+- Compression & URL hash encoding/decoding for instant 1-click sharing with single decode and stale Worker clear.
 - PNG export for the active topology graph view via `html-to-image`.
 - Copy normalized JSON / YAML to clipboard.
 - Bottom diagnostics drawer showing syntax errors and semantic warnings with click-to-jump to editor line.
 - Dark and light theme toggle saved to `localStorage`.
+- Live API diff across endpoints, schemas, security, servers and global metadata with debounce and parse error banners.
 
 ### Milestone 6: CI/CD, E2E & Production Build Verification
 - Update `.github/workflows/deploy.yml` to build Vite static assets (`dist/`) and deploy to GitHub Pages.

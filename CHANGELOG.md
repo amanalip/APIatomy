@@ -2,6 +2,9 @@
 
 All notable changes to APIatomy will be documented here.
 
+## [0.2.2] - 2026-08-24
+- Fix API diff to live detect semantic changes across endpoints, schemas, security schemes, servers and global metadata, show parse errors instead of zero changes, add 150 to 300 ms debounce and regression tests per category
+
 ## [0.2.1] - 2026-08-24
 - Fix keyboard shortcuts dark mode styling and CodeMirror `?` guard, reserve Ctrl/Cmd+K for palette and use `/` for search in Explorer and Schema Viewer, fix shortcut help docs
 - Fix multi-file `$ref` worker file map, workspace stale state, root file selection and nested external `$ref` scoping via basePath
