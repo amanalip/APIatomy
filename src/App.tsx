@@ -177,7 +177,7 @@ export function App() {
 
   useEffect(() => {
     if (activeView === 'diff' && diffOldText === null) {
-      setDiffOldText(PETSTORE_SPEC);
+      setDiffOldText('');
     }
   }, [activeView, diffOldText]);
 
@@ -347,7 +347,7 @@ export function App() {
           {/* View 4: Diff */}
           {activeView === 'diff' && (
             <div className="flex-1 h-full overflow-auto bg-white dark:bg-slate-950">
-              <DiffView oldText={diffOldText ?? PETSTORE_SPEC} newText={rawText} />
+              <DiffView oldText={diffOldText ?? ''} newText={rawText} />
             </div>
           )}
         </div>
@@ -418,7 +418,6 @@ export function App() {
             setIsShareOpen(true);
           }}
           onViewChange={(view) => {
-            if (view === 'diff' && !diffOldText) setDiffOldText(rawText);
             setActiveView(view as 'endpoints' | 'schemas' | 'graph' | 'diff');
           }}
         />
