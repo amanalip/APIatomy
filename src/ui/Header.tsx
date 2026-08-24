@@ -17,6 +17,7 @@ import {
   Network,
   ChevronDown,
   Menu,
+  Link2,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -25,8 +26,10 @@ interface HeaderProps {
   setActiveView: (view: 'endpoints' | 'schemas' | 'graph') => void;
   onSelectSample: (sample: SampleSpecOption) => void;
   onUploadText: (text: string) => void;
+  onOpenUrl: () => void;
   isEditorOpen: boolean;
   setIsEditorOpen: (open: boolean) => void;
+  sourceUrl?: string | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -35,8 +38,10 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveView,
   onSelectSample,
   onUploadText,
+  onOpenUrl,
   isEditorOpen,
   setIsEditorOpen,
+  sourceUrl,
 }) => {
   const { theme, toggleTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -273,6 +278,15 @@ export const Header: React.FC<HeaderProps> = ({
           <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           <span className="hidden sm:inline">Upload</span>
         </button>
+        <button
+          onClick={onOpenUrl}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 transition"
+          title="Load OpenAPI spec from public URL"
+          aria-label="Open from URL"
+        >
+          <Link2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+          <span className="hidden sm:inline">URL</span>
+        </button>
         <label htmlFor="spec-upload-input" className="sr-only">Upload OpenAPI spec file</label>
         <input
           id="spec-upload-input"
@@ -334,7 +348,7 @@ export const Header: React.FC<HeaderProps> = ({
           </svg>
         </a>
       </div>
-      {isShareOpen && <ShareDialog specText={spec.rawText} specTitle={spec.title} onClose={() => setIsShareOpen(false)} />}
+      {isShareOpen && <ShareDialog specText={spec.rawText} specTitle={spec.title} sourceUrl={sourceUrl} onClose={() => setIsShareOpen(false)} />}
     </header>
   );
 };

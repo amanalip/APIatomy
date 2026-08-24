@@ -6,10 +6,11 @@ import { getShareUrl, getShareSize, downloadShareFile, canUseNativeShare, native
 interface ShareDialogProps {
   specText: string;
   specTitle?: string;
+  sourceUrl?: string | null;
   onClose: () => void;
 }
 
-export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, onClose }) => {
+export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, sourceUrl, onClose }) => {
   const [compact, setCompact] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copiedCompact, setCopiedCompact] = useState(false);
@@ -164,6 +165,32 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({ specText, specTitle, o
               </div>
             )}
           </div>
+
+          {sourceUrl && (
+            <div className="space-y-2 p-3 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
+              <div className="text-xs font-medium text-slate-700 dark:text-slate-300">Source URL available</div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                This spec was loaded from a public URL. You can share the source URL directly.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  readOnly
+                  value={sourceUrl}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="flex-1 px-2 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded text-slate-700 dark:text-slate-300 truncate"
+                />
+                <button
+                  onClick={async () => {
+                    await copyTextToClipboard(sourceUrl);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                >
+                  <Copy className="w-3 h-3" />
+                  Copy URL
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             <button

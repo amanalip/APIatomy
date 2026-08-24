@@ -11,6 +11,8 @@ import { EndpointDetails } from './ui/EndpointDetails';
 import { SchemaViewer } from './ui/SchemaViewer';
 import { TopologyGraph } from './graph/TopologyGraph';
 import { DiagnosticsBar } from './ui/DiagnosticsBar';
+import { Onboarding } from './ui/Onboarding';
+import { UrlImportDialog } from './ui/UrlImportDialog';
 
 export function App() {
   const [rawText, setRawText] = useState<string>(() => {
@@ -27,6 +29,8 @@ export function App() {
   const [selectedSchemaName, setSelectedSchemaName] = useState<string | undefined>(undefined);
   const [editorWidth, setEditorWidth] = useState(420); // default px width for left pane
   const isResizingRef = useRef(false);
+  const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState<string | null>(null);
 
   const editorPaneRef = useRef<EditorPaneRef>(null);
 
@@ -150,6 +154,7 @@ export function App() {
     setRawText(sample.spec);
     editorPaneRef.current?.setContent(sample.spec);
     setSelectedEndpoint(null);
+    setSourceUrl(null);
     window.location.hash = '';
   };
 
@@ -157,6 +162,22 @@ export function App() {
     setRawText(text);
     editorPaneRef.current?.setContent(text);
     setSelectedEndpoint(null);
+    setSourceUrl(null);
+    if (typeof window !== 'undefined' && window.location.hash) {
+      window.location.hash = '';
+      try {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      } catch {
+        window.location.hash = '';
+      }
+    }
+  };
+
+  const handleLoadFromUrl = (text: string, url: string) => {
+    setRawText(text);
+    editorPaneRef.current?.setContent(text);
+    setSelectedEndpoint(null);
+    setSourceUrl(url);
     if (typeof window !== 'undefined' && window.location.hash) {
       window.location.hash = '';
       try {
@@ -196,6 +217,7 @@ export function App() {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-150">
+      <Onboarding />
       {/* Header Navigation */}
       <Header
         spec={spec}
@@ -203,18 +225,31 @@ export function App() {
         setActiveView={setActiveView}
         onSelectSample={handleSelectSample}
         onUploadText={handleUploadText}
+        onOpenUrl={() => setIsUrlDialogOpen(true)}
         isEditorOpen={isEditorOpen}
         setIsEditorOpen={setIsEditorOpen}
+        sourceUrl={sourceUrl}
       />
 
       {/* Main Split-Pane Workspace */}
       <div id="main-content" className="flex-1 flex overflow-hidden relative">
-        {/* Left: Code Editor Pane */}
+        {/* Mobile backdrop */}
+        {isEditorOpen && (
+          <div className="fixed inset-0 z-10 bg-slate-900/30 backdrop-blur-sm lg:hidden" onClick={() => setIsEditorOpen(false)} aria-hidden="true" />
+        )}
+        {/* Left: Code Editor Pane - full screen drawer on mobile, side pane on large */}
         {isEditorOpen && (
           <div
-            style={{ width: `${editorWidth}px` }}
-            className="h-full flex flex-col border-r border-slate-200 dark:border-slate-800 shrink-0 relative bg-white dark:bg-slate-950 transition-colors duration-150"
+            style={typeof window !== 'undefined' && window.innerWidth >= 1024 ? { width: `${editorWidth}px` } : undefined}
+            className="absolute inset-0 z-20 flex flex-col bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 lg:static lg:inset-auto lg:z-auto lg:h-full lg:shrink-0 lg:relative transition-colors duration-150 w-full lg:w-auto"
           >
+            <button
+              onClick={() => setIsEditorOpen(false)}
+              className="lg:hidden absolute top-2 right-2 z-10 p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow"
+              aria-label="Close editor"
+            >
+              <span className="text-xs px-1">Close</span>
+            </button>
             <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-900/60 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
               <span className="font-mono text-[11px] font-medium">
                 Spec Editor ({spec.originalFormat === 'swagger2' ? 'Swagger 2.0' : 'OpenAPI 3.x'})
@@ -237,7 +272,7 @@ export function App() {
               />
             </div>
 
-            {/* Resizer Handle - enlarged hit area with visual grab dots */}
+            {/* Resizer Handle - hidden on mobile, visible on large */}
             <div
               onMouseDown={handleMouseDownResize}
               role="separator"
@@ -255,7 +290,7 @@ export function App() {
                 else if (e.key === 'End') setEditorWidth(Math.max(280, window.innerWidth - 360));
                 else if (e.key === 'Enter') setEditorWidth(420);
               }}
-              className="absolute top-0 right-0 w-2.5 h-full cursor-col-resize hover:bg-blue-500/50 active:bg-blue-500 transition z-20 focus-visible:ring-2 focus-visible:ring-blue-500 outline-none flex items-center justify-center group"
+              className="hidden lg:flex absolute top-0 right-0 w-2.5 h-full cursor-col-resize hover:bg-blue-500/50 active:bg-blue-500 transition z-20 focus-visible:ring-2 focus-visible:ring-blue-500 outline-none items-center justify-center group"
               title="Drag to resize editor pane (or use Arrow keys when focused, Home/End for min/max, Enter to reset)"
             >
               <span className="w-0.5 h-6 rounded-full bg-slate-300 dark:bg-slate-600 group-hover:bg-blue-500 transition" />
@@ -325,6 +360,12 @@ export function App() {
         diagnostics={spec.diagnostics}
         onSelectDiagnostic={handleSelectDiagnostic}
       />
+      {isUrlDialogOpen && (
+        <UrlImportDialog
+          onClose={() => setIsUrlDialogOpen(false)}
+          onLoad={(text, url) => handleLoadFromUrl(text, url)}
+        />
+      )}
     </div>
   );
 }
