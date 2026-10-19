@@ -17,22 +17,49 @@ const documentationKeys = new Set([
 ]);
 
 /** Stable object comparison: property order and retained source AST are not API changes. */
-export function stableValue(value: unknown, omitDocs = false): string {
-  function clean(v: unknown): unknown {
-    if (Array.isArray(v)) return v.map(clean);
+export function stableValue(
+  value: unknown,
+  omitDocs = false,
+  context: 'model' | 'literal' = 'model'
+): string {
+  const maps = new Set([
+    'properties',
+    'headers',
+    'variables',
+    'schemas',
+    'securitySchemes',
+    'flows',
+    'scopes',
+  ]);
+  const literals = new Set(['enum', 'default', 'example', 'examples']);
+  function clean(v: unknown, kind: 'model' | 'map' | 'literal'): unknown {
+    if (Array.isArray(v)) return v.map((item) => clean(item, kind));
     if (v && typeof v === 'object')
       return Object.fromEntries(
         Object.entries(v)
           .filter(
-            ([k, val]) =>
-              k !== 'raw' && val !== undefined && (!omitDocs || !documentationKeys.has(k))
+            ([key, val]) =>
+              val !== undefined &&
+              (kind !== 'model' || (key !== 'raw' && (!omitDocs || !documentationKeys.has(key))))
           )
           .sort(([a], [b]) => a.localeCompare(b))
-          .map(([k, val]) => [k, clean(val)])
+          .map(([key, val]) => {
+            const childKind =
+              kind === 'literal'
+                ? 'literal'
+                : kind === 'map'
+                  ? 'model'
+                  : literals.has(key)
+                    ? 'literal'
+                    : maps.has(key)
+                      ? 'map'
+                      : 'model';
+            return [key, clean(val, childKind)];
+          })
       );
     return v;
   }
-  return JSON.stringify(clean(value));
+  return JSON.stringify(clean(value, context));
 }
 
 /** Conservative compatibility rules: uncertain structural changes require review. */
@@ -66,7 +93,12 @@ export function schemaBreaks(
   if (
     acceptingEnum &&
     (!offeringEnum ||
-      offeringEnum.some((v) => !acceptingEnum.some((a) => stableValue(a) === stableValue(v))))
+      offeringEnum.some(
+        (v) =>
+          !acceptingEnum.some(
+            (a) => stableValue(a, false, 'literal') === stableValue(v, false, 'literal')
+          )
+      ))
   )
     return true;
   const oldRequired = new Set(oldSchema.required || []);
