@@ -1,5 +1,6 @@
+import { readImportResponse } from '../utils/readImportResponse';
 import { createPortal } from 'react-dom';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Link2, Loader2, AlertTriangle } from 'lucide-react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
@@ -16,25 +17,41 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
   const overlayRef = useRef<HTMLDivElement>(null);
   const trapRef = useFocusTrap(true);
 
+  const abortRef = useRef<AbortController | null>(null);
+  const closedRef = useRef(false);
+  const closeDialog = useCallback(() => {
+    closedRef.current = true;
+    abortRef.current?.abort();
+    abortRef.current = null;
+    onClose();
+  }, [onClose]);
   useEffect(() => {
+    closedRef.current = false;
     inputRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+    return () => {
+      closedRef.current = true;
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, []);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeDialog();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  const abortRef = useRef<AbortController | null>(null);
+  }, [closeDialog]);
 
   const handleFetch = async () => {
+    if (closedRef.current || abortRef.current) return;
     const trimmed = url.trim();
     if (!trimmed) {
       setError('Please enter a URL');
       return;
     }
     try {
-      new URL(trimmed);
+      const parsed = new URL(trimmed);
+      if (!['https:', 'http:'].includes(parsed.protocol)) throw new Error('Unsupported URL');
     } catch {
       setError('Invalid URL');
       return;
@@ -49,23 +66,15 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
       if (!res.ok) {
         throw new Error(`Request failed ${res.status} ${res.statusText}`);
       }
-      const lenHeader = res.headers.get('content-length');
-      if (lenHeader) {
-        const len = parseInt(lenHeader, 10);
-        if (!isNaN(len) && len > 5 * 1024 * 1024) {
-          throw new Error('Remote file too large (over 5 MB)');
-        }
-      }
-      const text = await res.text();
-      if (text.length > 5 * 1024 * 1024) {
-        throw new Error('Remote file too large (over 5 MB)');
-      }
+      const text = await readImportResponse(res, controller.signal);
+      if (closedRef.current || controller.signal.aborted || abortRef.current !== controller) return;
       if (!text.trim()) throw new Error('Empty response');
       onLoad(text, trimmed);
-      onClose();
+      closeDialog();
     } catch (err) {
+      if (closedRef.current || abortRef.current !== controller) return;
       const msg = err instanceof Error ? err.message : String(err);
-      if (err instanceof DOMException && err.name === 'AbortError') {
+      if (controller.signal.aborted) {
         setError('Request timed out or cancelled');
       } else if (msg.includes('Failed to fetch') || msg.includes('CORS')) {
         setError(
@@ -76,8 +85,10 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
       }
     } finally {
       window.clearTimeout(timeout);
-      setLoading(false);
-      abortRef.current = null;
+      if (!closedRef.current && abortRef.current === controller) {
+        setLoading(false);
+        abortRef.current = null;
+      }
     }
   };
 
@@ -85,7 +96,7 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
     <div
       ref={overlayRef}
       onClick={(e) => {
-        if (e.target === overlayRef.current) onClose();
+        if (e.target === overlayRef.current) closeDialog();
       }}
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur"
       role="dialog"
@@ -102,7 +113,7 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
             Open from URL
           </span>
           <button
-            onClick={onClose}
+            onClick={closeDialog}
             className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
             aria-label="Close"
           >
@@ -135,8 +146,11 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
               onClick={() => {
                 if (loading && abortRef.current) {
                   abortRef.current.abort();
+                  abortRef.current = null;
+                  setLoading(false);
+                  setError('Request cancelled');
                 } else {
-                  onClose();
+                  closeDialog();
                 }
               }}
               className="px-3 py-1.5 text-xs rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
