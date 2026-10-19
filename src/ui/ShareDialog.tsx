@@ -1,12 +1,13 @@
-import { captureProject, encodeProject } from '../share/project';
+import { getFileRevision, subscribeFileMap } from '../parser/fileMap';
+import { useSharePreparation } from '../hooks/useSharePreparation';
+import { captureProject } from '../share/project';
 import { createPortal } from 'react-dom';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useSyncExternalStore } from 'react';
 import { X, Copy, Check, Download, Share2, Minimize2, AlertTriangle } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
 import {
-  getShareUrl,
-  getShareSize,
-  getCompactSpecText,
+  getUrlFromHash,
+  measureShareUrl,
   downloadShareFile,
   canUseNativeShare,
   nativeShare,
@@ -38,62 +39,19 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const trapRef = useFocusTrap(true);
 
-  const [isPreparing, setIsPreparing] = useState(false);
-  const [asyncUrl, setAsyncUrl] = useState<string | null>(null);
-  const compactAvailable = getCompactSpecText(specText) !== null;
-  const syncCompactUrl = compactAvailable
-    ? getShareUrl(specText, true, includeState ? appState : undefined)
-    : '';
-  const syncUrl = getShareUrl(
-    specText,
-    compact && compactAvailable,
-    includeState ? appState : undefined
+  const fileRevision = useSyncExternalStore(subscribeFileMap, getFileRevision);
+  const project = useMemo(() => captureProject(specText), [specText, fileRevision]);
+  const { result, error, isPreparing } = useSharePreparation(project);
+  const compactAvailable = Boolean(result?.compactHash);
+  const state = includeState ? appState : undefined;
+  const compactUrl = getUrlFromHash(result?.compactHash || '', state);
+  const url = getUrlFromHash(
+    (compact && compactAvailable ? result?.compactHash : result?.hash) || '',
+    state
   );
-  const compactUrl = asyncUrl && compact ? asyncUrl : syncCompactUrl;
-  const url = asyncUrl ? asyncUrl : syncUrl;
-  const size = getShareSize(
-    specText,
-    compact && compactAvailable,
-    includeState ? appState : undefined
-  );
-  const compactSize = compactAvailable
-    ? getShareSize(specText, true, includeState ? appState : undefined)
-    : { bytes: 0, kb: '0.0', urlLength: 0, isWarn: false, isLarge: false };
+  const size = useMemo(() => measureShareUrl(url), [url]);
+  const compactSize = useMemo(() => measureShareUrl(compactUrl), [compactUrl]);
   const isLarge = size.isLarge || size.urlLength > 8000;
-
-  useEffect(() => {
-    if (specText.length < 80000) {
-      setAsyncUrl(null);
-      return;
-    }
-    setIsPreparing(true);
-    setAsyncUrl(null);
-    const worker = new Worker(new URL('../workers/compressWorker.ts', import.meta.url), {
-      type: 'module',
-    });
-    const id = Date.now();
-    worker.onmessage = (e: MessageEvent<{ id: number; compressed?: string }>) => {
-      if (e.data.compressed) {
-        const hash = `#spec=${e.data.compressed}`;
-        const base = `${window.location.origin}${window.location.pathname}${hash}`;
-        const finalUrl =
-          includeState && appState && Object.keys(appState).length > 0
-            ? `${base}&state=${encodeURIComponent(JSON.stringify(appState))}`
-            : base;
-        setAsyncUrl(finalUrl);
-      }
-      setIsPreparing(false);
-      worker.terminate();
-    };
-    worker.onerror = () => {
-      setIsPreparing(false);
-      worker.terminate();
-    };
-    const textToCompress =
-      compact && compactAvailable ? getCompactSpecText(specText) || specText : specText;
-    worker.postMessage({ id, text: encodeProject(captureProject(textToCompress)) });
-    return () => worker.terminate();
-  }, [specText, compact, compactAvailable, appState, includeState]);
 
   useEffect(() => {
     closeBtnRef.current?.focus();
@@ -112,13 +70,8 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
   const handleCopy = async (useCompact: boolean) => {
     const targetUrl = useCompact ? compactUrl : url;
-    const fallback = getShareUrl(
-      specText,
-      useCompact && compactAvailable,
-      includeState ? appState : undefined
-    );
-    const finalUrl = targetUrl || fallback;
-    const success = await copyTextToClipboard(finalUrl);
+    if (!targetUrl || isPreparing) return;
+    const success = await copyTextToClipboard(targetUrl);
     if (success) {
       if (useCompact) {
         setCopiedCompact(true);
@@ -178,6 +131,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         </div>
 
         <div className="p-4 space-y-4">
+          {error && (
+            <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+              {error}. You can still download the share file.
+            </p>
+          )}
           <div className="space-y-2">
             <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
               Shareable URL
@@ -192,7 +150,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               />
               <button
                 onClick={() => handleCopy(false)}
-                disabled={isPreparing}
+                disabled={isPreparing || !url}
                 className="flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-500 transition shrink-0 disabled:opacity-50"
               >
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
@@ -249,7 +207,11 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               <span className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Minimize2 className="w-3 h-3" />
                 Compact Private Link &middot;{' '}
-                {compactAvailable ? `${compactSize.kb} KB` : 'unavailable'}
+                {isPreparing
+                  ? 'Preparing...'
+                  : compactAvailable
+                    ? `${compactSize.kb} KB`
+                    : 'unavailable'}
               </span>
             </label>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -261,13 +223,14 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
               <div className="flex gap-2">
                 <input
                   readOnly
+                  aria-label="Compact shareable URL"
                   value={compactUrl}
                   onFocus={(e) => e.currentTarget.select()}
                   className="flex-1 px-2 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded text-slate-700 dark:text-slate-300 truncate"
                 />
                 <button
                   onClick={() => handleCopy(true)}
-                  disabled={isPreparing}
+                  disabled={isPreparing || !url}
                   className="flex items-center gap-1 px-2.5 py-1.5 text-xs rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50"
                 >
                   {copiedCompact ? (
@@ -319,6 +282,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
             </button>
             {nativeSupported && (
               <button
+                disabled={isPreparing || !url}
                 onClick={handleNativeShare}
                 className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
               >

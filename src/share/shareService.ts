@@ -40,8 +40,11 @@ export function getShareUrl(
   compact = false,
   appState?: Record<string, unknown>
 ): string {
-  if (typeof window === 'undefined') return getShareHash(specText, compact);
-  const hash = getShareHash(specText, compact);
+  return getUrlFromHash(getShareHash(specText, compact), appState);
+}
+
+export function getUrlFromHash(hash: string, appState?: Record<string, unknown>): string {
+  if (typeof window === 'undefined') return hash;
   if (!hash) return '';
   if (appState && Object.keys(appState).length > 0) {
     try {
@@ -70,9 +73,17 @@ export function getShareSize(
   compact = false,
   appState?: Record<string, unknown>
 ): { bytes: number; kb: string; urlLength: number; isWarn: boolean; isLarge: boolean } {
-  const hash = getShareHash(specText, compact);
-  const url = typeof window !== 'undefined' ? getShareUrl(specText, compact, appState) : hash;
-  if (!hash) return { bytes: 0, kb: '0.0', urlLength: 0, isWarn: false, isLarge: false };
+  return measureShareUrl(getShareUrl(specText, compact, appState));
+}
+
+export function measureShareUrl(url: string): {
+  bytes: number;
+  kb: string;
+  urlLength: number;
+  isWarn: boolean;
+  isLarge: boolean;
+} {
+  if (!url) return { bytes: 0, kb: '0.0', urlLength: 0, isWarn: false, isLarge: false };
   let bytes: number;
   try {
     bytes = new TextEncoder().encode(url).length;

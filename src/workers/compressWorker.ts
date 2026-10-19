@@ -1,11 +1,10 @@
-import LZString from 'lz-string';
+import { SpecProject } from '../share/project';
+import { prepareShare } from '../share/sharePreparation';
 
-self.onmessage = (e: MessageEvent<{ id: number; text: string }>) => {
-  const { id, text } = e.data;
+self.onmessage = (event: MessageEvent<{ project: SpecProject }>) => {
   try {
-    const compressed = LZString.compressToEncodedURIComponent(text);
-    (self as unknown as Worker).postMessage({ id, compressed });
+    self.postMessage({ result: prepareShare(event.data.project) });
   } catch (err) {
-    (self as unknown as Worker).postMessage({ id, error: String(err) });
+    self.postMessage({ error: err instanceof Error ? err.message : String(err) });
   }
 };

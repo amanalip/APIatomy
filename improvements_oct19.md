@@ -36,7 +36,7 @@ Review baseline: `npm run check` passed, including all 207 tests, TypeScript, li
   - Verification: save, reopen, and share a multi-file project with nested external references; confirm the resolved schemas and endpoints remain intact.
   - References: [src/utils/workspaceStore.ts:16](src/utils/workspaceStore.ts#L16), [src/share/shareService.ts:27](src/share/shareService.ts#L27).
 
-- [ ] **Avoid repeated synchronous compression in the share dialog.**
+- [x] **Avoid repeated synchronous compression in the share dialog.**
   - Finding: rendering generates regular and compact URLs synchronously and repeats compression for size calculations before the compression worker runs.
   - Improvement: memoize preparation, derive size from the prepared URL, and use the worker for large inputs without first repeating the work on the main thread.
   - Verification: confirm opening the dialog and changing its options stay responsive for large specs, and that URL sizes match the generated links.
