@@ -48,7 +48,9 @@ export function App() {
   const [activeView, setActiveView] = useState<'endpoints' | 'schemas' | 'graph' | 'diff'>(
     'endpoints'
   );
-  const [isEditorOpen, setIsEditorOpen] = useState(true);
+  const [isEditorOpen, setIsEditorOpen] = useState(
+    () => typeof window === 'undefined' || window.innerWidth >= 1024
+  );
   const [selectedEndpoint, setSelectedEndpoint] = useState<EndpointModel | null>(null);
   const [selectedSchemaName, setSelectedSchemaName] = useState<string | undefined>(undefined);
   const { editorWidth, setEditorWidth, handleMouseDownResize } = useResizableEditor(420);
@@ -173,13 +175,7 @@ export function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      const isInput =
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.classList.contains('cm-content'));
-      if (!isInput && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsPaletteOpen(true);
       }
@@ -218,7 +214,7 @@ export function App() {
       />
 
       {/* Main Split-Pane Workspace */}
-      <div id="main-content" className="flex-1 flex overflow-hidden relative">
+      <main id="main-content" className="flex-1 flex overflow-hidden relative">
         {/* Mobile backdrop */}
         {isEditorOpen && (
           <div
@@ -248,7 +244,7 @@ export function App() {
               <span className="font-mono text-[11px] font-medium">
                 Spec Editor ({spec.originalFormat === 'swagger2' ? 'Swagger 2.0' : 'OpenAPI 3.x'})
               </span>
-              <span className="text-[10px] text-slate-500">Live Parser</span>
+              <span className="text-[10px] text-slate-600 dark:text-slate-400">Live Parser</span>
             </div>
 
             <div className="flex-1 overflow-hidden">
@@ -344,7 +340,7 @@ export function App() {
           {activeView === 'graph' && (
             <div className="flex-1 h-full">
               <React.Suspense
-                fallback={<div className="p-4 text-xs text-slate-500">Loading graph...</div>}
+                fallback={<div className="p-4 text-xs text-slate-600">Loading graph...</div>}
               >
                 <TopologyGraph
                   spec={spec}
@@ -367,7 +363,7 @@ export function App() {
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {/* Bottom Diagnostics Drawer */}
       <DiagnosticsBar diagnostics={spec.diagnostics} onSelectDiagnostic={handleSelectDiagnostic} />

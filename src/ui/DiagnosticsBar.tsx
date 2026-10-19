@@ -86,7 +86,11 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
   }, [diagnostics, activeFilter]);
 
   return (
-    <div className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 z-20 transition-colors duration-150 shadow-lg">
+    <div
+      role="region"
+      aria-label="Specification diagnostics"
+      className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 z-20 transition-colors duration-150 shadow-lg"
+    >
       {/* Diagnostics Bar Toggle */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50/90 dark:bg-slate-900/90 text-xs border-b border-slate-200 dark:border-slate-800">
         <button
@@ -205,6 +209,8 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
 
           <button
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? 'Collapse diagnostics' : 'Expand diagnostics'}
+            aria-expanded={isOpen}
             className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
           >
             {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}

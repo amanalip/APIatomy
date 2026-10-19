@@ -123,7 +123,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
         <div className="p-3 border-b border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
             <span>Schemas</span>
-            <span className="text-[10px] font-normal text-slate-400 font-mono">
+            <span className="text-[10px] font-normal text-slate-600 font-mono">
               ({schemaNames.length}
               {Object.keys(schemas).length !== schemaNames.length
                 ? ` / ${Object.keys(schemas).length}`
@@ -132,7 +132,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
             </span>
           </div>
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-slate-600 absolute left-2.5 top-2.5 pointer-events-none" />
             <input
               ref={searchInputRef}
               type="text"
@@ -145,14 +145,14 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
               aria-label="Search schemas"
               className="w-full pl-8 pr-14 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
-            <span className="absolute right-7 top-1.5 hidden sm:flex items-center text-[9px] font-mono px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 pointer-events-none">
+            <span className="absolute right-7 top-1.5 hidden sm:flex items-center text-[9px] font-mono px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700 pointer-events-none">
               /
             </span>
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 aria-label="Clear schema search"
-                className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-1 focus-visible:ring-blue-500"
+                className="absolute right-2 top-2 text-slate-600 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-1 focus-visible:ring-blue-500"
                 title="Clear search (Esc)"
               >
                 <X className="w-3.5 h-3.5" />
@@ -163,9 +163,9 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
 
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {schemaNames.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs space-y-2 px-2">
+            <div className="text-center py-8 text-slate-600 dark:text-slate-500 text-xs space-y-2 px-2">
               <div className="mx-auto w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
-                <Box className="w-4 h-4 text-slate-400" />
+                <Box className="w-4 h-4 text-slate-600" />
               </div>
               <div className="font-medium text-slate-600 dark:text-slate-400">
                 {searchQuery ? 'No schemas match your search' : 'No schemas defined'}
@@ -329,7 +329,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                   </>
                 ) : (
                   <>
-                    <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    <Copy className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
                     <span>Copy AST</span>
                   </>
                 )}
@@ -392,7 +392,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                         </>
                       ) : (
                         <>
-                          <Copy className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                          <Copy className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
                           <span>Copy Mock {mockFormat.toUpperCase()}</span>
                         </>
                       )}
@@ -412,7 +412,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
             </div>
           </>
         ) : (
-          <div className="flex items-center justify-center h-full text-slate-400 dark:text-slate-500 text-xs">
+          <div className="flex items-center justify-center h-full text-slate-600 dark:text-slate-500 text-xs">
             Select a schema from the left to view structure and properties.
           </div>
         )}
@@ -453,16 +453,16 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
             {String(schema.type || 'object / any')}
           </span>
           {schema.format && (
-            <span className="text-slate-400 dark:text-slate-500 ml-2">&lt;{schema.format}&gt;</span>
+            <span className="text-slate-600 dark:text-slate-500 ml-2">&lt;{schema.format}&gt;</span>
           )}
         </div>
         {schema.description && (
-          <div className="text-slate-500 dark:text-slate-400 font-sans text-[11px]">
+          <div className="text-slate-600 dark:text-slate-400 font-sans text-[11px]">
             {schema.description}
           </div>
         )}
         {schema.default !== undefined && (
-          <div className="text-slate-500 dark:text-slate-400">
+          <div className="text-slate-600 dark:text-slate-400">
             Default: {JSON.stringify(schema.default)}
           </div>
         )}
@@ -496,7 +496,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                 key={idx}
                 className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800"
               >
-                <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mb-1.5">
+                <div className="text-[11px] font-mono text-slate-600 dark:text-slate-400 mb-1.5">
                   Branch #{idx + 1}
                 </div>
                 <TreeNodeRenderer
@@ -550,7 +550,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                     {hasChildren && (
                       <button
                         onClick={() => toggleProperty(propName)}
-                        className="p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                        className="p-0.5 rounded text-slate-600 hover:text-slate-600 dark:hover:text-slate-300"
                       >
                         {isCollapsed ? (
                           <ChevronRight className="w-3 h-3" />
@@ -582,35 +582,35 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                         writeOnly
                       </span>
                     )}
-                    <span className="text-slate-400 dark:text-slate-500">:</span>
+                    <span className="text-slate-600 dark:text-slate-500">:</span>
                     <span className="text-blue-600 dark:text-blue-400 text-[11px]">
                       {String(propSchema.type || 'object')}
                       {propSchema.format ? ` <${propSchema.format}>` : ''}
                     </span>
 
                     {propSchema.minimum !== undefined && (
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-[10px] text-slate-600 font-mono">
                         ≥ {propSchema.minimum}
                       </span>
                     )}
                     {propSchema.maximum !== undefined && (
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-[10px] text-slate-600 font-mono">
                         ≤ {propSchema.maximum}
                       </span>
                     )}
                     {propSchema.minLength !== undefined && (
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-[10px] text-slate-600 font-mono">
                         minLen: {propSchema.minLength}
                       </span>
                     )}
                     {propSchema.maxLength !== undefined && (
-                      <span className="text-[10px] text-slate-500 font-mono">
+                      <span className="text-[10px] text-slate-600 font-mono">
                         maxLen: {propSchema.maxLength}
                       </span>
                     )}
                     {propSchema.pattern && (
                       <span
-                        className="text-[10px] text-slate-500 font-mono"
+                        className="text-[10px] text-slate-600 font-mono"
                         title={`Pattern: ${propSchema.pattern}`}
                       >
                         /{propSchema.pattern}/
@@ -628,7 +628,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                   </div>
 
                   {propSchema.enum && (
-                    <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <div className="flex items-center gap-1 text-[10px] text-slate-600">
                       <span>enum:</span>
                       <span className="font-mono text-slate-700 dark:text-slate-400">
                         [{propSchema.enum.join(', ')}]
@@ -637,7 +637,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                   )}
 
                   {propSchema.default !== undefined && (
-                    <div className="flex items-center gap-1 text-[10px] text-slate-500 font-mono">
+                    <div className="flex items-center gap-1 text-[10px] text-slate-600 font-mono">
                       <span>default:</span>
                       <span className="text-slate-700 dark:text-slate-300">
                         {JSON.stringify(propSchema.default)}
@@ -646,7 +646,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
                   )}
 
                   {propSchema.example !== undefined && (
-                    <div className="flex items-center gap-1 text-[10px] text-slate-500 font-mono">
+                    <div className="flex items-center gap-1 text-[10px] text-slate-600 font-mono">
                       <span>example:</span>
                       <span className="text-emerald-700 dark:text-emerald-400">
                         {JSON.stringify(propSchema.example)}
@@ -682,7 +682,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
       {hasItems && !hasProperties && (
         <div className="text-xs text-slate-700 dark:text-slate-300 space-y-2">
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-500 dark:text-slate-400">Array of</span>
+            <span className="text-slate-600 dark:text-slate-400">Array of</span>
             <span className="text-blue-600 dark:text-blue-400 font-mono font-semibold">
               {String(schema.items?.type || 'object')}
             </span>
@@ -712,11 +712,11 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
       {/* Additional properties dictionary map - handles boolean true/false and object */}
       {schema.additionalProperties !== undefined && (
         <div className="pt-2 text-xs font-mono text-slate-600 dark:text-slate-400 flex items-center gap-1.5 pl-3 border-l border-dashed border-slate-200 dark:border-slate-800">
-          <span className="text-slate-500">[key: string]:</span>
+          <span className="text-slate-600">[key: string]:</span>
           {schema.additionalProperties === true ? (
             <span className="text-blue-600 dark:text-blue-400 font-semibold">any (free-form)</span>
           ) : schema.additionalProperties === false ? (
-            <span className="text-slate-400">false (no extra)</span>
+            <span className="text-slate-600">false (no extra)</span>
           ) : (
             <>
               <span className="text-blue-600 dark:text-blue-400 font-semibold">

@@ -54,7 +54,8 @@ Zero backend, no accounts, no specs leaving your machine. The entire application
 APIatomy/
 ├── .github/
 │   ├── workflows/
-│   │   └── deploy.yml           # CI/CD: build and deploy Vite static site to GitHub Pages
+│   │   ├── validate.yml         # PR quality checks and browser tests; reusable before deployment
+│   │   └── deploy.yml           # Build and deploy after validation succeeds
 │   └── dependabot.yml           # Weekly dependency updates
 ├── src/
 │   ├── model/                   # Normalized internal data types
@@ -188,7 +189,7 @@ npm run test:watch
 # Run with coverage
 npm run test:coverage
 
-# Run E2E tests
+# Build the production site and run E2E tests
 npm run e2e
 ```
 
@@ -204,6 +205,8 @@ npm run format
 # One command typecheck, lint, test and build
 npm run check
 ```
+
+Pull requests run the full quality suite and production browser tests in Chromium, Firefox, WebKit, and mobile Chrome. The deployment workflow reuses the same validation before building for GitHub Pages. Browser reports and coverage are uploaded as CI artifacts.
 
 ### Agent guidance
 

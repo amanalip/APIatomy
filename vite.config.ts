@@ -5,7 +5,7 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: process.env.GITHUB_ACTIONS ? '/APIatomy/' : './',
+  base: process.env.VITE_BASE_PATH ?? (process.env.GITHUB_ACTIONS ? '/APIatomy/' : './'),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

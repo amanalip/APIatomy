@@ -48,10 +48,20 @@ Review baseline: `npm run check` passed, including all 207 tests, TypeScript, li
   - Verification: ensure tests fail when the corresponding production behavior regresses; avoid relying on copies of implementation logic in tests.
   - References: [vitest.config.ts:18](vitest.config.ts#L18), [tests/diffRegression.test.ts:4](tests/diffRegression.test.ts#L4).
 
-- [ ] **Run quality checks on pull requests before changes reach `main`.**
+- [x] **Run quality checks on pull requests before changes reach `main`.**
   - Finding: the deployment workflow runs lint, formatting, tests, and build only on pushes to `main` or manual dispatch. CodeQL has a separate pull-request trigger.
   - Improvement: add a pull-request validation workflow for type checking, lint, formatting, tests, and build. Run browser E2E tests there and keep deployment separate.
   - Verification: confirm a pull request runs the checks and a failing check is visible before merge.
   - Reference: [.github/workflows/deploy.yml:3](.github/workflows/deploy.yml#L3).
 
 Recommended implementation order: cURL quoting, reference caching, and diff classification first, followed by the remaining checklist items.
+
+## Completion and verification
+
+All eight improvements are implemented, with one commit per checklist item. Repository guidance is in `AGENTS.md`, and the reusable development skill is in `.agents/skills/apiatomy-development/SKILL.md`. The repository-wide prohibition on em dashes is enforced by `npm run check:text`.
+
+- `npm run check` passed: 249 unit tests, TypeScript, the source text check, lint, formatting, coverage thresholds, and the production build.
+- Expanded coverage reports 81.11% line coverage across the configured production modules, including 96.92% for `shareService.ts`.
+- All 36 browser scenarios passed across Chromium, Firefox, and mobile Chrome, including accessibility and multi-file save/share/reload flows. The mobile schema scenario passed after correcting a locator that selected a hidden desktop navigation label.
+- WebKit could not launch on the local CachyOS host because its Playwright build requires unavailable ICU 74 and Flite libraries. The Ubuntu CI job installs browser dependencies with `playwright install --with-deps` before running WebKit tests.
+- The reusable skill passed its validator. The source text guard was also verified against a prohibited character in an isolated temporary fixture.

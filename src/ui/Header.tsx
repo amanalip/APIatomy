@@ -225,10 +225,10 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">
+              <h1 className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">
                 <span className="font-mono">API</span>
                 <span className="font-light">atomy</span>
-              </span>
+              </h1>
               <span className="text-[10px] px-1.5 py-0.5 rounded font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                 v0.2.0
               </span>
@@ -455,6 +455,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Share Link - opens dialog instead of instantly copying */}
         <button
           onClick={handleShare}
+          aria-label="Share"
           aria-live="polite"
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 transition focus-visible:ring-2 focus-visible:ring-white"
           title="Open sharing options"

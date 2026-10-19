@@ -114,6 +114,7 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
             Load a public OpenAPI spec by URL. The spec is fetched directly in your browser.
           </p>
           <input
+            aria-label="Specification URL"
             ref={inputRef}
             value={url}
             onChange={(e) => setUrl(e.target.value)}

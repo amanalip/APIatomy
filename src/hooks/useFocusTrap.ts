@@ -1,5 +1,9 @@
 import { useEffect, useRef } from 'react';
 
+let activePortalTraps = 0;
+let previousRootInert = false;
+let previousRootHidden: string | null = null;
+
 export function useFocusTrap(isActive: boolean) {
   const containerRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -10,14 +14,26 @@ export function useFocusTrap(isActive: boolean) {
     const container = containerRef.current;
     if (!container) return;
 
-    const focusable = container.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
-    );
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+    const root = document.getElementById('root');
+    const isPortal = root && !root.contains(container);
+    if (isPortal) {
+      if (activePortalTraps++ === 0) {
+        previousRootInert = root.inert;
+        previousRootHidden = root.getAttribute('aria-hidden');
+      }
+      root.inert = true;
+      root.setAttribute('aria-hidden', 'true');
+    }
+    const getFocusable = () =>
+      container.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;
+      const focusable = getFocusable();
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
       if (focusable.length === 0) {
         e.preventDefault();
         return;
@@ -36,10 +52,15 @@ export function useFocusTrap(isActive: boolean) {
     };
 
     container.addEventListener('keydown', onKey);
-    first?.focus();
+    getFocusable()[0]?.focus();
 
     return () => {
       container.removeEventListener('keydown', onKey);
+      if (isPortal && --activePortalTraps === 0) {
+        root.inert = previousRootInert;
+        if (previousRootHidden === null) root.removeAttribute('aria-hidden');
+        else root.setAttribute('aria-hidden', previousRootHidden);
+      }
       previousFocusRef.current?.focus();
     };
   }, [isActive]);

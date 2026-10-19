@@ -98,7 +98,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
             </span>
             <button
               onClick={handleCopyPath}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 hover:text-slate-600 dark:hover:text-slate-200 transition"
               title="Copy endpoint path"
             >
               {copiedPath ? (
@@ -140,7 +140,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
 
         <button
           onClick={onClose}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+          className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
           title="Close details"
         >
           <X className="w-5 h-5" />
@@ -154,7 +154,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
           className={`py-2 text-xs font-medium border-b-2 transition ${
             activeTab === 'details'
               ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 font-semibold'
-              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
           Request & Responses
@@ -164,7 +164,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
           className={`py-2 text-xs font-medium border-b-2 transition ${
             activeTab === 'curl'
               ? 'border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 font-semibold'
-              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
           cURL Snippet
@@ -229,7 +229,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                             ))}
                           </div>
                         ) : (
-                          <span className="text-slate-500 text-[11px]">
+                          <span className="text-slate-600 text-[11px]">
                             No specific scopes required
                           </span>
                         )}
@@ -247,7 +247,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
               </div>
 
               {endpoint.parameters.length === 0 ? (
-                <div className="text-xs text-slate-500 italic p-3 rounded-lg bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/60">
+                <div className="text-xs text-slate-600 italic p-3 rounded-lg bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/60">
                   No parameters defined for this endpoint.
                 </div>
               ) : (
@@ -271,7 +271,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                             <div className="flex items-center gap-1.5">
                               <span>{p.name}</span>
                               {(p.required || p.in === 'path') && (
-                                <span className="text-[9px] px-1 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
+                                <span className="text-[9px] px-1 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 font-bold border border-red-200 dark:border-red-500/30">
                                   req
                                 </span>
                               )}
@@ -296,12 +296,12 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                               {p.schema?.format ? ` (${p.schema.format})` : ''}
                             </div>
                             {p.schema?.enum && (
-                              <div className="text-[10px] text-slate-500 mt-0.5">
+                              <div className="text-[10px] text-slate-600 mt-0.5">
                                 enum: [{p.schema.enum.join(', ')}]
                               </div>
                             )}
                             {p.style && (
-                              <div className="text-[10px] text-slate-500 font-sans mt-0.5">
+                              <div className="text-[10px] text-slate-600 font-sans mt-0.5">
                                 style: {p.style}
                                 {p.explode ? ' (explode)' : ''}
                               </div>
@@ -314,7 +314,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                           </td>
                           <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 text-[11px]">
                             {p.description || (
-                              <span className="italic text-slate-400 dark:text-slate-600">
+                              <span className="italic text-slate-600 dark:text-slate-600">
                                 No description
                               </span>
                             )}
@@ -334,11 +334,11 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                   <FileCode className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
                   <span>Request Body</span>
                   {endpoint.requestBody.required ? (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 font-bold ml-1 border border-red-200 dark:border-red-500/30">
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 font-bold ml-1 border border-red-200 dark:border-red-500/30">
                       Required
                     </span>
                   ) : (
-                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 ml-1 border border-slate-200 dark:border-slate-700">
+                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 ml-1 border border-slate-200 dark:border-slate-700">
                       Optional
                     </span>
                   )}
@@ -458,14 +458,14 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
 
                           <div className="flex items-center gap-2">
                             {resp.content.length > 0 && (
-                              <span className="text-[10px] text-slate-500 font-mono">
+                              <span className="text-[10px] text-slate-600 font-mono">
                                 {resp.content[0].contentType}
                               </span>
                             )}
                             {isExpanded ? (
-                              <ChevronDown className="w-4 h-4 text-slate-400" />
+                              <ChevronDown className="w-4 h-4 text-slate-600" />
                             ) : (
-                              <ChevronRight className="w-4 h-4 text-slate-400" />
+                              <ChevronRight className="w-4 h-4 text-slate-600" />
                             )}
                           </div>
                         </button>
@@ -498,7 +498,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                                           </span>
                                         </div>
                                         {hVal.description && (
-                                          <div className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-0.5">
+                                          <div className="text-[11px] font-sans text-slate-600 dark:text-slate-400 mt-0.5">
                                             {hVal.description}
                                           </div>
                                         )}
@@ -511,7 +511,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
 
                             {resp.content.length === 0 &&
                               (!resp.headers || Object.keys(resp.headers).length === 0) && (
-                                <div className="text-xs text-slate-500 italic">
+                                <div className="text-xs text-slate-600 italic">
                                   No response body or headers specified.
                                 </div>
                               )}
@@ -591,7 +591,7 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
               {isRequired && (
                 <span className="text-red-500 dark:text-red-400 text-[10px] font-bold">*</span>
               )}
-              <span className="text-slate-400 dark:text-slate-500">:</span>
+              <span className="text-slate-600 dark:text-slate-500">:</span>
               <span className="text-blue-600 dark:text-blue-400 text-[11px] font-mono">
                 {String(propSchema.type || 'object')}
                 {propSchema.format ? ` (${propSchema.format})` : ''}
@@ -609,7 +609,7 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
               )}
               {propSchema.description && (
                 <span
-                  className="text-slate-500 text-[11px] truncate"
+                  className="text-slate-600 text-[11px] truncate"
                   title={propSchema.description}
                 >
                   // {propSchema.description}
@@ -620,7 +620,7 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
         })}
         {schema.additionalProperties !== undefined && (
           <div className="flex items-baseline gap-2 py-0.5 text-xs font-mono">
-            <span className="text-slate-500">[additionalProperties]:</span>
+            <span className="text-slate-600">[additionalProperties]:</span>
             {schema.additionalProperties === true ? (
               <span className="text-blue-600 dark:text-blue-400 text-[11px]">
                 any (free-form map)
@@ -648,7 +648,7 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
                 )}
               </>
             ) : (
-              <span className="text-slate-400 text-[11px]">false (no extra props)</span>
+              <span className="text-slate-600 text-[11px]">false (no extra props)</span>
             )}
           </div>
         )}
@@ -659,7 +659,7 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
   if (schema.items) {
     return (
       <div className="text-xs text-slate-700 dark:text-slate-300">
-        <span className="text-slate-500 dark:text-slate-400">Array of </span>
+        <span className="text-slate-600 dark:text-slate-400">Array of </span>
         <span className="text-blue-600 dark:text-blue-400 font-semibold">
           {String(schema.items.type || 'object')}
         </span>
@@ -704,7 +704,7 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
     }
     if (schema.additionalProperties === false) {
       return (
-        <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+        <div className="text-xs text-slate-600 dark:text-slate-400 font-mono">
           No additional properties allowed.
         </div>
       );
@@ -712,7 +712,7 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
     if (typeof schema.additionalProperties === 'object') {
       return (
         <div className="text-xs text-slate-700 dark:text-slate-300">
-          <span className="text-slate-500 dark:text-slate-400">[additionalProperties]: </span>
+          <span className="text-slate-600 dark:text-slate-400">[additionalProperties]: </span>
           <span className="text-blue-600 dark:text-blue-400 font-mono">
             {String(
               (schema.additionalProperties as any).type ||
@@ -738,13 +738,13 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
   }
 
   return (
-    <div className="text-xs text-slate-500 dark:text-slate-400">
+    <div className="text-xs text-slate-600 dark:text-slate-400">
       Type: <span className="text-blue-600 dark:text-blue-400">{String(schema.type || 'any')}</span>
       {schema.format ? (
-        <span className="text-slate-400 dark:text-slate-500 ml-1">&lt;{schema.format}&gt;</span>
+        <span className="text-slate-600 dark:text-slate-500 ml-1">&lt;{schema.format}&gt;</span>
       ) : null}
       {schema.enum ? (
-        <span className="ml-2 text-slate-500">enum: [{schema.enum.join(', ')}]</span>
+        <span className="ml-2 text-slate-600">enum: [{schema.enum.join(', ')}]</span>
       ) : null}
     </div>
   );

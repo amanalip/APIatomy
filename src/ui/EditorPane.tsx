@@ -10,10 +10,35 @@ import {
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { yaml } from '@codemirror/lang-yaml';
 import { json } from '@codemirror/lang-json';
-import { oneDark } from '@codemirror/theme-one-dark';
+import {
+  oneDarkTheme,
+  oneDarkHighlightStyle,
+  color as oneDarkColors,
+} from '@codemirror/theme-one-dark';
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+
 import { useTheme } from '../theme/ThemeContext';
 import { Upload } from 'lucide-react';
 import { MAX_UPLOAD_SIZE } from '../utils/schemaRefs';
+
+// Preserve the familiar theme while meeting contrast requirements for small text.
+const accessibleDarkTheme = [
+  oneDarkTheme,
+  EditorView.theme({ '.cm-gutters .cm-gutterElement': { color: '#9ca7b8' } }),
+  syntaxHighlighting(
+    HighlightStyle.define(
+      oneDarkHighlightStyle.specs.map((rule) => ({
+        ...rule,
+        color:
+          rule.color === oneDarkColors.coral
+            ? '#e78a92'
+            : rule.color === oneDarkColors.stone
+              ? '#9ca7b8'
+              : rule.color,
+      }))
+    )
+  ),
+];
 
 export interface EditorPaneRef {
   jumpToLine: (line: number) => void;
@@ -73,7 +98,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
       if (!containerRef.current) return;
 
       const langExtension = format === 'json' ? json() : yaml();
-      const editorTheme = theme === 'dark' ? oneDark : [];
+      const editorTheme = theme === 'dark' ? accessibleDarkTheme : [];
 
       const updateListener = EditorView.updateListener.of((update) => {
         if (update.docChanged) {
@@ -102,6 +127,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
       const state = EditorState.create({
         doc: value,
         extensions: [
+          EditorView.contentAttributes.of({ 'aria-label': 'Specification editor' }),
           lineNumbers(),
           highlightActiveLineGutter(),
           highlightActiveLine(),
@@ -119,6 +145,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
         parent: containerRef.current,
       });
 
+      view.scrollDOM.tabIndex = 0;
       editorViewRef.current = view;
 
       return () => {
@@ -135,7 +162,9 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
     useEffect(() => {
       if (editorViewRef.current) {
         editorViewRef.current.dispatch({
-          effects: themeCompartmentRef.current.reconfigure(theme === 'dark' ? oneDark : []),
+          effects: themeCompartmentRef.current.reconfigure(
+            theme === 'dark' ? accessibleDarkTheme : []
+          ),
         });
       }
     }, [theme]);

@@ -157,7 +157,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
       <div className="p-3 border-b border-slate-200 dark:border-slate-800 space-y-2.5 bg-white/70 dark:bg-slate-900/50 backdrop-blur">
         {/* Search */}
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+          <Search className="w-4 h-4 text-slate-600 absolute left-3 top-2.5 pointer-events-none" />
           <input
             ref={searchInputRef}
             type="text"
@@ -170,14 +170,14 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
             aria-label="Search endpoints"
             className="w-full pl-9 pr-16 py-1.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-100 rounded-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
-          <span className="absolute right-8 top-1.5 hidden sm:flex items-center text-[9px] font-mono px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-700 pointer-events-none">
+          <span className="absolute right-8 top-1.5 hidden sm:flex items-center text-[9px] font-mono px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700 pointer-events-none">
             /
           </span>
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
               aria-label="Clear endpoint search"
-              className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-1 focus-visible:ring-blue-500"
+              className="absolute right-2.5 top-2 text-slate-600 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 focus-visible:ring-1 focus-visible:ring-blue-500"
               title="Clear search (Esc)"
             >
               <X className="w-3.5 h-3.5" />
@@ -222,7 +222,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
         {/* Tag filter dropdown if multiple tags exist */}
         {allTags.length > 1 && (
           <div className="flex items-center gap-2">
-            <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <Tag className="w-3.5 h-3.5 text-slate-600 shrink-0" />
             <select
               aria-label="Filter by tag"
               value={selectedTag}
@@ -290,9 +290,9 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
       {/* Endpoint cards grouped by tag within the current page. */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {filteredEndpoints.length === 0 ? (
-          <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-xs space-y-3">
+          <div className="text-center py-12 text-slate-600 dark:text-slate-500 text-xs space-y-3">
             <div className="mx-auto w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
-              <Search className="w-5 h-5 text-slate-400" />
+              <Search className="w-5 h-5 text-slate-600" />
             </div>
             <div className="font-medium text-slate-600 dark:text-slate-400">
               No endpoints found matching your filter criteria.
@@ -328,14 +328,14 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                 >
                   <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-800 dark:text-slate-200">
                     {isCollapsed ? (
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-600 dark:text-slate-500" />
                     ) : (
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-600 dark:text-slate-500" />
                     )}
                     <span className="uppercase tracking-wider text-[11px] text-slate-600 dark:text-slate-400 font-mono">
                       {tag}
                     </span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                    <span className="text-[10px] text-slate-600 dark:text-slate-400 font-normal">
                       ({eps.length}
                       {totalByTag[tag] && totalByTag[tag] !== eps.length
                         ? ` / ${totalByTag[tag]}`
@@ -404,7 +404,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                             </div>
                           )}
 
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                          <div className="flex items-center gap-2 text-[10px] text-slate-600 dark:text-slate-400 pt-0.5">
                             {ep.parameters.length > 0 && (
                               <span>
                                 {ep.parameters.length} param{ep.parameters.length > 1 ? 's' : ''}
@@ -415,7 +415,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                               <span>• {ep.responses.length} responses</span>
                             )}
                             {ep.security.length > 0 && (
-                              <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400/80 ml-auto font-medium">
+                              <span className="flex items-center gap-0.5 text-amber-700 dark:text-amber-400/80 ml-auto font-medium">
                                 <Shield className="w-2.5 h-2.5" />
                                 Secured
                               </span>
