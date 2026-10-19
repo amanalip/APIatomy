@@ -7,6 +7,11 @@ import { joinUrl, normalizeServerUrl, sanitizeHeaderValue } from '../utils/serve
 
 const FALLBACK_SERVER_URL = 'https://api.example.com';
 
+/** Quote one POSIX shell argument after URL and payload serialization. */
+function shellQuote(value: string): string {
+  return `"${sanitizeHeaderValue(value)}"`;
+}
+
 interface CurlGeneratorProps {
   endpoint: EndpointModel;
   servers: ServerModel[];
@@ -199,17 +204,8 @@ export function buildCurlCommand(
         defVal !== undefined && String(defVal).trim() !== ''
           ? String(defVal)
           : ((varDef as any)?.enum?.[0] ?? 'default');
-      // Sanitize shell specials then URL-encode spaces and unsafe characters while preserving shell escapes
-      let replacement = sanitizeHeaderValue(String(replacementRaw));
-      // Encode spaces and encode remaining unsafe URL characters except already escaped sequences
-      // For URL correctness, encode spaces; other characters keep shell-escaped form for curl double-quoted string
-      replacement = replacement.replace(/ /g, '%20');
-      // Additionally encode raw unsafe that would break URL but not already escaped
-      try {
-        replacement = replacement.replace(/(?<!\\)%20/g, '%20');
-      } catch {
-        /* ignore lookbehind unsupported */
-      }
+      // Shell quoting happens once, after constructing the complete argument.
+      const replacement = String(replacementRaw).replace(/ /g, '%20');
       rawUrl = rawUrl.split(`{${varName}}`).join(replacement);
     }
   }
@@ -325,7 +321,7 @@ export function buildCurlCommand(
     if (qParts.length > 0) url += `?${qParts.join('&')}`;
   }
 
-  const lines: string[] = [`curl -X ${endpoint.method.toUpperCase()} "${url}"`];
+  const lines: string[] = [`curl -X ${endpoint.method.toUpperCase()} ${shellQuote(url)}`];
   const hasExplicitAuthHeader = endpoint.parameters.some(
     (p) => p.in === 'header' && p.name.toLowerCase() === 'authorization'
   );
@@ -346,8 +342,7 @@ export function buildCurlCommand(
       else if (header.schema?.type === 'boolean') val = 'true';
       else val = 'string';
     }
-    const sanitizedVal = sanitizeHeaderValue(String(val));
-    lines.push(`  -H "${header.name}: ${sanitizedVal}"`);
+    lines.push(`  -H ${shellQuote(`${header.name}: ${String(val)}`)}`);
   }
 
   const cookieParams = endpoint.parameters.filter((p) => p.in === 'cookie');
@@ -363,7 +358,7 @@ export function buildCurlCommand(
         return `${encodeURIComponent(c.name)}=${encodeURIComponent(String(val))}`;
       })
       .join('; ');
-    lines.push(`  -b "${cookieStr}"`);
+    lines.push(`  -b ${shellQuote(cookieStr)}`);
   }
 
   const hasSecurity =
@@ -388,11 +383,11 @@ export function buildCurlCommand(
           if (scheme.in === 'query') {
             const sep = url.includes('?') ? '&' : '?';
             url = `${url}${sep}${encodeURIComponent(headerName)}=YOUR_API_KEY`;
-            lines[0] = `curl -X ${endpoint.method.toUpperCase()} "${url}"`;
+            lines[0] = `curl -X ${endpoint.method.toUpperCase()} ${shellQuote(url)}`;
           } else if (scheme.in === 'cookie') {
-            lines.push(`  -b "${headerName}=YOUR_API_KEY"`);
+            lines.push(`  -b ${shellQuote(`${headerName}=YOUR_API_KEY`)}`);
           } else {
-            lines.push(`  -H "${headerName}: YOUR_API_KEY"`);
+            lines.push(`  -H ${shellQuote(`${headerName}: YOUR_API_KEY`)}`);
           }
         } else if (scheme.type === 'http') {
           const s = (scheme.scheme || '').toLowerCase();
@@ -441,14 +436,14 @@ export function buildCurlCommand(
       if (primaryMedia.schema?.properties) {
         for (const [propKey, propVal] of Object.entries(primaryMedia.schema.properties)) {
           const isFile = propVal.format === 'binary' || (propVal.type as string) === 'file';
-          lines.push(`  -F "${propKey}=${isFile ? '@filename.ext' : 'value'}"`);
+          lines.push(`  -F ${shellQuote(`${propKey}=${isFile ? '@filename.ext' : 'value'}`)}`);
         }
       } else {
         lines.push(`  -F "file=@filename.ext"`);
       }
     } else {
       if (!hasExplicitContentTypeHeader) {
-        lines.push(`  -H "Content-Type: ${primaryMedia.contentType}"`);
+        lines.push(`  -H ${shellQuote(`Content-Type: ${primaryMedia.contentType}`)}`);
       }
       if (lowerType.includes('json')) {
         const rawBody = primaryMedia.example
@@ -462,7 +457,7 @@ export function buildCurlCommand(
           const fieldNames = Object.keys(primaryMedia.schema.properties);
           if (fieldNames.length > 0) {
             for (const k of fieldNames) {
-              lines.push(`  --data-urlencode "${k}=value"`);
+              lines.push(`  --data-urlencode ${shellQuote(`${k}=value`)}`);
             }
           } else {
             lines.push(`  --data-urlencode "field=value"`);

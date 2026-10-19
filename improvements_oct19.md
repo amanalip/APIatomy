@@ -4,7 +4,7 @@ Review baseline: `npm run check` passed, including all 207 tests, TypeScript, li
 
 ## High priority
 
-- [ ] **Quote all spec-derived arguments in generated cURL commands.**
+- [x] **Quote all spec-derived arguments in generated cURL commands.**
   - Finding: server URLs are inserted directly into double quotes. A server URL containing `$(printf REVIEW_MARKER)` survives into the generated command and would be evaluated by a shell when pasted.
   - Improvement: apply consistent shell quoting to URLs, header names and values, form fields, and other spec-derived arguments.
   - Verification: add regression tests covering command substitution, backticks, quotes, and other shell metacharacters.
