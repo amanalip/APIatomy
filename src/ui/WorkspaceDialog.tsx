@@ -7,6 +7,7 @@ import {
   saveWorkspace,
   loadWorkspace,
   deleteWorkspace,
+  renameWorkspace,
   WorkspaceData,
 } from '../utils/workspaceStore';
 
@@ -160,11 +161,9 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
                         const newName = prompt('Rename workspace:', ws.id);
                         if (!newName || newName === ws.id) return;
                         try {
-                          const data = await loadWorkspace(ws.id);
-                          if (data) {
-                            await saveWorkspace(newName, data.specText, data.title, data);
-                            await handleDelete(ws.id);
-                          }
+                          setError(null);
+                          await renameWorkspace(ws.id, newName);
+                          await refresh();
                         } catch (err) {
                           setError(err instanceof Error ? err.message : 'Rename failed');
                         }

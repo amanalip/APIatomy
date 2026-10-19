@@ -73,3 +73,36 @@ export async function listWorkspaces(): Promise<
 export async function deleteWorkspace(id: string): Promise<void> {
   await transaction('readwrite', (store) => store.delete(id));
 }
+
+/** Move the complete record without replacing an existing workspace. */
+export async function renameWorkspace(id: string, newId: string): Promise<void> {
+  if (id === newId) return;
+  if (!newId.trim()) throw new Error('Workspace name cannot be empty');
+  const db = await openDb();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readwrite');
+      const store = tx.objectStore(STORE);
+      let failure: Error | undefined;
+      tx.oncomplete = () => resolve();
+      tx.onerror = tx.onabort = () => reject(failure || tx.error || new Error('Rename failed'));
+      const source = store.get(id);
+      source.onsuccess = () => {
+        try {
+          if (!source.result) throw new Error('Workspace no longer exists');
+          const destination = store.add({ ...source.result, id: newId });
+          destination.onerror = () => {
+            if (destination.error?.name === 'ConstraintError')
+              failure = new Error(`A workspace named "${newId}" already exists`);
+          };
+          store.delete(id);
+        } catch (error) {
+          failure = error instanceof Error ? error : new Error('Rename failed');
+          tx.abort();
+        }
+      };
+    });
+  } finally {
+    db.close();
+  }
+}
