@@ -1,3 +1,5 @@
+import { importProjectFiles } from './share/importService';
+import { useToast } from './ui/Toast';
 import { ownValue } from './utils/dictionary';
 import { decodeProject, restoreProject } from './share/project';
 import React, { useState, useEffect, useRef } from 'react';
@@ -62,6 +64,14 @@ export function App() {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
 
+  const { showToast } = useToast();
+  const fileImportRef = useRef<AbortController | null>(null);
+  const cancelFileImport = () => {
+    fileImportRef.current?.abort();
+    fileImportRef.current = null;
+  };
+  useEffect(() => () => fileImportRef.current?.abort(), []);
+
   const editorPaneRef = useRef<EditorPaneRef>(null);
 
   // Keep selected endpoint in sync when spec changes
@@ -80,6 +90,7 @@ export function App() {
         if (decompressed) {
           try {
             const project = decodeProject(decompressed);
+            cancelFileImport();
             restoreProject(project);
             setRawText(project.specText);
             editorPaneRef.current?.setContent(project.specText);
@@ -100,6 +111,7 @@ export function App() {
   }, []);
 
   const handleSelectSample = (sample: SampleSpecOption) => {
+    cancelFileImport();
     setRawText(sample.spec);
     editorPaneRef.current?.setContent(sample.spec);
     setSelectedEndpoint(null);
@@ -123,7 +135,26 @@ export function App() {
     }
   };
 
+  const handleImportFiles = async (files: File[]) => {
+    cancelFileImport();
+    const controller = new AbortController();
+    fileImportRef.current = controller;
+    try {
+      const project = await importProjectFiles(files, controller.signal);
+      if (controller.signal.aborted || fileImportRef.current !== controller) return;
+      restoreProject(project);
+      handleUploadText(project.specText);
+      showToast('Spec loaded', 'success');
+    } catch (err) {
+      if (!controller.signal.aborted)
+        showToast(err instanceof Error ? err.message : 'Import failed', 'error');
+    } finally {
+      if (fileImportRef.current === controller) fileImportRef.current = null;
+    }
+  };
+
   const handleLoadFromUrl = (text: string, url: string) => {
+    cancelFileImport();
     const project = decodeProject(text);
     restoreProject(project);
     setRawText(project.specText);
@@ -203,7 +234,7 @@ export function App() {
         activeView={activeView}
         setActiveView={setActiveView}
         onSelectSample={handleSelectSample}
-        onUploadText={handleUploadText}
+        onImportFiles={handleImportFiles}
         onOpenUrl={() => setIsUrlDialogOpen(true)}
         onOpenWorkspace={() => setIsWorkspaceOpen(true)}
         onShare={() => setIsShareOpen(true)}
@@ -255,7 +286,9 @@ export function App() {
               <EditorPane
                 ref={editorPaneRef}
                 value={rawText}
+                onImportFiles={handleImportFiles}
                 onChange={(newText) => {
+                  cancelFileImport();
                   setRawText(newText);
                   if (sourceUrl !== null) setSourceUrl(null);
                 }}
@@ -397,6 +430,7 @@ export function App() {
           currentTitle={spec.title}
           onClose={() => setIsWorkspaceOpen(false)}
           onLoad={(project) => {
+            cancelFileImport();
             restoreProject(project);
             setRawText(project.specText);
             editorPaneRef.current?.setContent(project.specText);

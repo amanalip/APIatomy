@@ -19,7 +19,6 @@ import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 
 import { useTheme } from '../theme/ThemeContext';
 import { Upload } from 'lucide-react';
-import { MAX_UPLOAD_SIZE } from '../utils/schemaRefs';
 
 // Preserve the familiar theme while meeting contrast requirements for small text.
 const accessibleDarkTheme = [
@@ -48,11 +47,12 @@ export interface EditorPaneRef {
 interface EditorPaneProps {
   value: string;
   onChange: (value: string) => void;
+  onImportFiles: (files: File[]) => void;
   format?: 'yaml' | 'json';
 }
 
 export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
-  ({ value, onChange, format = 'yaml' }, ref) => {
+  ({ value, onChange, onImportFiles, format = 'yaml' }, ref) => {
     const { theme } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const editorViewRef = useRef<EditorView | null>(null);
@@ -196,34 +196,8 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
       e.preventDefault();
       setIsDragging(false);
 
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        const file = e.dataTransfer.files[0];
-        const validExt = /\.(yaml|yml|json)$/i;
-        const validMime = /^(application\/json|text\/yaml|text\/plain|application\/x-yaml)/i;
-        const nameOk = validExt.test(file.name);
-        const mimeOk = !file.type || validMime.test(file.type) || file.type === '';
-        if (!nameOk && !mimeOk) {
-          alert(`Unsupported file type "${file.name}". Please drop a .yaml, .yml or .json file.`);
-          return;
-        }
-        if (file.size > MAX_UPLOAD_SIZE) {
-          alert('File too large. Maximum is 5 MB.');
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const text = event.target?.result as string;
-          if (text && editorViewRef.current) {
-            editorViewRef.current.dispatch({
-              changes: { from: 0, to: editorViewRef.current.state.doc.length, insert: text },
-              annotations: [Transaction.userEvent.of('apiatomy-sync')],
-            });
-            onChange(text);
-          }
-        };
-        reader.onerror = () => alert('Failed to read dropped file.');
-        reader.readAsText(file);
-      }
+      const files = Array.from(e.dataTransfer.files || []);
+      if (files.length) onImportFiles(files);
     };
 
     return (

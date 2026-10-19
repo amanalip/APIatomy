@@ -1,4 +1,3 @@
-import { dictionary } from '../utils/dictionary';
 import React, { useState, useRef, useEffect } from 'react';
 import { ApiSpecModel } from '../model';
 import { SAMPLE_SPECS, SampleSpecOption } from '../samples';
@@ -7,9 +6,6 @@ import { ShareDialog } from './ShareDialog';
 import { ShortcutHelp } from './ShortcutHelp';
 import { useTheme } from '../theme/ThemeContext';
 import { useToast } from './Toast';
-import { MAX_PROJECT_BYTES, MAX_SPEC_BYTES } from '../share/projectLimits';
-import { setFileMap } from '../parser/fileMap';
-import { decodeProject, restoreProject, encodeProject } from '../share/project';
 import {
   Share2,
   Upload,
@@ -34,7 +30,7 @@ interface HeaderProps {
   activeView: 'endpoints' | 'schemas' | 'graph' | 'diff';
   setActiveView: (view: 'endpoints' | 'schemas' | 'graph' | 'diff') => void;
   onSelectSample: (sample: SampleSpecOption) => void;
-  onUploadText: (text: string) => void;
+  onImportFiles: (files: File[]) => void;
   onOpenUrl: () => void;
   onOpenWorkspace: () => void;
   onShare?: () => void;
@@ -49,7 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeView,
   setActiveView,
   onSelectSample,
-  onUploadText,
+  onImportFiles,
   onOpenUrl,
   onOpenWorkspace,
   onShare,
@@ -135,86 +131,10 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    const maxBytes = files.length === 1 ? MAX_PROJECT_BYTES : MAX_SPEC_BYTES;
-    if (files.length === 1) {
-      const file = files[0];
-      if (file.size > maxBytes) {
-        showToast(
-          `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum import file size is 20 MB (5 MB per specification).`,
-          'error'
-        );
-        e.target.value = '';
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target?.result as string;
-        if (text) {
-          try {
-            const project = decodeProject(text);
-            if (Object.keys(project.files).length) restoreProject(project);
-            else {
-              const name = file.webkitRelativePath || file.name;
-              setFileMap({ [name]: text }, name);
-            }
-            onUploadText(project.specText);
-          } catch (error) {
-            showToast(error instanceof Error ? error.message : 'Invalid project file', 'error');
-            return;
-          }
-          showToast('Spec loaded', 'success');
-        }
-      };
-      reader.onerror = () => {
-        showToast('Failed to read file. Please try again.', 'error');
-      };
-      reader.readAsText(file);
-    } else {
-      const fileEntries: Array<{ name: string; text: string }> = [];
-      for (const file of Array.from(files)) {
-        if (file.size > maxBytes) {
-          showToast(`File ${file.name} too large, skipped`, 'warning');
-          continue;
-        }
-        const text = await file.text();
-        fileEntries.push({ name: file.webkitRelativePath || file.name, text });
-      }
-      if (fileEntries.length > 0) {
-        const map: Record<string, string> = dictionary();
-        for (const entry of fileEntries) map[entry.name] = entry.text;
-        let root = fileEntries[0];
-        const candidates = fileEntries.filter((e) => {
-          const lower = e.text.toLowerCase();
-          return lower.includes('openapi') || lower.includes('swagger');
-        });
-        if (candidates.length > 0) {
-          root = candidates[0];
-        } else if (fileEntries.length > 1) {
-          root = fileEntries.reduce((a, b) => (a.text.length > b.text.length ? a : b));
-        }
-        try {
-          encodeProject({ specText: root.text, files: map, rootFilename: root.name });
-        } catch (err) {
-          showToast(err instanceof Error ? err.message : 'Project too large', 'error');
-          e.target.value = '';
-          return;
-        }
-        setFileMap(map, root.name);
-        onUploadText(root.text);
-        if (fileEntries.length > 1) {
-          showToast(
-            `Loaded ${fileEntries.length} files. Resolving external refs from uploaded set.`,
-            'info'
-          );
-        } else {
-          showToast('Spec loaded', 'success');
-        }
-      }
-    }
-    e.target.value = '';
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.currentTarget.files || []);
+    event.currentTarget.value = '';
+    if (files.length) onImportFiles(files);
   };
 
   return (
