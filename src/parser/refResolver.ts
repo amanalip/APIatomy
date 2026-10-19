@@ -120,25 +120,14 @@ export function resolveSchema(
       };
     }
 
-    // Cache lookup - deep clone composed structures to avoid mutation leaking into cache
     if (context.resolvedCache.has(cacheKey)) {
-      const cached = context.resolvedCache.get(cacheKey)!;
-      return {
-        ...cached,
-        properties: cached.properties ? { ...cached.properties } : undefined,
-        items: cached.items ? { ...cached.items } : undefined,
-        additionalProperties:
-          typeof cached.additionalProperties === 'object' && cached.additionalProperties !== null
-            ? ({ ...(cached.additionalProperties as Record<string, unknown>) } as any)
-            : cached.additionalProperties,
-        allOf: cached.allOf ? [...cached.allOf] : undefined,
-        oneOf: cached.oneOf ? [...cached.oneOf] : undefined,
-        anyOf: cached.anyOf ? [...cached.anyOf] : undefined,
-        not: cached.not ? { ...cached.not } : undefined,
-        $ref: ref,
-        refTarget: targetName,
-        name: schemaName || targetName,
-      };
+      return applyReferenceSiblings(
+        context.resolvedCache.get(cacheKey)!,
+        s,
+        context,
+        targetName,
+        schemaName
+      );
     }
 
     let resolvedRaw: unknown = resolveJsonPointer(context.rootDoc, ref);
@@ -192,48 +181,15 @@ export function resolveSchema(
           basePath: externalBase || '',
         }
       : context;
-    const resolved = resolveSchema(resolvedRaw, childContext, targetName);
-    const hasSiblings = Object.keys(s).some((k) => k !== '$ref');
-    let result: SchemaModel = {
-      ...resolved,
-      $ref: ref,
-      refTarget: targetName,
-      name: schemaName || targetName,
-    };
-    if (hasSiblings) {
-      const siblingRaw: Record<string, unknown> = { ...s };
-      delete siblingRaw.$ref;
-      const siblingModel = resolveSchema(siblingRaw, childContext, schemaName);
-      for (const [k, v] of Object.entries(siblingModel)) {
-        if (
-          v !== undefined &&
-          k !== '$ref' &&
-          k !== 'refTarget' &&
-          k !== 'name' &&
-          k !== 'id' &&
-          k !== 'raw'
-        ) {
-          (result as any)[k] = v;
-        }
-      }
-      result.$ref = ref;
-      result.refTarget = targetName;
-      result.name = schemaName || targetName;
-      if (resolved.properties && siblingModel.properties) {
-        result.properties = { ...resolved.properties, ...siblingModel.properties };
-      }
-      if (resolved.required && siblingModel.required) {
-        const merged = new Set([...(resolved.required || []), ...(siblingModel.required || [])]);
-        result.required = Array.from(merged);
-      }
-      if (siblingModel.allOf) {
-        result.allOf = [...(resolved.allOf || []), ...siblingModel.allOf];
-      }
+    let resolved: SchemaModel;
+    try {
+      resolved = resolveSchema(resolvedRaw, childContext, targetName);
+    } finally {
+      context.visitingPath.delete(cacheKey);
     }
-    context.visitingPath.delete(cacheKey);
-
-    context.resolvedCache.set(cacheKey, result);
-    return result;
+    // Cache only the target. Siblings belong to this reference occurrence.
+    context.resolvedCache.set(cacheKey, structuredClone(resolved));
+    return applyReferenceSiblings(resolved, s, context, targetName, schemaName);
   }
 
   // Parse direct schema object
@@ -318,6 +274,42 @@ export function resolveSchema(
   }
 
   return model;
+}
+
+function applyReferenceSiblings(
+  target: SchemaModel,
+  reference: Record<string, unknown>,
+  context: RefResolutionContext,
+  targetName: string,
+  schemaName?: string
+): SchemaModel {
+  const result = structuredClone(target);
+  const siblingRaw = { ...reference };
+  delete siblingRaw.$ref;
+  if (Object.keys(siblingRaw).length) {
+    const sibling = resolveSchema(siblingRaw, context, schemaName);
+    // Only explicitly provided fields override the target. Normalization also
+    // supplies default flags (e.g. nullable:false), which are not overrides.
+    for (const key of Object.keys(siblingRaw)) {
+      const modelKey = key === 'examples' ? 'example' : key;
+      if (modelKey === 'raw' || modelKey === 'id' || modelKey === 'name') continue;
+      const value = (sibling as unknown as Record<string, unknown>)[modelKey];
+      if (value !== undefined) (result as unknown as Record<string, unknown>)[modelKey] = value;
+    }
+    if (target.properties && sibling.properties) {
+      result.properties = { ...result.properties, ...sibling.properties };
+    }
+    if (target.required && sibling.required) {
+      result.required = Array.from(new Set([...target.required, ...sibling.required]));
+    }
+    if (sibling.allOf) result.allOf = [...(target.allOf || []), ...sibling.allOf];
+  }
+  return {
+    ...result,
+    $ref: reference.$ref as string,
+    refTarget: targetName,
+    name: schemaName || targetName,
+  };
 }
 
 export function collectSchemaRefs(schema: unknown, refs: Set<string> = new Set()): Set<string> {

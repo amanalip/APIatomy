@@ -10,7 +10,7 @@ Review baseline: `npm run check` passed, including all 207 tests, TypeScript, li
   - Verification: add regression tests covering command substitution, backticks, quotes, and other shell metacharacters.
   - Reference: [src/ui/CurlGenerator.tsx:328](src/ui/CurlGenerator.tsx#L328).
 
-- [ ] **Prevent `$ref` sibling overrides from leaking through the resolver cache.**
+- [x] **Prevent `$ref` sibling overrides from leaking through the resolver cache.**
   - Finding: the resolver caches results after applying reference-specific siblings. A description override on one reference appeared on a later reference with no override.
   - Improvement: cache the resolved target separately, then apply sibling fields independently for each reference occurrence.
   - Verification: test multiple references to the same target with different descriptions and constraints, in different resolution orders.

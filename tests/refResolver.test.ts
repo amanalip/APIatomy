@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseApiSpec } from '../src/parser';
-import { resolveJsonPointer } from '../src/parser/refResolver';
+import { resolveJsonPointer, resolveSchema } from '../src/parser/refResolver';
 
 const CIRCULAR_SPEC = `
 openapi: 3.0.3
@@ -63,4 +63,43 @@ describe('Ref Resolver & Circular Detection', () => {
     expect(resolveJsonPointer(doc, '#/paths/~1users~1%7Bid%7D/get/summary')).toBe('Get user');
     expect(resolveJsonPointer(doc, '#/components/schemas/Order%20Model/type')).toBe('object');
   });
+});
+
+it('keeps reference siblings isolated regardless of lookup order', () => {
+  for (const reverse of [false, true]) {
+    const context = {
+      rootDoc: {
+        components: {
+          schemas: {
+            Pet: {
+              type: 'object',
+              description: 'Original',
+              nullable: true,
+              properties: { name: { type: 'string' } },
+            },
+          },
+        },
+      },
+      resolvedCache: new Map(),
+      visitingPath: new Set<string>(),
+    };
+    const variants = [
+      { $ref: '#/components/schemas/Pet', description: 'First', minProperties: 1 },
+      { $ref: '#/components/schemas/Pet', description: 'Second', minProperties: 2 },
+      { $ref: '#/components/schemas/Pet' },
+    ];
+    if (reverse) variants.reverse();
+    for (const variant of variants) {
+      const result = resolveSchema(variant, context);
+      expect(result.description).toBe('description' in variant ? variant.description : 'Original');
+      expect(result.minProperties).toBe(
+        'minProperties' in variant ? variant.minProperties : undefined
+      );
+      expect(result.nullable).toBe(true);
+      result.properties!.name.type = 'integer';
+    }
+    expect(resolveSchema({ $ref: '#/components/schemas/Pet' }, context).properties!.name.type).toBe(
+      'string'
+    );
+  }
 });
