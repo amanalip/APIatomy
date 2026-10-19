@@ -42,7 +42,7 @@ Review baseline: `npm run check` passed, including all 207 tests, TypeScript, li
   - Verification: confirm opening the dialog and changing its options stay responsive for large specs, and that URL sizes match the generated links.
   - Reference: [src/ui/ShareDialog.tsx:42](src/ui/ShareDialog.tsx#L42).
 
-- [ ] **Strengthen tests around production behavior and uncovered modules.**
+- [x] **Strengthen tests around production behavior and uncovered modules.**
   - Finding: coverage excludes most UI, hooks, workers, and persistence. `shareService.ts` reported 0% coverage. Diff regression tests duplicate comparison logic rather than exercising the production implementation.
   - Improvement: add focused regression tests for the findings above, test shared production functions directly, and expand coverage to important orchestration and persistence paths.
   - Verification: ensure tests fail when the corresponding production behavior regresses; avoid relying on copies of implementation logic in tests.

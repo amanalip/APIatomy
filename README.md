@@ -20,15 +20,15 @@ Zero backend, no accounts, no specs leaving your machine. The entire application
 
 - **Multi Spec Normalization**: Broad OpenAPI 3.0/3.1 support with automatic conversion of Swagger 2.0 specs including `host`/`basePath`/`schemes`, `collectionFormat`, file uploads and OAuth2 flow mapping. External file refs and full JSON Schema 2020-12 require bundling.
 - **Interactive Topology Graph**: Powered by React Flow and Dagre with lazy loading. Maps relationships between HTTP endpoints, consumed request payloads, produced response models and nested component schemas with layout direction controls, tag filtering, PNG and SVG export and efficient rendering for large specs.
-- **Endpoint Explorer**: Color coded HTTP method badges, filterable by path, method and tag, with quick search via `/` (Ctrl/Cmd+K is reserved for command palette), method pills and tag grouping, virtualized lists for hundreds of entries and detailed drawer with parameters, bodies, responses and security.
+- **Endpoint Explorer**: Color coded HTTP method badges, filterable by path, method and tag, with quick search via `/` (Ctrl/Cmd+K is reserved for command palette), method pills and tag grouping, paginated lists with access to every endpoint and detailed drawer with parameters, bodies, responses and security.
 - **Schema Viewer**: Expandable tree view for component schemas with composition support (`allOf`, `oneOf`, `anyOf`, `not`), circular reference protection, clickable `$ref` navigation, additionalProperties maps, mock data generator with JSON and YAML toggle, virtualized list and quick search via `/`.
 - **Diagnostics and Validation**: Syntax checking and spec linting for missing info and paths, invalid paths, duplicate operationIds, missing path params, broken refs, unused schemas and security schemes, tag checks and more, with click to jump navigation and how to fix guidance.
 - **cURL Generator**: Builds copy ready cURL commands with server URL normalization including operation and path level servers, template variable substitution, path and query encoding, array explode and delimited styles, `allowReserved` handling, header and cookie support, object query serialization, auth aware headers with selector for OR alternatives and correct `multipart` and `urlencoded` bodies.
-- **Zero Backend Sharing**: Private link sharing via URL hash with LZ String compression that does not pollute the address bar, share dialog with size display and warnings, compact link via minified normalization (with correct per-file scoping for large specs), file fallback for large specs, source URL sharing when loaded from URL (cleared automatically after local edits), app state preservation with correct single percent decoding including `%` in IDs, native system share and clipboard toast feedback.
-- **Import and Workspaces**: Upload single or multiple files for multi file projects with correct root selection and cross-file `$ref` resolution including nested refs inside external files, parser Worker correctly receives file map, load from public URL with CORS handling, optional IndexedDB workspaces for explicit saves (clearing stale file state on load), and onboarding for first use with privacy notice.
+- **Zero Backend Sharing**: Private link sharing via URL hash with LZ String compression that does not pollute the address bar, share dialog with size display and warnings, versioned multi-file project links and downloadable project files, compact link via minified normalization (with correct per-file scoping for large specs), file fallback for large specs, source URL sharing when loaded from URL (cleared automatically after local edits), app state preservation with correct single percent decoding including `%` in IDs, native system share and clipboard toast feedback.
+- **Import and Workspaces**: Upload single or multiple files for multi file projects with correct root selection and cross-file `$ref` resolution including nested refs inside external files, parser Worker correctly receives file map, load from public URL with CORS handling, optional IndexedDB workspaces that preserve the root filename and all uploaded files, and onboarding for first use with privacy notice.
 - **API Diff**: Live semantic diff across endpoints, schemas, security schemes, servers and global metadata with 150 to 300 ms debounce, parse error banners instead of silent zero changes and regression tests per category.
 - **Mobile and UX**: Full screen drawer editor on phones, command palette via Ctrl/Cmd+K, quick search via `/` in Explorer and Schema Viewer, keyboard shortcut help via `?` (with correct dark mode styling and no interference in CodeMirror), theme toggle with system sync that persists only explicit choice.
-- **Performance and Architecture**: Parsing, compression and Dagre layout can run off the main thread via experimental workers, shared code extracted to hooks and services, strong TypeScript typing and reusable guards.
+- **Performance and Architecture**: Parsing, compression and Dagre layout can run off the main thread via experimental workers, shared code extracted to hooks and services, one-pass share preparation with reusable compressed links, strong TypeScript typing and reusable guards.
 - **Dark and Light Theme**: Theme toggle with localStorage persistence for explicit preference and system preference sync.
 
 ---
@@ -204,6 +204,14 @@ npm run format
 # One command typecheck, lint, test and build
 npm run check
 ```
+
+### Agent guidance
+
+Repository development rules are in [AGENTS.md](AGENTS.md), including the prohibition on em dashes throughout the repository. Run `npm run check:text` to validate source text.
+
+The reusable [$apiatomy-development skill](.agents/skills/apiatomy-development/SKILL.md) covers parser, semantic diff, project persistence, sharing, and validation workflows. It is stored in the repository for agents working on this application.
+
+Workspace saves, private links, and downloaded `apiatomy-project.json` files preserve uploaded project dependencies. Upload a project file through the regular Upload action to restore it. Plain YAML and JSON specs and older workspace records remain supported.
 
 ### Production Build
 

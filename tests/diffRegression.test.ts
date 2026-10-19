@@ -1,64 +1,29 @@
 import { describe, it, expect } from 'vitest';
+import { compareSpecTexts } from '../src/model/specDiff';
 import { parseApiSpec } from '../src/parser';
 
 function getSecurityDiff(oldText: string, newText: string) {
-  const oldSpec = parseApiSpec(oldText);
-  const newSpec = parseApiSpec(newText);
-  const oldKeys = Object.keys(oldSpec.securitySchemes);
-  const newKeys = Object.keys(newSpec.securitySchemes);
-  const added = newKeys.filter((k) => !(k in oldSpec.securitySchemes));
-  const removed = oldKeys.filter((k) => !(k in newSpec.securitySchemes));
-  const changed = newKeys.filter(
-    (k) =>
-      k in oldSpec.securitySchemes &&
-      JSON.stringify(oldSpec.securitySchemes[k]) !== JSON.stringify(newSpec.securitySchemes[k])
-  );
-  return { added, removed, changed, oldSpec, newSpec };
+  const diff = compareSpecTexts(oldText, newText);
+  return {
+    ...diff,
+    changed: diff.changedSecurity,
+    added: diff.addedSecurity,
+    removed: diff.removedSecurity,
+  };
 }
-
 function getSchemaDiff(oldText: string, newText: string) {
-  const oldSpec = parseApiSpec(oldText);
-  const newSpec = parseApiSpec(newText);
-  const oldKeys = Object.keys(oldSpec.schemas);
-  const newKeys = Object.keys(newSpec.schemas);
-  const added = newKeys.filter((k) => !(k in oldSpec.schemas));
-  const removed = oldKeys.filter((k) => !(k in newSpec.schemas));
-  const changed = newKeys.filter(
-    (k) =>
-      k in oldSpec.schemas &&
-      JSON.stringify(oldSpec.schemas[k]) !== JSON.stringify(newSpec.schemas[k])
-  );
-  return { added, removed, changed };
+  const diff = compareSpecTexts(oldText, newText);
+  return { changed: diff.changedSchemas, added: diff.addedSchemas, removed: diff.removedSchemas };
 }
-
 function getServerDiff(oldText: string, newText: string) {
-  const oldSpec = parseApiSpec(oldText);
-  const newSpec = parseApiSpec(newText);
-  const oldStr = new Set(oldSpec.servers.map((s) => JSON.stringify(s)));
-  const newStr = new Set(newSpec.servers.map((s) => JSON.stringify(s)));
-  const added = newSpec.servers.filter((s) => !oldStr.has(JSON.stringify(s)));
-  const removed = oldSpec.servers.filter((s) => !newStr.has(JSON.stringify(s)));
-  return { added, removed };
+  const diff = compareSpecTexts(oldText, newText);
+  return { added: diff.addedServers, removed: diff.removedServers };
 }
-
 function getGlobalDiff(oldText: string, newText: string) {
-  const oldSpec = parseApiSpec(oldText);
-  const newSpec = parseApiSpec(newText);
-  const changes: string[] = [];
-  if (oldSpec.title !== newSpec.title) changes.push('title');
-  if (oldSpec.version !== newSpec.version) changes.push('version');
-  if (JSON.stringify(oldSpec.tags) !== JSON.stringify(newSpec.tags)) changes.push('tags');
-  if (oldSpec.description !== newSpec.description) changes.push('description');
-  return changes;
+  return compareSpecTexts(oldText, newText).globalChanges;
 }
-
-function hasParseError(spec: ReturnType<typeof parseApiSpec> | null, raw: string) {
-  if (!raw.trim()) return false;
-  if (!spec) return true;
-  if (spec.title === 'Invalid Spec' || spec.title === 'Parse Error') return true;
-  return spec.diagnostics.some(
-    (d) => d.severity === 'error' && (d.source === 'syntax' || d.id === 'parse-crash')
-  );
+function hasParseError(_spec: ReturnType<typeof parseApiSpec> | null, raw: string) {
+  return compareSpecTexts(raw, raw).oldParseError;
 }
 
 const baseSpec = `
@@ -161,14 +126,14 @@ components:
       .replace('title: Test API', 'title: New Title')
       .replace('version: 1.0.0', 'version: 2.0.0');
     const changes = getGlobalDiff(baseSpec, newSpec);
-    expect(changes).toContain('title');
-    expect(changes).toContain('version');
+    expect(changes).toContainEqual(expect.stringContaining('title:'));
+    expect(changes).toContainEqual(expect.stringContaining('version:'));
   });
 
   it('detects tags change', () => {
     const newSpec = baseSpec.replace('- name: test', '- name: test\n  - name: extra');
     const changes = getGlobalDiff(baseSpec, newSpec);
-    expect(changes).toContain('tags');
+    expect(changes).toContain('tags changed');
   });
 
   it('shows parse errors instead of zero changes', () => {

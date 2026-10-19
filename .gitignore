@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated validation artifacts
+coverage/
+playwright-report/
+test-results/
+output/playwright/

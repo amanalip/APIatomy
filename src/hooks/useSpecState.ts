@@ -55,7 +55,7 @@ export function useSpecState(initialText: string) {
         e: MessageEvent<{ id: number; result?: ApiSpecModel; error?: string }>
       ) => {
         const { id, result, error } = e.data;
-        if (id !== requestIdRef.current) return;
+        if (workerRef.current !== worker || id !== requestIdRef.current) return;
         if (result) {
           setSpec(result);
         } else if (error) {
@@ -63,6 +63,8 @@ export function useSpecState(initialText: string) {
         }
       };
       worker.onerror = () => {
+        worker.terminate();
+        workerRef.current = null;
         setSpec(parseSync(latestRawTextRef.current));
       };
     } catch {
@@ -92,6 +94,8 @@ export function useSpecState(initialText: string) {
         }
         workerRef.current?.postMessage({ id, rawText, files, rootFilename: getRootFilename() });
       } catch {
+        workerRef.current?.terminate();
+        workerRef.current = null;
         setSpec(parseSync(rawText));
       }
     }, 120) as unknown as number;
