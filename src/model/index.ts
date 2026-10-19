@@ -162,6 +162,7 @@ export interface ApiSpecModel {
   endpoints: EndpointModel[];
   schemas: Record<string, SchemaModel>;
   securitySchemes: Record<string, SecuritySchemeModel>;
+  security?: SecurityRequirementModel[][];
   diagnostics: DiagnosticItem[];
   rawText: string;
 }

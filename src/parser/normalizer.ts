@@ -425,6 +425,18 @@ export function normalizeSpec(
     endpoints,
     schemas,
     securitySchemes,
+    security: Array.isArray(doc.security)
+      ? doc.security
+          .filter(isRecord)
+          .map((group) =>
+            Object.entries(group).map(([name, scopes]) => ({
+              name,
+              scopes: Array.isArray(scopes)
+                ? scopes.filter((scope): scope is string => typeof scope === 'string')
+                : [],
+            }))
+          )
+      : [],
     diagnostics: allDiagnostics,
     rawText,
   };

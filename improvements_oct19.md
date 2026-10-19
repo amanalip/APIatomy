@@ -16,7 +16,7 @@ Review baseline: `npm run check` passed, including all 207 tests, TypeScript, li
   - Verification: test multiple references to the same target with different descriptions and constraints, in different resolution orders.
   - Reference: [src/parser/refResolver.ts:235](src/parser/refResolver.ts#L235).
 
-- [ ] **Correct breaking-change classification in API diffs.**
+- [x] **Correct breaking-change classification in API diffs.**
   - Finding: changing a response type from `string` to `integer` displayed “non-breaking.” Classification primarily checks required parameters and defaults other changes to non-breaking.
   - Improvement: extract a dedicated diff engine with explicit compatibility rules for request, response, and security changes. Review the rule that currently treats removing a required parameter as breaking.
   - Verification: exercise the production diff engine with response type changes, required request fields, parameter changes, removed responses, and authentication changes.
