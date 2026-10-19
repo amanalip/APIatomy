@@ -24,7 +24,7 @@ Review baseline: `npm run check` passed, including all 207 tests, TypeScript, li
 
 ## Medium priority
 
-- [ ] **Make every endpoint accessible in large endpoint lists.**
+- [x] **Make every endpoint accessible in large endpoint lists.**
   - Finding: a spec with 101 endpoints under one tag rendered only 20 cards while claiming “Showing 100.” The implementation truncates both tag groups and endpoints within each group.
   - Improvement: replace the slices with virtualization or pagination, and display accurate counts.
   - Verification: confirm all endpoints remain accessible with more than 100 endpoints, more than 10 tags, and more than 20 endpoints under one tag.

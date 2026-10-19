@@ -14,6 +14,8 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
   selectedEndpoint,
   onSelectEndpoint,
 }) => {
+  const [page, setPage] = useState(0);
+  const pageSize = 100;
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<HttpMethod | 'all'>('all');
   const [selectedTag, setSelectedTag] = useState<string>('all');
@@ -23,9 +25,9 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
 
   useEffect(() => {
     if (selectedEndpoint && activeEndpointRef.current) {
-      activeEndpointRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      activeEndpointRef.current.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
     }
-  }, [selectedEndpoint?.id]);
+  }, [selectedEndpoint?.id, page]);
 
   useEffect(() => {
     const handleGlobalKey = (e: KeyboardEvent) => {
@@ -82,11 +84,23 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
     });
   }, [endpoints, selectedMethod, selectedTag, searchQuery]);
 
+  const pageCount = Math.max(1, Math.ceil(filteredEndpoints.length / pageSize));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageEndpoints = useMemo(
+    () => filteredEndpoints.slice(currentPage * pageSize, (currentPage + 1) * pageSize),
+    [filteredEndpoints, currentPage]
+  );
+  useEffect(() => setPage(0), [searchQuery, selectedMethod, selectedTag, endpoints]);
+  useEffect(() => {
+    const index = filteredEndpoints.findIndex((ep) => ep.id === selectedEndpoint?.id);
+    if (index >= 0) setPage(Math.floor(index / pageSize));
+  }, [selectedEndpoint?.id]);
+
   // Group by primary or selected tag
   const groupedEndpoints = useMemo(() => {
     const groups: Record<string, EndpointModel[]> = {};
 
-    for (const ep of filteredEndpoints) {
+    for (const ep of pageEndpoints) {
       const tagKey =
         selectedTag !== 'all' && ep.tags.includes(selectedTag)
           ? selectedTag
@@ -99,7 +113,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
     }
 
     return groups;
-  }, [filteredEndpoints, selectedTag]);
+  }, [pageEndpoints, selectedTag]);
 
   const totalByTag = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -210,6 +224,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
           <div className="flex items-center gap-2">
             <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <select
+              aria-label="Filter by tag"
               value={selectedTag}
               onChange={(e) => setSelectedTag(e.target.value)}
               className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-lg px-2.5 py-1 w-full focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -246,7 +261,33 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
         )}
       </div>
 
-      {/* Endpoint Cards Grouped by Tag - virtualized for large APIs */}
+      {filteredEndpoints.length > pageSize && (
+        <nav
+          aria-label="Endpoint pages"
+          className="flex items-center justify-between gap-2 px-3 py-2 text-xs border-b border-slate-200 dark:border-slate-800"
+        >
+          <button
+            onClick={() => setPage(currentPage - 1)}
+            disabled={currentPage === 0}
+            className="px-2 py-1 rounded border disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span role="status">
+            Showing {currentPage * pageSize + 1}–
+            {Math.min((currentPage + 1) * pageSize, filteredEndpoints.length)} of{' '}
+            {filteredEndpoints.length} endpoints
+          </span>
+          <button
+            onClick={() => setPage(currentPage + 1)}
+            disabled={currentPage + 1 >= pageCount}
+            className="px-2 py-1 rounded border disabled:opacity-50"
+          >
+            Next
+          </button>
+        </nav>
+      )}
+      {/* Endpoint cards grouped by tag within the current page. */}
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
         {filteredEndpoints.length === 0 ? (
           <div className="text-center py-12 text-slate-400 dark:text-slate-500 text-xs space-y-3">
@@ -273,87 +314,6 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               </button>
             )}
           </div>
-        ) : filteredEndpoints.length > 100 ? (
-          <div className="space-y-4">
-            <div className="text-[11px] text-slate-600 dark:text-slate-400 p-2 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-              Showing 100 of {filteredEndpoints.length} endpoints. Use search or tag filter to
-              narrow.
-            </div>
-            {Object.entries(groupedEndpoints)
-              .slice(0, 10)
-              .map(([tag, eps]) => {
-                const isCollapsed = collapsedTags[tag] ?? false;
-                const visible = eps.slice(0, 20);
-                return (
-                  <div key={tag} className="space-y-2">
-                    <button
-                      onClick={() => toggleTagCollapse(tag)}
-                      className="w-full flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 transition text-left"
-                    >
-                      <div className="flex items-center gap-1.5 font-semibold text-xs text-slate-800 dark:text-slate-200">
-                        <span className="uppercase tracking-wider text-[11px] text-slate-600 dark:text-slate-400 font-mono">
-                          {tag}
-                        </span>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
-                          ({eps.length}
-                          {totalByTag[tag] && totalByTag[tag] !== eps.length
-                            ? ` / ${totalByTag[tag]}`
-                            : ''}
-                          )
-                        </span>
-                      </div>
-                    </button>
-                    {!isCollapsed && (
-                      <div className="space-y-1.5 pl-2">
-                        {visible.map((ep) => {
-                          const isSelected = selectedEndpoint?.id === ep.id;
-                          const methodConfig = HTTP_METHODS[ep.method] || HTTP_METHODS.get;
-                          return (
-                            <div
-                              key={ep.id}
-                              data-testid="endpoint-card"
-                              ref={isSelected ? activeEndpointRef : undefined}
-                              role="button"
-                              tabIndex={0}
-                              onClick={() => onSelectEndpoint(ep)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.preventDefault();
-                                  onSelectEndpoint(ep);
-                                }
-                              }}
-                              aria-pressed={isSelected}
-                              className={`group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 ${isSelected ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/50 shadow-md' : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm'}`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded shadow-sm shrink-0 ${methodConfig.badgeBg}`}
-                                >
-                                  {methodConfig.label}
-                                </span>
-                                <span className="font-mono text-xs font-semibold text-slate-800 dark:text-slate-200 truncate flex-1">
-                                  {ep.path}
-                                </span>
-                              </div>
-                              {ep.summary && (
-                                <div className="text-[11px] text-slate-600 dark:text-slate-400 truncate">
-                                  {ep.summary}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                        {eps.length > 20 && (
-                          <div className="text-[10px] text-slate-500">
-                            and {eps.length - 20} more in this tag...
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
         ) : (
           Object.entries(groupedEndpoints).map(([tag, eps]) => {
             const isCollapsed = collapsedTags[tag] ?? false;
@@ -362,6 +322,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               <div key={tag} className="space-y-2">
                 {/* Tag Header */}
                 <button
+                  aria-expanded={!isCollapsed}
                   onClick={() => toggleTagCollapse(tag)}
                   className="w-full flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 transition text-left"
                 >
