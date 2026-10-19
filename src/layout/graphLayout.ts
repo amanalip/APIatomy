@@ -1,3 +1,5 @@
+import { ownValue } from '../utils/dictionary';
+import { dictionary } from '../utils/dictionary';
 import dagre from '@dagrejs/dagre';
 import { Node, Edge } from '@xyflow/react';
 import { ApiSpecModel } from '../model';
@@ -29,15 +31,15 @@ export function computeApiTopologyGraph(
   const edgeSet = new Set<string>();
 
   // Track schema reuse frequency (endpoint refs + nested schema refs)
-  const schemaReuseCount: Record<string, number> = {};
+  const schemaReuseCount: Record<string, number> = dictionary();
   for (const ep of spec.endpoints) {
     for (const ref of ep.consumedSchemaRefs) {
-      if (spec.schemas[ref]) {
+      if (ownValue(spec.schemas, ref)) {
         schemaReuseCount[ref] = (schemaReuseCount[ref] || 0) + 1;
       }
     }
     for (const ref of ep.producedSchemaRefs) {
-      if (spec.schemas[ref]) {
+      if (ownValue(spec.schemas, ref)) {
         schemaReuseCount[ref] = (schemaReuseCount[ref] || 0) + 1;
       }
     }
@@ -48,7 +50,7 @@ export function computeApiTopologyGraph(
     collectSchemaRefs(schema, nested);
     for (const ref of nested) {
       if (ref === ownerName) continue;
-      if (spec.schemas[ref]) {
+      if (ownValue(spec.schemas, ref)) {
         schemaReuseCount[ref] = (schemaReuseCount[ref] || 0) + 1;
       }
     }
@@ -80,7 +82,7 @@ export function computeApiTopologyGraph(
 
     // Edges from Endpoint to Consumed Schemas (Request)
     for (const schemaName of ep.consumedSchemaRefs) {
-      if (!spec.schemas[schemaName]) continue; // Guard against broken/missing schema references
+      if (!ownValue(spec.schemas, schemaName)) continue; // Guard against broken/missing schema references
       const schemaNodeId = `schema_${schemaName}`;
       const edgeId = `${nodeId}->${schemaNodeId}:consumes`;
 
@@ -106,7 +108,7 @@ export function computeApiTopologyGraph(
 
     // Edges from Endpoint to Produced Schemas (Response)
     for (const schemaName of ep.producedSchemaRefs) {
-      if (!spec.schemas[schemaName]) continue; // Guard against broken/missing schema references
+      if (!ownValue(spec.schemas, schemaName)) continue; // Guard against broken/missing schema references
       const schemaNodeId = `schema_${schemaName}`;
       const edgeId = `${nodeId}->${schemaNodeId}:produces`;
 
@@ -157,7 +159,7 @@ export function computeApiTopologyGraph(
     collectSchemaRefs(schemaObj, nestedRefs);
 
     for (const childRef of nestedRefs) {
-      if (childRef === schemaName || !spec.schemas[childRef]) continue; // Guard against self loops and missing schemas
+      if (childRef === schemaName || !ownValue(spec.schemas, childRef)) continue; // Guard against self loops and missing schemas
       const childNodeId = `schema_${childRef}`;
       const edgeId = `${nodeId}->${childNodeId}:ref`;
 

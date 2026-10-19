@@ -1,3 +1,5 @@
+import { ownValue } from '../utils/dictionary';
+import { dictionary } from '../utils/dictionary';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EndpointModel, ServerModel, SchemaModel, SecuritySchemeModel } from '../model';
 import { HTTP_METHODS, getStatusCategory } from '../model/httpMethods';
@@ -361,7 +363,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                         {c.schema?.refTarget && (
                           <button
                             onClick={() => {
-                              const target = schemas[c.schema!.refTarget!];
+                              const target = ownValue(schemas, c.schema!.refTarget!);
                               if (target) onSelectSchema?.(c.schema!.refTarget!, target);
                             }}
                             className="flex items-center gap-1 text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-mono"
@@ -400,7 +402,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                       const allExpanded = endpoint.responses.every(
                         (r) => expandedResponses[r.statusCode]
                       );
-                      const next: Record<string, boolean> = {};
+                      const next: Record<string, boolean> = dictionary();
                       for (const r of endpoint.responses) next[r.statusCode] = !allExpanded;
                       setExpandedResponses(next);
                     }}
@@ -525,7 +527,7 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                                   {c.schema?.refTarget && (
                                     <button
                                       onClick={() => {
-                                        const target = schemas[c.schema!.refTarget!];
+                                        const target = ownValue(schemas, c.schema!.refTarget!);
                                         if (target) onSelectSchema?.(c.schema!.refTarget!, target);
                                       }}
                                       className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-mono"
@@ -599,7 +601,7 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
               {propSchema.refTarget && (
                 <button
                   onClick={() => {
-                    const target = schemas[propSchema.refTarget!];
+                    const target = ownValue(schemas, propSchema.refTarget!);
                     if (target) onSelectSchema?.(propSchema.refTarget!, target);
                   }}
                   className="text-indigo-600 dark:text-indigo-400 hover:underline text-[11px] flex items-center gap-0.5"
@@ -637,7 +639,10 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
                 {(schema.additionalProperties as any).refTarget && (
                   <button
                     onClick={() => {
-                      const target = schemas[(schema.additionalProperties as any).refTarget!];
+                      const target = ownValue(
+                        schemas,
+                        (schema.additionalProperties as any).refTarget!
+                      );
                       if (target)
                         onSelectSchema?.((schema.additionalProperties as any).refTarget!, target);
                     }}
@@ -666,7 +671,7 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
         {schema.items.refTarget && (
           <button
             onClick={() => {
-              const target = schemas[schema.items!.refTarget!];
+              const target = ownValue(schemas, schema.items!.refTarget!);
               if (target) onSelectSchema?.(schema.items!.refTarget!, target);
             }}
             className="text-indigo-600 dark:text-indigo-400 hover:underline ml-1"
@@ -723,7 +728,7 @@ const SchemaPropertyTree: React.FC<SchemaPropertyTreeProps> = ({
           {(schema.additionalProperties as any).refTarget && (
             <button
               onClick={() => {
-                const target = schemas[(schema.additionalProperties as any).refTarget!];
+                const target = ownValue(schemas, (schema.additionalProperties as any).refTarget!);
                 if (target)
                   onSelectSchema?.((schema.additionalProperties as any).refTarget!, target);
               }}

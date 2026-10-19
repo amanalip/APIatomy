@@ -1,3 +1,4 @@
+import { dictionary } from '../utils/dictionary';
 import React, { useState, useRef, useEffect } from 'react';
 import { ApiSpecModel } from '../model';
 import { SAMPLE_SPECS, SampleSpecOption } from '../samples';
@@ -182,7 +183,7 @@ export const Header: React.FC<HeaderProps> = ({
         fileEntries.push({ name: file.webkitRelativePath || file.name, text });
       }
       if (fileEntries.length > 0) {
-        const map: Record<string, string> = {};
+        const map: Record<string, string> = dictionary();
         for (const entry of fileEntries) map[entry.name] = entry.text;
         let root = fileEntries[0];
         const candidates = fileEntries.filter((e) => {

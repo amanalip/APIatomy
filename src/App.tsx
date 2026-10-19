@@ -1,3 +1,4 @@
+import { ownValue } from './utils/dictionary';
 import { decodeProject, restoreProject } from './share/project';
 import React, { useState, useEffect, useRef } from 'react';
 import { EndpointModel, SchemaModel } from './model';
@@ -163,7 +164,10 @@ export function App() {
           const ep = spec.endpoints.find((e) => e.id === state.endpointId);
           if (ep) setSelectedEndpoint(ep);
         }
-        if (typeof state.schemaName === 'string' && spec.schemas[state.schemaName as string]) {
+        if (
+          typeof state.schemaName === 'string' &&
+          ownValue(spec.schemas, state.schemaName as string)
+        ) {
           setSelectedSchemaName(state.schemaName as string);
         }
         hasRestoredStateRef.current = true;

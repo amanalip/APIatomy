@@ -1,3 +1,4 @@
+import { ownValue } from '../utils/dictionary';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EndpointModel, ServerModel, SchemaModel, SecuritySchemeModel } from '../model';
 import { generateMockData } from '../model/mockGenerator';
@@ -376,7 +377,7 @@ export function buildCurlCommand(
     for (const sec of authList) {
       if (seen.has(sec.name)) continue;
       seen.add(sec.name);
-      const scheme = securitySchemes?.[sec.name];
+      const scheme = securitySchemes && ownValue(securitySchemes, sec.name);
       if (scheme) {
         if (scheme.type === 'apiKey') {
           const headerName = (scheme as SecuritySchemeModel).paramName || sec.name;

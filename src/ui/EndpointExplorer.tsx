@@ -1,3 +1,5 @@
+import { ownValue } from '../utils/dictionary';
+import { dictionary } from '../utils/dictionary';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EndpointModel, HttpMethod } from '../model';
 import { HTTP_METHODS } from '../model/httpMethods';
@@ -98,7 +100,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
 
   // Group by primary or selected tag
   const groupedEndpoints = useMemo(() => {
-    const groups: Record<string, EndpointModel[]> = {};
+    const groups: Record<string, EndpointModel[]> = dictionary();
 
     for (const ep of pageEndpoints) {
       const tagKey =
@@ -116,7 +118,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
   }, [pageEndpoints, selectedTag]);
 
   const totalByTag = useMemo(() => {
-    const counts: Record<string, number> = {};
+    const counts: Record<string, number> = dictionary();
     for (const ep of endpoints) {
       const tags = ep.tags.length > 0 ? ep.tags : ['Default'];
       for (const t of tags) {
@@ -127,12 +129,12 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
   }, [endpoints]);
 
   const toggleTagCollapse = (tag: string) => {
-    setCollapsedTags((prev) => ({ ...prev, [tag]: !prev[tag] }));
+    setCollapsedTags((prev) => ({ ...prev, [tag]: !ownValue(prev, tag) }));
   };
 
   const handleToggleAllTags = () => {
-    const allCollapsed = Object.keys(groupedEndpoints).every((tag) => collapsedTags[tag]);
-    const nextState: Record<string, boolean> = {};
+    const allCollapsed = Object.keys(groupedEndpoints).every((tag) => ownValue(collapsedTags, tag));
+    const nextState: Record<string, boolean> = dictionary();
     for (const tag of Object.keys(groupedEndpoints)) {
       nextState[tag] = !allCollapsed;
     }
@@ -253,7 +255,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
               className="px-2 py-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 rounded-lg text-[10px] font-medium whitespace-nowrap"
               title="Toggle Expand/Collapse for all tag groups"
             >
-              {Object.keys(groupedEndpoints).every((tag) => collapsedTags[tag])
+              {Object.keys(groupedEndpoints).every((tag) => ownValue(collapsedTags, tag))
                 ? 'Expand All'
                 : 'Collapse All'}
             </button>
@@ -316,7 +318,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
           </div>
         ) : (
           Object.entries(groupedEndpoints).map(([tag, eps]) => {
-            const isCollapsed = collapsedTags[tag] ?? false;
+            const isCollapsed = ownValue(collapsedTags, tag) ?? false;
 
             return (
               <div key={tag} className="space-y-2">

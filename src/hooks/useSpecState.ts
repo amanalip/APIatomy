@@ -1,3 +1,4 @@
+import { dictionary } from '../utils/dictionary';
 import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import { parseApiSpec } from '../parser';
 import { ApiSpecModel } from '../model';
@@ -86,7 +87,7 @@ export function useSpecState(initialText: string) {
     if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
       try {
-        const files: Record<string, string> = {};
+        const files: Record<string, string> = dictionary();
         try {
           for (const [k, v] of getFileMap().entries()) files[k] = v;
         } catch {

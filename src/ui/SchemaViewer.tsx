@@ -1,3 +1,4 @@
+import { ownValue } from '../utils/dictionary';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { SchemaModel } from '../model';
 import { generateMockData } from '../model/mockGenerator';
@@ -66,9 +67,9 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
 
   // Sync if selectedSchemaName changes from parent or if current active schema is removed
   useEffect(() => {
-    if (selectedSchemaName && schemas[selectedSchemaName]) {
+    if (selectedSchemaName && ownValue(schemas, selectedSchemaName)) {
       setActiveSchemaName(selectedSchemaName);
-    } else if (!schemas[activeSchemaName]) {
+    } else if (!ownValue(schemas, activeSchemaName)) {
       const firstAvailable = Object.keys(schemas)[0] || '';
       setActiveSchemaName(firstAvailable);
     }
@@ -80,7 +81,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
     const q = searchQuery.toLowerCase();
     return names.filter((n) => {
       if (n.toLowerCase().includes(q)) return true;
-      const s = schemas[n];
+      const s = ownValue(schemas, n);
       if (s?.title?.toLowerCase().includes(q)) return true;
       if (s?.description?.toLowerCase().includes(q)) return true;
       if (
@@ -93,7 +94,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
     });
   }, [schemas, searchQuery]);
 
-  const activeSchema = schemas[activeSchemaName];
+  const activeSchema = ownValue(schemas, activeSchemaName);
 
   const generatedMockText = useMemo(() => {
     if (!activeSchema) return mockFormat === 'yaml' ? '' : '{}';
@@ -192,7 +193,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                 itemHeight={36}
                 renderItem={(name) => {
                   const isSelected = activeSchemaName === name;
-                  const s = schemas[name];
+                  const s = ownValue(schemas, name);
                   return (
                     <button
                       key={name}
@@ -226,7 +227,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
           ) : (
             schemaNames.map((name) => {
               const isSelected = activeSchemaName === name;
-              const s = schemas[name];
+              const s = ownValue(schemas, name);
 
               return (
                 <button
@@ -345,7 +346,8 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                     schemas={schemas}
                     onNavigateRef={(target) => {
                       setActiveSchemaName(target);
-                      if (schemas[target]) onSelectSchema?.(target, schemas[target]);
+                      if (ownValue(schemas, target))
+                        onSelectSchema?.(target, ownValue(schemas, target));
                     }}
                   />
                 </div>
@@ -437,7 +439,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
   const [collapsedProperties, setCollapsedProperties] = useState<Record<string, boolean>>({});
 
   const toggleProperty = (name: string) => {
-    setCollapsedProperties((prev) => ({ ...prev, [name]: !prev[name] }));
+    setCollapsedProperties((prev) => ({ ...prev, [name]: !ownValue(prev, name) }));
   };
 
   const hasComposition = Boolean(schema.allOf || schema.oneOf || schema.anyOf || schema.not);
@@ -538,7 +540,7 @@ const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
               propSchema.not ||
               propSchema.additionalProperties
             );
-            const isCollapsed = collapsedProperties[propName] ?? false;
+            const isCollapsed = ownValue(collapsedProperties, propName) ?? false;
 
             return (
               <div

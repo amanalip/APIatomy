@@ -1,3 +1,5 @@
+import { ownValue } from '../utils/dictionary';
+import { dictionary } from '../utils/dictionary';
 import { SchemaModel } from './index';
 import { MAX_MOCK_ARRAY_ITEMS, MAX_MOCK_DEPTH } from '../utils/schemaRefs';
 
@@ -30,13 +32,13 @@ export function generateMockData(
     return '...';
   }
 
-  if (schema.refTarget && allSchemas[schema.refTarget]) {
-    return generateMockData(allSchemas[schema.refTarget], allSchemas, depth + 1);
+  if (schema.refTarget && ownValue(allSchemas, schema.refTarget)) {
+    return generateMockData(ownValue(allSchemas, schema.refTarget), allSchemas, depth + 1);
   }
 
   // Handle allOf / oneOf / anyOf composition in mock generation
   if (schema.allOf && schema.allOf.length > 0) {
-    const merged: Record<string, unknown> = {};
+    const merged: Record<string, unknown> = dictionary();
     for (const sub of schema.allOf) {
       const subData = generateMockData(sub, allSchemas, depth + 1);
       if (typeof subData === 'object' && subData !== null) {
@@ -120,7 +122,7 @@ export function generateMockData(
   }
 
   if (schema.properties) {
-    const obj: Record<string, unknown> = {};
+    const obj: Record<string, unknown> = dictionary();
     for (const [key, prop] of Object.entries(schema.properties)) {
       obj[key] = generateMockData(prop, allSchemas, depth + 1);
     }

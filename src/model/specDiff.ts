@@ -1,3 +1,5 @@
+import { hasOwn } from '../utils/dictionary';
+import { ownValue } from '../utils/dictionary';
 import { decodeProject } from '../share/project';
 import { parseApiSpec } from '../parser';
 import { ApiSpecModel, EndpointModel, SchemaModel, MediaTypeModel } from './index';
@@ -112,7 +114,7 @@ export function schemaBreaks(
   const oldProps = oldSchema.properties || {};
   const newProps = newSchema.properties || {};
   for (const [key, oldProp] of Object.entries(oldProps)) {
-    if (!(key in newProps) || schemaBreaks(oldProp, newProps[key], direction)) return true;
+    if (!hasOwn(newProps, key) || schemaBreaks(oldProp, newProps[key], direction)) return true;
   }
   if (schemaBreaks(oldSchema.items, newSchema.items, direction)) return true;
   for (const key of ['minimum', 'minLength', 'minItems', 'minProperties'] as const) {
@@ -312,8 +314,8 @@ export function compareSpecTexts(oldText: string, newText: string) {
       const oldEp = oldSpec.endpoints.find((o) => `${o.method} ${o.path}` === key)!;
       const authChanged = [...oldEp.security, ...e.security].some(
         (requirement) =>
-          stableValue(oldSpec.securitySchemes[requirement.name], true) !==
-          stableValue(newSpec.securitySchemes[requirement.name], true)
+          stableValue(ownValue(oldSpec.securitySchemes, requirement.name), true) !==
+          stableValue(ownValue(newSpec.securitySchemes, requirement.name), true)
       );
       if (stableValue(oldEp) !== stableValue(e) || authChanged) {
         changedDetails.push({ key, cls: authChanged ? 'breaking' : classifyChange(oldEp, e) });
@@ -324,20 +326,21 @@ export function compareSpecTexts(oldText: string, newText: string) {
 
   const oldSchemaKeys = Object.keys(oldSpec.schemas);
   const newSchemaKeys = Object.keys(newSpec.schemas);
-  const addedSchemas = newSchemaKeys.filter((k) => !(k in oldSpec!.schemas));
-  const removedSchemas = oldSchemaKeys.filter((k) => !(k in newSpec!.schemas));
+  const addedSchemas = newSchemaKeys.filter((k) => !hasOwn(oldSpec!.schemas, k));
+  const removedSchemas = oldSchemaKeys.filter((k) => !hasOwn(newSpec!.schemas, k));
   const changedSchemas = newSchemaKeys.filter(
     (k) =>
-      k in oldSpec!.schemas && stableValue(oldSpec!.schemas[k]) !== stableValue(newSpec!.schemas[k])
+      hasOwn(oldSpec!.schemas, k) &&
+      stableValue(ownValue(oldSpec!.schemas, k)) !== stableValue(ownValue(newSpec!.schemas, k))
   );
 
   const oldSecKeys = Object.keys(oldSpec.securitySchemes);
   const newSecKeys = Object.keys(newSpec.securitySchemes);
-  const addedSecurity = newSecKeys.filter((k) => !(k in oldSpec!.securitySchemes));
-  const removedSecurity = oldSecKeys.filter((k) => !(k in newSpec!.securitySchemes));
+  const addedSecurity = newSecKeys.filter((k) => !hasOwn(oldSpec!.securitySchemes, k));
+  const removedSecurity = oldSecKeys.filter((k) => !hasOwn(newSpec!.securitySchemes, k));
   const changedSecurity = newSecKeys.filter(
     (k) =>
-      k in oldSpec!.securitySchemes &&
+      hasOwn(oldSpec!.securitySchemes, k) &&
       stableValue(oldSpec!.securitySchemes[k]) !== stableValue(newSpec!.securitySchemes[k])
   );
 

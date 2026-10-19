@@ -1,3 +1,4 @@
+import { dictionary } from '../utils/dictionary';
 import { getRootFilename, getFileMap } from './fileMap';
 import {
   ApiSpecModel,
@@ -106,7 +107,7 @@ export function normalizeSpec(
   }
 
   // 4. Component Schemas
-  const schemas: Record<string, SchemaModel> = {};
+  const schemas: Record<string, SchemaModel> = dictionary();
   const components = (
     typeof doc.components === 'object' && doc.components !== null ? doc.components : {}
   ) as Record<string, unknown>;
@@ -139,7 +140,7 @@ export function normalizeSpec(
   }
 
   // 5. Security Schemes
-  const securitySchemes: Record<string, SecuritySchemeModel> = {};
+  const securitySchemes: Record<string, SecuritySchemeModel> = dictionary();
   const rawSecSchemes = (
     typeof components.securitySchemes === 'object' && components.securitySchemes !== null
       ? components.securitySchemes

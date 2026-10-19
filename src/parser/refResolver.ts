@@ -1,3 +1,4 @@
+import { dictionary, hasOwn } from '../utils/dictionary';
 import { SchemaModel } from '../model';
 import { getFileContent, resolveFilePath } from './fileMap';
 import { parse as parseYaml } from 'yaml';
@@ -72,6 +73,7 @@ export function resolveJsonPointer(doc: Record<string, unknown>, pointer: string
     if (typeof current !== 'object' || current === null) {
       return undefined;
     }
+    if (!hasOwn(current, part)) return undefined;
     current = (current as Record<string, unknown>)[part];
   }
 
@@ -237,7 +239,7 @@ export function resolveSchema(
 
   // Properties
   if (s.properties && typeof s.properties === 'object') {
-    const props: Record<string, SchemaModel> = {};
+    const props: Record<string, SchemaModel> = dictionary();
     for (const [propKey, propVal] of Object.entries(s.properties as Record<string, unknown>)) {
       props[propKey] = resolveSchema(propVal, context, propKey);
     }

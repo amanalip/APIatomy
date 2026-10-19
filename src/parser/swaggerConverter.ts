@@ -1,3 +1,4 @@
+import { dictionary } from '../utils/dictionary';
 // Convert Swagger 2.0 specifications to OpenAPI 3.0.x format
 
 export function isSwagger2(doc: Record<string, unknown>): boolean {
@@ -68,7 +69,7 @@ export function convertSwagger2ToOpenApi3(
   };
 
   if (swagger.definitions && typeof swagger.definitions === 'object') {
-    const schemas: Record<string, unknown> = {};
+    const schemas: Record<string, unknown> = dictionary();
     for (const [key, schema] of Object.entries(swagger.definitions as Record<string, unknown>)) {
       schemas[key] = rewriteSwaggerRefs(schema);
     }
@@ -77,7 +78,7 @@ export function convertSwagger2ToOpenApi3(
 
   // Convert global parameters
   if (swagger.parameters && typeof swagger.parameters === 'object') {
-    const params: Record<string, unknown> = {};
+    const params: Record<string, unknown> = dictionary();
     for (const [key, param] of Object.entries(swagger.parameters as Record<string, unknown>)) {
       params[key] = rewriteSwaggerRefs(param);
     }
@@ -86,7 +87,7 @@ export function convertSwagger2ToOpenApi3(
 
   // Convert global responses
   if (swagger.responses && typeof swagger.responses === 'object') {
-    const resps: Record<string, unknown> = {};
+    const resps: Record<string, unknown> = dictionary();
     for (const [key, resp] of Object.entries(swagger.responses as Record<string, unknown>)) {
       resps[key] = rewriteSwaggerRefs(resp);
     }
@@ -95,7 +96,7 @@ export function convertSwagger2ToOpenApi3(
 
   // Convert securityDefinitions to components.securitySchemes
   if (swagger.securityDefinitions && typeof swagger.securityDefinitions === 'object') {
-    const secSchemes: Record<string, unknown> = {};
+    const secSchemes: Record<string, unknown> = dictionary();
     for (const [key, secDef] of Object.entries(
       swagger.securityDefinitions as Record<string, unknown>
     )) {
@@ -154,12 +155,12 @@ export function convertSwagger2ToOpenApi3(
       ? (swagger.produces as string[])
       : ['application/json'];
 
-    const newPaths: Record<string, unknown> = {};
+    const newPaths: Record<string, unknown> = dictionary();
 
     for (const [pathKey, pathItem] of Object.entries(swagger.paths as Record<string, unknown>)) {
       if (typeof pathItem !== 'object' || pathItem === null) continue;
 
-      const newPathItem: Record<string, unknown> = {};
+      const newPathItem: Record<string, unknown> = dictionary();
       const pi = pathItem as Record<string, unknown>;
 
       for (const [methodKey, opObj] of Object.entries(pi)) {
@@ -252,7 +253,7 @@ export function convertSwagger2ToOpenApi3(
 
         // Handle body parameter -> requestBody
         if (bodyParam) {
-          const contentMap: Record<string, unknown> = {};
+          const contentMap: Record<string, unknown> = dictionary();
           for (const cType of consumes) {
             contentMap[cType] = {
               schema: bodyParam.schema || {},
@@ -265,7 +266,7 @@ export function convertSwagger2ToOpenApi3(
           };
         } else if (formDataParams.length > 0) {
           // Handle formData parameters -> requestBody
-          const properties: Record<string, unknown> = {};
+          const properties: Record<string, unknown> = dictionary();
           const requiredProps: string[] = [];
 
           for (const fp of formDataParams) {
@@ -301,7 +302,7 @@ export function convertSwagger2ToOpenApi3(
 
         // Convert responses
         if (op.responses && typeof op.responses === 'object') {
-          const newResponses: Record<string, unknown> = {};
+          const newResponses: Record<string, unknown> = dictionary();
 
           for (const [code, respObj] of Object.entries(op.responses as Record<string, unknown>)) {
             if (typeof respObj !== 'object' || respObj === null) {
@@ -316,7 +317,7 @@ export function convertSwagger2ToOpenApi3(
             };
 
             if (r.schema) {
-              const contentMap: Record<string, unknown> = {};
+              const contentMap: Record<string, unknown> = dictionary();
               for (const pType of produces) {
                 contentMap[pType] = {
                   schema: r.schema,
@@ -375,7 +376,7 @@ function rewriteSwaggerRefs(
   if (typeof obj === 'object' && obj !== null) {
     if (seen.has(obj as object)) return obj;
     seen.add(obj as object);
-    const result: Record<string, unknown> = {};
+    const result: Record<string, unknown> = dictionary();
     for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
       result[k] = rewriteSwaggerRefs(v, seen, k);
     }
