@@ -16,9 +16,9 @@ import {
   TagModel,
 } from '../model';
 import {
-  extractRefTargetName,
   RefResolutionContext,
-  resolveJsonPointer,
+  resolveReferenceObject,
+  ResolvedReference,
   resolveSchema,
 } from './refResolver';
 import { isSwagger2, convertSwagger2ToOpenApi3 } from './swaggerConverter';
@@ -57,7 +57,52 @@ export function normalizeSpec(
     visitingPath: new Set<string>(),
     basePath: (project ? project.rootFilename : getRootFilename()) || '',
     files: project ? new Map(Object.entries(project.files)) : getFileMap(),
+    documents: new Map(),
   };
+
+  if (context.basePath) {
+    context.documents!.set(context.basePath, doc);
+    context.files!.set(context.basePath, rawText);
+  }
+  function resolveObject(
+    raw: unknown,
+    source: RefResolutionContext,
+    label: string,
+    path: string
+  ): ResolvedReference | undefined {
+    const resolved = resolveReferenceObject(raw, source);
+    if (!resolved && isRecord(raw) && typeof raw.$ref === 'string') {
+      diagnostics.push({
+        id: `unresolved-${label.replace(/ /g, '')}-ref-${path}`,
+        severity: raw.$ref.startsWith('#') ? 'error' : 'warning',
+        message: `Unresolved or circular ${label} reference "${raw.$ref}".`,
+        path,
+        line: findLineForPattern(rawText, raw.$ref) || 1,
+        source: 'ref',
+      });
+    }
+    return resolved;
+  }
+  function parseHeaders(
+    raw: unknown,
+    source: RefResolutionContext,
+    path: string
+  ): ResponseModel['headers'] {
+    if (!isRecord(raw)) return undefined;
+    const headers: NonNullable<ResponseModel['headers']> = dictionary();
+    for (const [name, header] of Object.entries(raw)) {
+      const resolved = resolveObject(header, source, 'header', `${path}/${name}`);
+      if (!resolved) continue;
+      headers[name] = {
+        description:
+          typeof resolved.value.description === 'string' ? resolved.value.description : undefined,
+        schema: resolved.value.schema
+          ? resolveSchema(resolved.value.schema, resolved.context)
+          : undefined,
+      };
+    }
+    return headers;
+  }
 
   // 1. Info block (guarded via isRecord for stricter typing)
   const info = isRecord(doc.info) ? doc.info : {};
@@ -149,7 +194,14 @@ export function normalizeSpec(
 
   for (const [secName, secObj] of Object.entries(rawSecSchemes)) {
     if (typeof secObj === 'object' && secObj !== null) {
-      const s = secObj as Record<string, unknown>;
+      const resolved = resolveObject(
+        secObj,
+        context,
+        'security scheme',
+        `/components/securitySchemes/${secName}`
+      );
+      if (!resolved) continue;
+      const s = resolved.value;
       securitySchemes[secName] = {
         name: secName,
         type: (s.type as any) || 'apiKey',
@@ -175,33 +227,21 @@ export function normalizeSpec(
 
   for (const [pathKey, rawPathItem] of Object.entries(rawPaths)) {
     if (typeof rawPathItem !== 'object' || rawPathItem === null) continue;
-    let pi = rawPathItem as Record<string, unknown>;
-    if (typeof pi.$ref === 'string') {
-      const ref = pi.$ref as string;
-      const resolved = resolveJsonPointer(context.rootDoc as Record<string, unknown>, ref);
-      if (resolved && typeof resolved === 'object' && !Array.isArray(resolved)) {
-        pi = resolved as Record<string, unknown>;
-      } else {
-        const isExternal = !ref.startsWith('#/');
-        diagnostics.push({
-          id: `unresolved-pathitem-ref-${pathKey}`,
-          severity: isExternal ? 'warning' : 'error',
-          message: isExternal
-            ? `External path item reference "${ref}" at path "${pathKey}" cannot be resolved in offline mode.`
-            : `Unresolved path item reference "${ref}" at path "${pathKey}".`,
-          path: `/paths/${pathKey}`,
-          line: findLineForPattern(rawText, ref) || findLineForPattern(rawText, pathKey) || 1,
-          source: 'ref',
-        });
-        continue;
-      }
-    }
+    const pathItem = resolveObject(rawPathItem, context, 'path item', `/paths/${pathKey}`);
+    if (!pathItem) continue;
+    const pi = pathItem.value;
+    const pathContext = pathItem.context;
 
     // Common path-level parameters
     const pathLevelParameters: ParameterModel[] = [];
     if (Array.isArray(pi.parameters)) {
       for (const p of pi.parameters) {
-        const parsedP = parseParameter(p, context);
+        const parsedP = parseParameter(
+          p,
+          pathItem.fieldContexts?.get('parameters') || pathContext,
+          diagnostics,
+          rawText
+        );
         if (parsedP) pathLevelParameters.push(parsedP);
       }
     }
@@ -215,6 +255,7 @@ export function normalizeSpec(
       if (!validMethods.includes(method)) continue;
       if (typeof opObj !== 'object' || opObj === null) continue;
 
+      const operationContext = pathItem.fieldContexts?.get(methodKey) || pathContext;
       const op = opObj as Record<string, unknown>;
       const opId =
         typeof op.operationId === 'string'
@@ -229,7 +270,7 @@ export function normalizeSpec(
       const operationParameters: ParameterModel[] = [];
       if (Array.isArray(op.parameters)) {
         for (const p of op.parameters) {
-          const parsedP = parseParameter(p, context);
+          const parsedP = parseParameter(p, operationContext, diagnostics, rawText);
           if (parsedP) operationParameters.push(parsedP);
         }
       }
@@ -252,19 +293,15 @@ export function normalizeSpec(
       const consumedSchemaRefs = new Set<string>();
 
       if (typeof op.requestBody === 'object' && op.requestBody !== null) {
-        let rb = op.requestBody as Record<string, unknown>;
-
-        // Resolve $ref on requestBody if present
-        if (typeof rb.$ref === 'string') {
-          const target = extractRefTargetName(rb.$ref);
-          if (context.rootDoc.components && (context.rootDoc.components as any).schemas?.[target]) {
-            consumedSchemaRefs.add(target);
-          }
-          const resolvedRb = resolveJsonPointer(context.rootDoc, rb.$ref);
-          if (typeof resolvedRb === 'object' && resolvedRb !== null) {
-            rb = resolvedRb as Record<string, unknown>;
-          }
-        }
+        const body = resolveObject(
+          op.requestBody,
+          operationContext,
+          'request body',
+          `/paths/${pathKey}/${method}/requestBody`
+        );
+        const rb = body?.value || {};
+        const bodyContext =
+          body?.fieldContexts?.get('content') || body?.context || operationContext;
 
         const contentList: MediaTypeModel[] = [];
 
@@ -274,7 +311,7 @@ export function normalizeSpec(
               const m = mediaObj as Record<string, unknown>;
               let schema: SchemaModel | undefined;
               if (m.schema) {
-                schema = resolveSchema(m.schema, context);
+                schema = resolveSchema(m.schema, bodyContext);
                 collectSchemaRefs(schema, consumedSchemaRefs);
               }
               contentList.push({
@@ -287,11 +324,13 @@ export function normalizeSpec(
           }
         }
 
-        requestBody = {
-          description: typeof rb.description === 'string' ? rb.description : undefined,
-          required: Boolean(rb.required),
-          content: contentList,
-        };
+        requestBody = body
+          ? {
+              description: typeof rb.description === 'string' ? rb.description : undefined,
+              required: Boolean(rb.required),
+              content: contentList,
+            }
+          : undefined;
       }
 
       // Responses
@@ -309,15 +348,15 @@ export function normalizeSpec(
             continue;
           }
 
-          let r = respObj as Record<string, unknown>;
-
-          // Resolve $ref on response if present
-          if (typeof r.$ref === 'string') {
-            const resolvedResp = resolveJsonPointer(context.rootDoc, r.$ref);
-            if (typeof resolvedResp === 'object' && resolvedResp !== null) {
-              r = resolvedResp as Record<string, unknown>;
-            }
-          }
+          const response = resolveObject(
+            respObj,
+            operationContext,
+            'response',
+            `/paths/${pathKey}/${method}/responses/${code}`
+          );
+          if (!response) continue;
+          const r = response.value;
+          const responseContext = response.context;
 
           const contentList: MediaTypeModel[] = [];
 
@@ -327,7 +366,7 @@ export function normalizeSpec(
                 const m = mediaObj as Record<string, unknown>;
                 let schema: SchemaModel | undefined;
                 if (m.schema) {
-                  schema = resolveSchema(m.schema, context);
+                  schema = resolveSchema(m.schema, responseContext);
                   collectSchemaRefs(schema, producedSchemaRefs);
                 }
                 contentList.push({
@@ -344,8 +383,11 @@ export function normalizeSpec(
             statusCode: code,
             description: typeof r.description === 'string' ? r.description : '',
             content: contentList,
-            headers:
-              typeof r.headers === 'object' && r.headers !== null ? (r.headers as any) : undefined,
+            headers: parseHeaders(
+              r.headers,
+              responseContext,
+              `/paths/${pathKey}/${method}/responses/${code}/headers`
+            ),
           });
         }
       }
@@ -444,25 +486,26 @@ export function normalizeSpec(
   };
 }
 
-function parseParameter(p: unknown, context: RefResolutionContext): ParameterModel | null {
+function parseParameter(
+  p: unknown,
+  context: RefResolutionContext,
+  diagnostics: DiagnosticItem[],
+  rawText: string
+): ParameterModel | null {
   if (typeof p !== 'object' || p === null) return null;
-  const param = p as Record<string, unknown>;
-
-  // Handle $ref on parameter
-  if (typeof param.$ref === 'string') {
-    const resolvedRaw = resolveJsonPointer(context.rootDoc, param.$ref);
-    if (typeof resolvedRaw === 'object' && resolvedRaw !== null) {
-      return parseParameter(resolvedRaw, context);
-    }
-    const target = extractRefTargetName(param.$ref);
-    return {
-      name: target,
-      in: 'query',
-      required: false,
-      description: `Referenced parameter: ${param.$ref}`,
-    };
+  const resolved = resolveReferenceObject(p, context);
+  if (!resolved) {
+    if (isRecord(p) && typeof p.$ref === 'string')
+      diagnostics.push({
+        id: `unresolved-parameter-ref-${p.$ref}`,
+        severity: p.$ref.startsWith('#') ? 'error' : 'warning',
+        message: `Unresolved or circular parameter reference "${p.$ref}".`,
+        line: findLineForPattern(rawText, p.$ref) || 1,
+        source: 'ref',
+      });
+    return null;
   }
-
+  const param = resolved.value;
   const name = typeof param.name === 'string' ? param.name : 'unnamed';
   const inType = typeof param.in === 'string' ? (param.in as any) : 'query';
   const required = Boolean(param.required ?? inType === 'path');
@@ -471,7 +514,7 @@ function parseParameter(p: unknown, context: RefResolutionContext): ParameterMod
 
   let schema: SchemaModel | undefined;
   if (param.schema) {
-    schema = resolveSchema(param.schema, context, name);
+    schema = resolveSchema(param.schema, resolved.context, name);
   }
 
   const defaultStyle =

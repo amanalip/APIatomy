@@ -1,7 +1,8 @@
+import { isRecord } from '../utils/typeGuards';
 import { dictionary, hasOwn } from '../utils/dictionary';
 import { SchemaModel } from '../model';
 import { getFileContent, resolveFilePath } from './fileMap';
-import { parse as parseYaml } from 'yaml';
+import { parseRawText } from './yamlJson';
 
 export interface RefResolutionContext {
   rootDoc: Record<string, unknown>;
@@ -9,6 +10,7 @@ export interface RefResolutionContext {
   visitingPath: Set<string>;
   basePath?: string;
   files?: Map<string, string>;
+  documents?: Map<string, Record<string, unknown>>;
 }
 
 function getCacheKey(ref: string, basePath?: string): string {
@@ -80,6 +82,69 @@ export function resolveJsonPointer(doc: Record<string, unknown>, pointer: string
   return current;
 }
 
+export interface ResolvedReference {
+  value: Record<string, unknown>;
+  context: RefResolutionContext;
+  fieldContexts?: Map<string, RefResolutionContext>;
+}
+
+/** Resolve one target without fetching: nested refs remain scoped to their document. */
+export function resolveReferenceTarget(
+  ref: string,
+  context: RefResolutionContext
+): ResolvedReference | undefined {
+  if (!isExternalRef(ref)) {
+    const value = ref === '#' ? context.rootDoc : resolveJsonPointer(context.rootDoc, ref);
+    return isRecord(value) ? { value, context } : undefined;
+  }
+  const basePath = resolveFilePath(ref, context.basePath);
+  let doc = context.documents?.get(basePath);
+  if (!doc) {
+    const text = getFileContent(ref, context.basePath, context.files);
+    if (!text) return undefined;
+    try {
+      const parsed = parseRawText(text).data;
+      if (!isRecord(parsed)) return undefined;
+      doc = parsed;
+      context.documents?.set(basePath, doc);
+    } catch {
+      return undefined;
+    }
+  }
+  const hashIndex = ref.indexOf('#');
+  const pointer = hashIndex < 0 ? '#' : ref.slice(hashIndex);
+  const value = pointer === '#' || pointer === '#/' ? doc : resolveJsonPointer(doc, pointer);
+  if (!isRecord(value)) return undefined;
+  return { value, context: { ...context, rootDoc: doc, basePath } };
+}
+
+/** Follow reference chains with a document-scoped cycle guard for non-schema objects. */
+export function resolveReferenceObject(
+  raw: unknown,
+  context: RefResolutionContext
+): ResolvedReference | undefined {
+  if (!isRecord(raw)) return undefined;
+  let value = raw;
+  let current = context;
+  let fields = new Map(Object.keys(value).map((key) => [key, context]));
+  const visited = new Set<string>();
+  while (typeof value.$ref === 'string') {
+    const key = getCacheKey(value.$ref, current.basePath);
+    if (visited.has(key)) return undefined;
+    visited.add(key);
+    const target = resolveReferenceTarget(value.$ref, current);
+    if (!target) return undefined;
+    const siblings = { ...value };
+    delete siblings.$ref;
+    const nextFields = new Map(Object.keys(target.value).map((key) => [key, target.context]));
+    for (const key of Object.keys(siblings)) nextFields.set(key, fields.get(key) || current);
+    fields = nextFields;
+    value = { ...target.value, ...siblings };
+    current = target.context;
+  }
+  return { value, context: current, fieldContexts: fields };
+}
+
 export function resolveSchema(
   rawSchema: unknown,
   context: RefResolutionContext,
@@ -128,36 +193,8 @@ export function resolveSchema(
       );
     }
 
-    let resolvedRaw: unknown = resolveJsonPointer(context.rootDoc, ref);
-    let externalDoc: Record<string, unknown> | null = null;
-    let externalBase: string | undefined;
-    if ((!resolvedRaw || typeof resolvedRaw !== 'object') && isExternalRef(ref)) {
-      const fileContent = getFileContent(ref, context.basePath, context.files);
-      if (fileContent) {
-        try {
-          const parsed = fileContent.trim().startsWith('{')
-            ? JSON.parse(fileContent)
-            : parseYaml(fileContent);
-          const hashIdx = ref.indexOf('#');
-          const pointer = hashIdx >= 0 ? ref.slice(hashIdx) : '#/';
-          const doc =
-            typeof parsed === 'object' && parsed !== null
-              ? (parsed as Record<string, unknown>)
-              : ({ value: parsed } as Record<string, unknown>);
-          const candidate =
-            pointer === '#/' || pointer === '#' || pointer === ''
-              ? doc
-              : resolveJsonPointer(doc, pointer.startsWith('#') ? pointer : `#${pointer}`);
-          if (candidate && typeof candidate === 'object') {
-            resolvedRaw = candidate;
-            externalDoc = doc;
-            externalBase = resolveFilePath(ref, context.basePath);
-          }
-        } catch {
-          // ignore parse error
-        }
-      }
-    }
+    const target = resolveReferenceTarget(ref, context);
+    const resolvedRaw = target?.value;
     if (!resolvedRaw || typeof resolvedRaw !== 'object') {
       const external = isExternalRef(ref);
       return {
@@ -171,15 +208,7 @@ export function resolveSchema(
     }
 
     context.visitingPath.add(cacheKey);
-    const childContext: RefResolutionContext = externalDoc
-      ? {
-          rootDoc: externalDoc,
-          resolvedCache: context.resolvedCache,
-          visitingPath: context.visitingPath,
-          files: context.files,
-          basePath: externalBase || '',
-        }
-      : context;
+    const childContext = target!.context;
     let resolved: SchemaModel;
     try {
       resolved = resolveSchema(resolvedRaw, childContext, targetName);
