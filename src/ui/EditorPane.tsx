@@ -106,7 +106,13 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
           const isExternal = update.transactions.some(
             (tr) => tr.annotation(Transaction.userEvent) === 'apiatomy-sync'
           );
-          if (isExternal) return;
+          if (isExternal) {
+            if (debounceTimerRef.current !== null) {
+              window.clearTimeout(debounceTimerRef.current);
+              debounceTimerRef.current = null;
+            }
+            return;
+          }
           const docString = update.state.doc.toString();
           if (debounceTimerRef.current) {
             window.clearTimeout(debounceTimerRef.current);
@@ -226,7 +232,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
               Drop your OpenAPI or Swagger spec file here
             </p>
             <p className="text-xs text-slate-700 dark:text-blue-200">
-              Accepts .yaml, .yml, .json - max 5 MB - press Esc to cancel
+              Accepts .yaml, .yml, .json - 5 MB per spec, 20 MB per project
             </p>
           </div>
         )}
