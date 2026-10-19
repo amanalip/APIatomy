@@ -78,3 +78,13 @@ The second review reproduced seven additional issues with targeted checks and id
 - [x] **R2.6: Resolve external references for non-schema objects.** An available external request body normalizes to an empty body because request bodies, responses, parameters, and path items use local-pointer resolution. Share document-aware reference resolution across all supported object types and retain the containing document's scope. See `src/parser/normalizer.ts` and `src/parser/refResolver.ts`.
 - [x] **R2.7: Unify Upload and drag-and-drop imports.** Dropped project envelopes are inserted as plain spec text, and dropped standalone specs retain old dependencies. Use one import service to decode project files, validate inputs, select the root structurally, and replace project state consistently. See `src/ui/Header.tsx` and `src/ui/EditorPane.tsx`.
 - [x] **R2.8: Generate schema-conforming mock examples or explain limitations.** Generated examples can violate `uniqueItems`, `maxItems`, `minLength`, and exclusive numeric bounds. Respect supported constraints, avoid shared object references, and visibly report impossible or unsupported generation cases. See `src/model/mockGenerator.ts` and its UI callers.
+
+### Second-review verification
+
+All eight second-review items are complete, with a separate implementation commit for each item. A follow-up import regression fix also cancels pending editor callbacks when imported content replaces the document.
+
+- `npm run check` passed with 311 unit tests, 83.79% line coverage, TypeScript, lint, formatting, source text enforcement, and a production build.
+- Added production regressions for atomic workspace renames, metadata-like property names, prototype-like keys, project limits, cancelled URL requests, external object scopes, shared file ingestion, and constrained mock examples.
+- The complete existing browser suite passed its 36 scenarios on Chromium, Firefox, and mobile Chrome. The nine new browser scenarios also passed after correcting test locators and asserting the displayed unresolved-reference state. They cover project drops, dependency removal, rename collisions, and mock preview limitations.
+- Updated `AGENTS.md` and the reusable development skill with the import, size, dictionary, reference-scope, diff, persistence, and mock-generation invariants from this work. The skill validator and repository-wide source text check passed.
+- Local WebKit validation remains unavailable because of the host library prerequisites documented above; the Ubuntu CI matrix retains WebKit coverage.

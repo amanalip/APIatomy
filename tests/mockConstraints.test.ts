@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateMockExample } from '../src/model/mockGenerator';
-import { generateSampleJsonFromSchema } from '../src/ui/CurlGenerator';
+import { parseApiSpec } from '../src/parser';
+import { buildCurlCommand, generateSampleJsonFromSchema } from '../src/ui/CurlGenerator';
 import type { SchemaModel } from '../src/model';
 
 describe('constrained mock examples', () => {
@@ -76,6 +77,33 @@ describe('constrained mock examples', () => {
     const result = generateMockExample(schema);
     expect(result.issues.length).toBeGreaterThan(0);
     expect(() => JSON.stringify(result.value)).not.toThrow();
+  });
+
+  it.each([false, 0])('preserves explicit JSON request examples: %j', (example) => {
+    const parsed = parseApiSpec(
+      JSON.stringify({
+        openapi: '3.1.0',
+        info: { title: 'Examples', version: '1' },
+        paths: {
+          '/example': {
+            post: {
+              requestBody: {
+                content: {
+                  'application/json': {
+                    example,
+                    schema: { type: typeof example === 'boolean' ? 'boolean' : 'integer' },
+                  },
+                },
+              },
+              responses: { '200': { description: 'OK' } },
+            },
+          },
+        },
+      })
+    );
+    expect(buildCurlCommand(parsed.endpoints[0], 'https://example.com')).toContain(
+      `-d '${JSON.stringify(example)}'`
+    );
   });
 
   it('bounds large examples and recursive generation', () => {
