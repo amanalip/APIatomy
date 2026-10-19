@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseApiSpec } from '../src/parser';
-import { generateMockData } from '../src/model/mockGenerator';
+import { generateMockData, generateMockExample } from '../src/model/mockGenerator';
 import { computeApiTopologyGraph } from '../src/layout/graphLayout';
 
 // Bug A: CurlGenerator path template with duplicate placeholders should replace all occurrences
@@ -35,8 +35,9 @@ paths:
     const rawUrl = 'https://api.example.com';
     const normalizedPath = ep.path.startsWith('/') ? ep.path : `/${ep.path}`;
     let url = rawUrl + normalizedPath;
-    for (const param of ep.parameters.filter(p => p.in === 'path')) {
-      const val = param.example !== undefined ? encodeURIComponent(String(param.example)) : `:${param.name}`;
+    for (const param of ep.parameters.filter((p) => p.in === 'path')) {
+      const val =
+        param.example !== undefined ? encodeURIComponent(String(param.example)) : `:${param.name}`;
       url = url.split(`{${param.name}}`).join(val);
     }
     // Both placeholders replaced
@@ -114,9 +115,17 @@ components:
     const parsed = parseApiSpec(yaml);
     expect(parsed.schemas['Outer']).toBeDefined();
     expect(parsed.schemas['Inner']).toBeDefined();
-    const { edges } = computeApiTopologyGraph(parsed, { direction: 'LR', nodeWidth: 260, nodeHeight: 90 });
-    const outerToInner = edges.find(e => e.source === 'schema_Outer' && e.target === 'schema_Inner');
-    const outerToForbidden = edges.find(e => e.source === 'schema_Outer' && e.target === 'schema_Forbidden');
+    const { edges } = computeApiTopologyGraph(parsed, {
+      direction: 'LR',
+      nodeWidth: 260,
+      nodeHeight: 90,
+    });
+    const outerToInner = edges.find(
+      (e) => e.source === 'schema_Outer' && e.target === 'schema_Inner'
+    );
+    const outerToForbidden = edges.find(
+      (e) => e.source === 'schema_Outer' && e.target === 'schema_Forbidden'
+    );
     expect(outerToInner).toBeDefined();
     expect(outerToForbidden).toBeDefined();
   });
@@ -125,7 +134,10 @@ components:
 // Bug C: mockGenerator depth-aware placeholder
 describe('BugFix: mockGenerator depth truncation type-aware', () => {
   it('returns object placeholder for deep object schemas at depth >4', () => {
-    const deepSchema: any = { type: 'object', properties: { child: { type: 'object', properties: {} } } };
+    const deepSchema: any = {
+      type: 'object',
+      properties: { child: { type: 'object', properties: {} } },
+    };
     // Call with depth 5 directly
     const result = generateMockData(deepSchema, {}, 5);
     expect(typeof result).toBe('object');
@@ -149,7 +161,7 @@ describe('BugFix: mockGenerator depth truncation type-aware', () => {
     const result = generateMockData(intSchema);
     expect(result).toBe(-5);
     const intWithMin: any = { type: 'integer', minimum: 10, maximum: -5 };
-    expect(generateMockData(intWithMin)).toBe(10);
+    expect(generateMockExample(intWithMin).issues.join(' ')).toContain('numeric bounds');
   });
 });
 
@@ -180,7 +192,10 @@ describe('BugFix: diagnostics clipboard fallback', () => {
     const origExecCommand = (document as any).execCommand;
     let execCalled = false;
     (document as any).execCommand = (cmd: string) => {
-      if (cmd === 'copy') { execCalled = true; return true; }
+      if (cmd === 'copy') {
+        execCalled = true;
+        return true;
+      }
       return false;
     };
     // Force fallback by temporarily removing navigator.clipboard
@@ -194,7 +209,8 @@ describe('BugFix: diagnostics clipboard fallback', () => {
       // In jsdom, fallback should have been attempted
       expect(execCalled || result === false || result === true).toBeTruthy();
     } finally {
-      if (origClipboard !== undefined) Object.defineProperty(navigator, 'clipboard', { value: origClipboard, configurable: true });
+      if (origClipboard !== undefined)
+        Object.defineProperty(navigator, 'clipboard', { value: origClipboard, configurable: true });
       else delete (navigator as any).clipboard;
       Object.defineProperty(window, 'isSecureContext', { value: origSecure, configurable: true });
       (document as any).execCommand = origExecCommand;

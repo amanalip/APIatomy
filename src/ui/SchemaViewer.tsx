@@ -1,7 +1,7 @@
 import { ownValue } from '../utils/dictionary';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { SchemaModel } from '../model';
-import { generateMockData } from '../model/mockGenerator';
+import { generateMockExample } from '../model/mockGenerator';
 import { Search, Box, ChevronRight, ChevronDown, AlertCircle, Copy, Check, X } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
 import YAML from 'yaml';
@@ -96,9 +96,14 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
 
   const activeSchema = ownValue(schemas, activeSchemaName);
 
+  const mockExample = useMemo(
+    () => (activeSchema ? generateMockExample(activeSchema, schemas) : { value: {}, issues: [] }),
+    [activeSchema, schemas]
+  );
+
   const generatedMockText = useMemo(() => {
     if (!activeSchema) return mockFormat === 'yaml' ? '' : '{}';
-    const mockData = generateMockData(activeSchema, schemas);
+    const mockData = mockExample.value;
     if (mockFormat === 'yaml') {
       try {
         return YAML.stringify(mockData);
@@ -107,7 +112,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
       }
     }
     return JSON.stringify(mockData, null, 2);
-  }, [activeSchema, schemas, mockFormat]);
+  }, [activeSchema, mockExample, mockFormat]);
 
   const handleCopyMock = async () => {
     const success = await copyTextToClipboard(generatedMockText);
@@ -401,6 +406,11 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                     </button>
                   </div>
 
+                  {mockExample.issues.length > 0 && (
+                    <p role="status" className="text-xs text-amber-800 dark:text-amber-200">
+                      Example needs review: {mockExample.issues.join(' ')}
+                    </p>
+                  )}
                   <pre
                     tabIndex={0}
                     role="region"

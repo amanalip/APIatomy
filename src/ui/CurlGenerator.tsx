@@ -1,7 +1,7 @@
 import { ownValue } from '../utils/dictionary';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EndpointModel, ServerModel, SchemaModel, SecuritySchemeModel } from '../model';
-import { generateMockData } from '../model/mockGenerator';
+import { generateMockExample } from '../model/mockGenerator';
 import { Copy, Check, Terminal } from 'lucide-react';
 import { copyTextToClipboard } from '../share/urlHash';
 import { joinUrl, normalizeServerUrl, sanitizeHeaderValue } from '../utils/serverUrl';
@@ -75,6 +75,16 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({
       selectedAuth
     );
   }, [endpoint, selectedServerUrl, activeServer, securitySchemes, selectedAuth]);
+
+  const bodyIssues = useMemo(() => {
+    const media = endpoint.requestBody?.content?.find((item) =>
+      item.contentType.toLowerCase().includes('json')
+    );
+    if (!media?.schema) return [];
+    return generateMockExample(
+      media.example !== undefined ? { ...media.schema, example: media.example } : media.schema
+    ).issues;
+  }, [endpoint]);
 
   const handleCopy = async () => {
     const success = await copyTextToClipboard(curlCommand);
@@ -158,6 +168,11 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({
         </div>
       </div>
 
+      {bodyIssues.length > 0 && (
+        <p role="status" className="mb-2 text-xs text-amber-800 dark:text-amber-200">
+          Request example needs review: {bodyIssues.join(' ')}
+        </p>
+      )}
       <pre
         tabIndex={0}
         role="region"
@@ -447,9 +462,10 @@ export function buildCurlCommand(
         lines.push(`  -H ${shellQuote(`Content-Type: ${primaryMedia.contentType}`)}`);
       }
       if (lowerType.includes('json')) {
-        const rawBody = primaryMedia.example
-          ? JSON.stringify(primaryMedia.example, null, 2)
-          : generateSampleJsonFromSchema(primaryMedia.schema);
+        const rawBody =
+          primaryMedia.example !== undefined
+            ? JSON.stringify(primaryMedia.example, null, 2)
+            : generateSampleJsonFromSchema(primaryMedia.schema);
         // Escape single quotes for shell: ' -> '\'' (close, escaped, reopen)
         const sampleBody = rawBody.replace(/'/g, `'\\''`);
         lines.push(`  -d '${sampleBody}'`);
@@ -477,16 +493,5 @@ export function buildCurlCommand(
 
 export function generateSampleJsonFromSchema(schema?: SchemaModel): string {
   if (!schema) return '{}';
-  if (schema.example !== undefined) return JSON.stringify(schema.example, null, 2);
-  try {
-    const mock = generateMockData(schema, {}, 0);
-    if (mock !== undefined) return JSON.stringify(mock, null, 2);
-  } catch {
-    // fallback to legacy generation below
-  }
-  if (schema.type === 'array') {
-    if (schema.items?.example) return JSON.stringify([schema.items.example], null, 2);
-    return '[]';
-  }
-  return '{}';
+  return JSON.stringify(generateMockExample(schema).value, null, 2);
 }
