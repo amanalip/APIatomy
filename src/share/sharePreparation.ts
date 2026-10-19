@@ -9,13 +9,13 @@ export interface PreparedShare {
 
 /** Run once per project, either in the compression worker or the fallback. */
 export function prepareShare(project: SpecProject): PreparedShare {
-  const hash = compressSpecToHash(encodeProject(project));
+  const encoded = encodeProject(project);
+  const hash = compressSpecToHash(encoded);
   const compactText = getCompactSpecText(project.specText);
   if (compactText === null) return { hash, compactHash: null };
   const files = { ...project.files };
   if (project.rootFilename) files[project.rootFilename] = compactText;
-  const compactHash = compressSpecToHash(
-    encodeProject({ ...project, files, specText: compactText })
-  );
+  const compactEncoded = encodeProject({ ...project, files, specText: compactText });
+  const compactHash = compactEncoded === encoded ? hash : compressSpecToHash(compactEncoded);
   return { hash, compactHash };
 }

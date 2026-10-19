@@ -1,3 +1,5 @@
+import { decompressBounded } from './boundedDecompress';
+import { MAX_PROJECT_BYTES, textBytes } from './projectLimits';
 import LZString from 'lz-string';
 
 /**
@@ -10,7 +12,7 @@ export function compressSpecToHash(specText: string): string {
   return `#spec=${compressed}`;
 }
 
-const MAX_SPEC_SIZE = 5 * 1024 * 1024; // 5MB guard against hash bomb
+const MAX_SPEC_SIZE = MAX_PROJECT_BYTES;
 export function decompressSpecFromHash(hashString: string): string | null {
   if (!hashString) return null;
   // Guard oversized hash (compressed + encoded) to avoid decompression DoS
@@ -46,9 +48,9 @@ export function decompressSpecFromHash(hashString: string): string | null {
   if (!specEncoded) return null;
 
   try {
-    const decompressed = LZString.decompressFromEncodedURIComponent(specEncoded);
+    const decompressed = decompressBounded(specEncoded, MAX_SPEC_SIZE);
     if (decompressed) {
-      if (decompressed.length > MAX_SPEC_SIZE) return null;
+      if (textBytes(decompressed) > MAX_SPEC_SIZE) return null;
       return decompressed;
     }
   } catch {
@@ -58,7 +60,7 @@ export function decompressSpecFromHash(hashString: string): string | null {
   // Fallback: Check if specEncoded is URL-encoded raw text (case-insensitive)
   try {
     const decoded = decodeURIComponent(specEncoded);
-    if (decoded.length > MAX_SPEC_SIZE) return null;
+    if (textBytes(decoded) > MAX_SPEC_SIZE) return null;
     const lower = decoded.toLowerCase();
     const trimmedLower = decoded.trim().toLowerCase();
     if (
@@ -77,7 +79,7 @@ export function decompressSpecFromHash(hashString: string): string | null {
   }
   // Second fallback: try raw text without decoding (already plain text)
   try {
-    if (specEncoded.length > MAX_SPEC_SIZE) return null;
+    if (textBytes(specEncoded) > MAX_SPEC_SIZE) return null;
     const rawLower = specEncoded.toLowerCase();
     if (
       specEncoded.trim().startsWith('{') ||

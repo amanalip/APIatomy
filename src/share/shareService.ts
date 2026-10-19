@@ -1,4 +1,4 @@
-import { captureProject, encodeProject } from './project';
+import { captureProject, encodeProject, validateProject } from './project';
 import { compressSpecToHash } from './urlHash';
 import { parse as parseYaml } from 'yaml';
 
@@ -26,13 +26,18 @@ export function getCompactSpecText(specText: string): string | null {
 }
 
 export function getShareHash(specText: string, compact = false): string {
-  const project = captureProject(specText);
-  if (compact) {
-    const compactText = getCompactSpecText(specText);
-    if (compactText === null) return '';
-    return compressSpecToHash(encodeProject({ ...project, specText: compactText }));
+  try {
+    const project = captureProject(specText);
+    validateProject(project);
+    if (compact) {
+      const compactText = getCompactSpecText(specText);
+      if (compactText === null) return '';
+      return compressSpecToHash(encodeProject({ ...project, specText: compactText }));
+    }
+    return compressSpecToHash(encodeProject(project));
+  } catch {
+    return '';
   }
-  return compressSpecToHash(encodeProject(project));
 }
 
 export function getShareUrl(

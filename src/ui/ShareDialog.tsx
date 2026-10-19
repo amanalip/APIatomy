@@ -29,6 +29,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
   appState,
   onClose,
 }) => {
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const [compact, setCompact] = useState(false);
   const [includeState, setIncludeState] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -94,7 +95,12 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
 
   const handleDownload = () => {
     const ext = specText.trim().startsWith('{') ? 'json' : 'yaml';
-    downloadShareFile(specText, `apiatomy-share.${ext}`);
+    try {
+      downloadShareFile(specText, `apiatomy-share.${ext}`);
+      setDownloadError(null);
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Download failed');
+    }
   };
 
   return createPortal(
@@ -131,9 +137,9 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
         </div>
 
         <div className="p-4 space-y-4">
-          {error && (
+          {(error || downloadError) && (
             <p role="alert" className="text-xs text-red-600 dark:text-red-400">
-              {error}. You can still download the share file.
+              {downloadError || error}
             </p>
           )}
           <div className="space-y-2">

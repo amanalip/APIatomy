@@ -34,6 +34,6 @@ export const VALID_HTTP_METHODS = [
   'head',
   'trace',
 ] as const;
-export const MAX_UPLOAD_SIZE = 5 * 1024 * 1024;
+export { MAX_SPEC_BYTES as MAX_UPLOAD_SIZE } from '../share/projectLimits';
 export const MAX_MOCK_DEPTH = 4;
 export const MAX_MOCK_ARRAY_ITEMS = 5;

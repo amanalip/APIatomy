@@ -7,9 +7,9 @@ import { ShareDialog } from './ShareDialog';
 import { ShortcutHelp } from './ShortcutHelp';
 import { useTheme } from '../theme/ThemeContext';
 import { useToast } from './Toast';
-import { MAX_UPLOAD_SIZE } from '../utils/schemaRefs';
+import { MAX_PROJECT_BYTES, MAX_SPEC_BYTES } from '../share/projectLimits';
 import { setFileMap } from '../parser/fileMap';
-import { decodeProject, restoreProject } from '../share/project';
+import { decodeProject, restoreProject, encodeProject } from '../share/project';
 import {
   Share2,
   Upload,
@@ -138,12 +138,12 @@ export const Header: React.FC<HeaderProps> = ({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    const maxBytes = MAX_UPLOAD_SIZE;
+    const maxBytes = files.length === 1 ? MAX_PROJECT_BYTES : MAX_SPEC_BYTES;
     if (files.length === 1) {
       const file = files[0];
       if (file.size > maxBytes) {
         showToast(
-          `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 5 MB.`,
+          `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum import file size is 20 MB (5 MB per specification).`,
           'error'
         );
         e.target.value = '';
@@ -194,6 +194,13 @@ export const Header: React.FC<HeaderProps> = ({
           root = candidates[0];
         } else if (fileEntries.length > 1) {
           root = fileEntries.reduce((a, b) => (a.text.length > b.text.length ? a : b));
+        }
+        try {
+          encodeProject({ specText: root.text, files: map, rootFilename: root.name });
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : 'Project too large', 'error');
+          e.target.value = '';
+          return;
         }
         setFileMap(map, root.name);
         onUploadText(root.text);
@@ -400,7 +407,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={() => fileInputRef.current?.click()}
           className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 transition"
-          title="Upload OpenAPI or Swagger file (.yaml, .yml, .json) - max 5 MB"
+          title="Upload OpenAPI or Swagger file (.yaml, .yml, .json) - 5 MB per spec, 20 MB per project"
           aria-label="Upload spec file"
         >
           <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
