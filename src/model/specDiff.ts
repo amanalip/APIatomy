@@ -1,3 +1,4 @@
+import { decodeProject } from '../share/project';
 import { parseApiSpec } from '../parser';
 import { ApiSpecModel, EndpointModel, SchemaModel, MediaTypeModel } from './index';
 
@@ -204,7 +205,8 @@ export function compareSpecTexts(oldText: string, newText: string) {
 
   if (oldText.trim()) {
     try {
-      oldSpec = parseApiSpec(oldText);
+      const project = decodeProject(oldText);
+      oldSpec = parseApiSpec(project.specText, project);
       oldParseError = hasParseError(oldSpec, oldText);
     } catch {
       oldSpec = null;
@@ -214,7 +216,8 @@ export function compareSpecTexts(oldText: string, newText: string) {
 
   if (newText.trim()) {
     try {
-      newSpec = parseApiSpec(newText);
+      const project = decodeProject(newText);
+      newSpec = parseApiSpec(project.specText, project);
       newParseError = hasParseError(newSpec, newText);
     } catch {
       newSpec = null;

@@ -1,3 +1,4 @@
+import { decodeProject, restoreProject } from './share/project';
 import React, { useState, useEffect, useRef } from 'react';
 import { EndpointModel, SchemaModel } from './model';
 import { PETSTORE_SPEC } from './samples/petstore';
@@ -26,13 +27,22 @@ const TopologyGraph = React.lazy(() =>
 );
 
 export function App() {
-  const initialText = (() => {
+  const [initialText] = useState(() => {
     if (typeof window !== 'undefined' && window.location.hash) {
       const decompressed = decompressSpecFromHash(window.location.hash);
-      if (decompressed) return decompressed;
+      if (decompressed) {
+        try {
+          const project = decodeProject(decompressed);
+          restoreProject(project);
+          return project.specText;
+        } catch {
+          /* Invalid project: keep the default sample available. */
+        }
+      }
     }
+    setFileMap({});
     return PETSTORE_SPEC;
-  })();
+  });
   const { rawText, setRawText, spec } = useSpecState(initialText);
 
   const [activeView, setActiveView] = useState<'endpoints' | 'schemas' | 'graph' | 'diff'>(
@@ -59,20 +69,22 @@ export function App() {
     }
   }, [spec]);
 
-  // Keep latest rawText in ref to avoid stale closure on hashchange
-  const rawTextRef = useRef(rawText);
-  useEffect(() => {
-    rawTextRef.current = rawText;
-  }, [rawText]);
-
   // Listen to hash changes in browser
   useEffect(() => {
     const handleHashChange = () => {
       if (window.location.hash) {
         const decompressed = decompressSpecFromHash(window.location.hash);
-        if (decompressed && decompressed !== rawTextRef.current) {
-          setRawText(decompressed);
-          editorPaneRef.current?.setContent(decompressed);
+        if (decompressed) {
+          try {
+            const project = decodeProject(decompressed);
+            restoreProject(project);
+            setRawText(project.specText);
+            editorPaneRef.current?.setContent(project.specText);
+            setSourceUrl(null);
+            setSelectedEndpoint(null);
+          } catch {
+            /* Ignore malformed project links. */
+          }
         }
       } else {
         // Hash cleared: stay on current editor content (no stale spec)
@@ -109,11 +121,12 @@ export function App() {
   };
 
   const handleLoadFromUrl = (text: string, url: string) => {
-    setRawText(text);
-    editorPaneRef.current?.setContent(text);
+    const project = decodeProject(text);
+    restoreProject(project);
+    setRawText(project.specText);
+    editorPaneRef.current?.setContent(project.specText);
     setSelectedEndpoint(null);
     setSourceUrl(url);
-    setFileMap({});
     if (typeof window !== 'undefined' && window.location.hash) {
       window.location.hash = '';
       try {
@@ -383,11 +396,11 @@ export function App() {
           currentText={rawText}
           currentTitle={spec.title}
           onClose={() => setIsWorkspaceOpen(false)}
-          onLoad={(text) => {
-            setRawText(text);
-            editorPaneRef.current?.setContent(text);
+          onLoad={(project) => {
+            restoreProject(project);
+            setRawText(project.specText);
+            editorPaneRef.current?.setContent(project.specText);
             setSourceUrl(null);
-            setFileMap({});
             setSelectedEndpoint(null);
             if (typeof window !== 'undefined' && window.location.hash) {
               window.location.hash = '';

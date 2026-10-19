@@ -2,13 +2,19 @@ import { createPortal } from 'react-dom';
 import React, { useEffect, useState, useRef } from 'react';
 import { X, Save, FolderOpen, Trash2, Edit2 } from 'lucide-react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
-import { listWorkspaces, saveWorkspace, loadWorkspace } from '../utils/workspaceStore';
+import {
+  listWorkspaces,
+  saveWorkspace,
+  loadWorkspace,
+  deleteWorkspace,
+  WorkspaceData,
+} from '../utils/workspaceStore';
 
 interface WorkspaceDialogProps {
   currentText: string;
   currentTitle?: string;
   onClose: () => void;
-  onLoad: (text: string) => void;
+  onLoad: (project: WorkspaceData) => void;
 }
 
 export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
@@ -20,13 +26,18 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
   const [workspaces, setWorkspaces] = useState<
     Array<{ id: string; title?: string; savedAt: number }>
   >([]);
+  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const trapRef = useFocusTrap(true);
 
   const refresh = async () => {
-    const list = await listWorkspaces();
-    setWorkspaces(list);
+    try {
+      const list = await listWorkspaces();
+      setWorkspaces(list);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load workspaces');
+    }
   };
 
   useEffect(() => {
@@ -42,32 +53,36 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
     const id = prompt('Workspace name:', currentTitle || 'my-spec');
     if (!id) return;
     setSaving(true);
-    await saveWorkspace(id, currentText, currentTitle);
-    await refresh();
-    setSaving(false);
+    try {
+      setError(null);
+      await saveWorkspace(id, currentText, currentTitle);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleOpen = async (id: string) => {
-    const ws = await loadWorkspace(id);
-    if (ws) {
-      onLoad(ws.specText);
-      onClose();
+    try {
+      const ws = await loadWorkspace(id);
+      if (ws) {
+        onLoad(ws);
+        onClose();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Open failed');
     }
   };
 
   const handleDelete = async (id: string) => {
-    const db = await new Promise<IDBDatabase>((res, rej) => {
-      const req = indexedDB.open('apiatomy_workspaces', 1);
-      req.onsuccess = () => res(req.result);
-      req.onerror = () => rej(req.error);
-    });
-    const tx = db.transaction('specs', 'readwrite');
-    tx.objectStore('specs').delete(id);
-    await new Promise<void>((res, rej) => {
-      tx.oncomplete = () => res();
-      tx.onerror = () => rej(tx.error);
-    });
-    refresh();
+    try {
+      await deleteWorkspace(id);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed');
+    }
   };
 
   return createPortal(
@@ -110,6 +125,11 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
             <Save className="w-3.5 h-3.5" />
             {saving ? 'Saving...' : 'Save locally'}
           </button>
+          {error && (
+            <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+              {error}
+            </p>
+          )}
           <div className="space-y-1 max-h-64 overflow-auto">
             {workspaces.length === 0 ? (
               <div className="text-xs text-slate-500 text-center py-4">No saved workspaces</div>
@@ -139,10 +159,14 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
                       onClick={async () => {
                         const newName = prompt('Rename workspace:', ws.id);
                         if (!newName || newName === ws.id) return;
-                        const data = await loadWorkspace(ws.id);
-                        if (data) {
-                          await saveWorkspace(newName, data.specText, data.title);
-                          await handleDelete(ws.id);
+                        try {
+                          const data = await loadWorkspace(ws.id);
+                          if (data) {
+                            await saveWorkspace(newName, data.specText, data.title, data);
+                            await handleDelete(ws.id);
+                          }
+                        } catch (err) {
+                          setError(err instanceof Error ? err.message : 'Rename failed');
                         }
                       }}
                       className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-600"

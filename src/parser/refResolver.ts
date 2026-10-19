@@ -1,5 +1,5 @@
 import { SchemaModel } from '../model';
-import { getFileContent } from './fileMap';
+import { getFileContent, resolveFilePath } from './fileMap';
 import { parse as parseYaml } from 'yaml';
 
 export interface RefResolutionContext {
@@ -7,11 +7,13 @@ export interface RefResolutionContext {
   resolvedCache: Map<string, SchemaModel>;
   visitingPath: Set<string>;
   basePath?: string;
+  files?: Map<string, string>;
 }
 
 function getCacheKey(ref: string, basePath?: string): string {
   if (!ref) return ref;
-  if (isExternalRef(ref)) return ref;
+  if (isExternalRef(ref))
+    return `${resolveFilePath(ref, basePath)}${ref.includes('#') ? ref.slice(ref.indexOf('#')) : ''}`;
   return basePath ? `${basePath}${ref}` : ref;
 }
 
@@ -103,13 +105,7 @@ export function resolveSchema(
       }
     })();
     const normalizedKey = getCacheKey(normalizedRef, context.basePath);
-    const canonicalPath = `#/components/schemas/${targetName}`;
-    const canonicalKey = getCacheKey(canonicalPath, context.basePath);
-    if (
-      context.visitingPath.has(cacheKey) ||
-      context.visitingPath.has(normalizedKey) ||
-      (targetName && context.visitingPath.has(canonicalKey))
-    ) {
+    if (context.visitingPath.has(cacheKey) || context.visitingPath.has(normalizedKey)) {
       return {
         $ref: ref,
         refTarget: targetName,
@@ -134,7 +130,7 @@ export function resolveSchema(
     let externalDoc: Record<string, unknown> | null = null;
     let externalBase: string | undefined;
     if ((!resolvedRaw || typeof resolvedRaw !== 'object') && isExternalRef(ref)) {
-      const fileContent = getFileContent(ref);
+      const fileContent = getFileContent(ref, context.basePath, context.files);
       if (fileContent) {
         try {
           const parsed = fileContent.trim().startsWith('{')
@@ -153,7 +149,7 @@ export function resolveSchema(
           if (candidate && typeof candidate === 'object') {
             resolvedRaw = candidate;
             externalDoc = doc;
-            externalBase = ref.split('#')[0];
+            externalBase = resolveFilePath(ref, context.basePath);
           }
         } catch {
           // ignore parse error
@@ -178,6 +174,7 @@ export function resolveSchema(
           rootDoc: externalDoc,
           resolvedCache: context.resolvedCache,
           visitingPath: context.visitingPath,
+          files: context.files,
           basePath: externalBase || '',
         }
       : context;

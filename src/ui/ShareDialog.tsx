@@ -1,3 +1,4 @@
+import { captureProject, encodeProject } from '../share/project';
 import { createPortal } from 'react-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Copy, Check, Download, Share2, Minimize2, AlertTriangle } from 'lucide-react';
@@ -90,7 +91,7 @@ export const ShareDialog: React.FC<ShareDialogProps> = ({
     };
     const textToCompress =
       compact && compactAvailable ? getCompactSpecText(specText) || specText : specText;
-    worker.postMessage({ id, text: textToCompress });
+    worker.postMessage({ id, text: encodeProject(captureProject(textToCompress)) });
     return () => worker.terminate();
   }, [specText, compact, compactAvailable, appState, includeState]);
 

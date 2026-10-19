@@ -6,7 +6,10 @@ import { normalizeSpec } from './normalizer';
  * Primary entry point: parse raw OpenAPI/Swagger text into a normalized ApiSpecModel.
  * Handles syntax diagnostics and delegates to swagger conversion and normalization.
  */
-export function parseApiSpec(rawText: string): ApiSpecModel {
+export function parseApiSpec(
+  rawText: string,
+  project?: { files: Record<string, string>; rootFilename?: string }
+): ApiSpecModel {
   const { data, diagnostics } = parseRawText(rawText);
 
   if (!data) {
@@ -25,7 +28,7 @@ export function parseApiSpec(rawText: string): ApiSpecModel {
     };
   }
 
-  return normalizeSpec(data, rawText, diagnostics);
+  return normalizeSpec(data, rawText, diagnostics, project);
 }
 
 export * from './yamlJson';

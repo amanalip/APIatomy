@@ -1,3 +1,4 @@
+import { getRootFilename, getFileMap } from './fileMap';
 import {
   ApiSpecModel,
   DiagnosticItem,
@@ -27,7 +28,8 @@ import { isRecord } from '../utils/typeGuards';
 export function normalizeSpec(
   rawDoc: Record<string, unknown>,
   rawText: string,
-  initialDiagnostics: DiagnosticItem[] = []
+  initialDiagnostics: DiagnosticItem[] = [],
+  project?: { files: Record<string, string>; rootFilename?: string }
 ): ApiSpecModel {
   let doc = rawDoc;
   const diagnostics: DiagnosticItem[] = [...initialDiagnostics];
@@ -52,7 +54,8 @@ export function normalizeSpec(
     rootDoc: doc,
     resolvedCache: new Map<string, SchemaModel>(),
     visitingPath: new Set<string>(),
-    basePath: '',
+    basePath: (project ? project.rootFilename : getRootFilename()) || '',
+    files: project ? new Map(Object.entries(project.files)) : getFileMap(),
   };
 
   // 1. Info block (guarded via isRecord for stricter typing)
@@ -112,7 +115,7 @@ export function normalizeSpec(
   ) as Record<string, unknown>;
 
   for (const [schemaName, rawSchema] of Object.entries(rawSchemas)) {
-    const canonicalRef = `#/components/schemas/${schemaName}`;
+    const canonicalRef = `${context.basePath || ''}#/components/schemas/${schemaName}`;
     context.visitingPath.add(canonicalRef);
     try {
       schemas[schemaName] = resolveSchema(rawSchema, context, schemaName);
@@ -426,16 +429,14 @@ export function normalizeSpec(
     schemas,
     securitySchemes,
     security: Array.isArray(doc.security)
-      ? doc.security
-          .filter(isRecord)
-          .map((group) =>
-            Object.entries(group).map(([name, scopes]) => ({
-              name,
-              scopes: Array.isArray(scopes)
-                ? scopes.filter((scope): scope is string => typeof scope === 'string')
-                : [],
-            }))
-          )
+      ? doc.security.filter(isRecord).map((group) =>
+          Object.entries(group).map(([name, scopes]) => ({
+            name,
+            scopes: Array.isArray(scopes)
+              ? scopes.filter((scope): scope is string => typeof scope === 'string')
+              : [],
+          }))
+        )
       : [],
     diagnostics: allDiagnostics,
     rawText,

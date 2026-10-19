@@ -1,3 +1,4 @@
+import { captureProject, encodeProject } from './project';
 import { compressSpecToHash } from './urlHash';
 import { parse as parseYaml } from 'yaml';
 
@@ -25,12 +26,13 @@ export function getCompactSpecText(specText: string): string | null {
 }
 
 export function getShareHash(specText: string, compact = false): string {
+  const project = captureProject(specText);
   if (compact) {
     const compactText = getCompactSpecText(specText);
     if (compactText === null) return '';
-    return compressSpecToHash(compactText);
+    return compressSpecToHash(encodeProject({ ...project, specText: compactText }));
   }
-  return compressSpecToHash(specText);
+  return compressSpecToHash(encodeProject(project));
 }
 
 export function getShareUrl(
@@ -89,7 +91,12 @@ export function getShareSize(
 
 export function downloadShareFile(specText: string, filename = 'apiatomy-share.yaml'): void {
   if (typeof document === 'undefined') return;
-  const blob = new Blob([specText], { type: 'text/yaml;charset=utf-8' });
+  const project = captureProject(specText);
+  const multiFile = Object.keys(project.files).length > 0;
+  const blob = new Blob([encodeProject(project)], {
+    type: multiFile ? 'application/json;charset=utf-8' : 'text/yaml;charset=utf-8',
+  });
+  if (multiFile) filename = 'apiatomy-project.json';
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

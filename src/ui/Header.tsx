@@ -8,6 +8,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { useToast } from './Toast';
 import { MAX_UPLOAD_SIZE } from '../utils/schemaRefs';
 import { setFileMap } from '../parser/fileMap';
+import { decodeProject, restoreProject } from '../share/project';
 import {
   Share2,
   Upload,
@@ -151,8 +152,18 @@ export const Header: React.FC<HeaderProps> = ({
       reader.onload = (event) => {
         const text = event.target?.result as string;
         if (text) {
-          setFileMap({ [file.name]: text });
-          onUploadText(text);
+          try {
+            const project = decodeProject(text);
+            if (Object.keys(project.files).length) restoreProject(project);
+            else {
+              const name = file.webkitRelativePath || file.name;
+              setFileMap({ [name]: text }, name);
+            }
+            onUploadText(project.specText);
+          } catch (error) {
+            showToast(error instanceof Error ? error.message : 'Invalid project file', 'error');
+            return;
+          }
           showToast('Spec loaded', 'success');
         }
       };
@@ -168,12 +179,11 @@ export const Header: React.FC<HeaderProps> = ({
           continue;
         }
         const text = await file.text();
-        fileEntries.push({ name: file.name, text });
+        fileEntries.push({ name: file.webkitRelativePath || file.name, text });
       }
       if (fileEntries.length > 0) {
         const map: Record<string, string> = {};
         for (const entry of fileEntries) map[entry.name] = entry.text;
-        setFileMap(map);
         let root = fileEntries[0];
         const candidates = fileEntries.filter((e) => {
           const lower = e.text.toLowerCase();
@@ -184,6 +194,7 @@ export const Header: React.FC<HeaderProps> = ({
         } else if (fileEntries.length > 1) {
           root = fileEntries.reduce((a, b) => (a.text.length > b.text.length ? a : b));
         }
+        setFileMap(map, root.name);
         onUploadText(root.text);
         if (fileEntries.length > 1) {
           showToast(

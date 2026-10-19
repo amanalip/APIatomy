@@ -1,4 +1,4 @@
-# Repository improvements — October 19, 2026
+# Repository improvements - October 19, 2026
 
 Review baseline: `npm run check` passed, including all 207 tests, TypeScript, lint, formatting, and the production build. Browser E2E tests were inspected but not run.
 
@@ -30,7 +30,7 @@ Review baseline: `npm run check` passed, including all 207 tests, TypeScript, li
   - Verification: confirm all endpoints remain accessible with more than 100 endpoints, more than 10 tags, and more than 20 endpoints under one tag.
   - Reference: [src/ui/EndpointExplorer.tsx:276](src/ui/EndpointExplorer.tsx#L276).
 
-- [ ] **Preserve multi-file dependencies when saving and sharing projects.**
+- [x] **Preserve multi-file dependencies when saving and sharing projects.**
   - Finding: workspaces persist only the root spec text, and share links encode only that text. Uploaded external files are lost when reopening or sharing the project.
   - Improvement: persist the file map and root filename in workspaces. Bundle external references or include the project files in the sharing format.
   - Verification: save, reopen, and share a multi-file project with nested external references; confirm the resolved schemas and endpoints remain intact.

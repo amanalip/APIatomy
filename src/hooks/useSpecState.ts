@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
 import { parseApiSpec } from '../parser';
 import { ApiSpecModel } from '../model';
-import { getFileMap } from '../parser/fileMap';
+import { getFileMap, getRootFilename, getFileRevision, subscribeFileMap } from '../parser/fileMap';
 
 function parseSync(rawText: string): ApiSpecModel {
   try {
@@ -33,6 +33,7 @@ function parseSync(rawText: string): ApiSpecModel {
 }
 
 export function useSpecState(initialText: string) {
+  const fileRevision = useSyncExternalStore(subscribeFileMap, getFileRevision);
   const [rawText, setRawText] = useState(initialText);
   const [spec, setSpec] = useState<ApiSpecModel>(() => parseSync(initialText));
   const workerRef = useRef<Worker | null>(null);
@@ -89,7 +90,7 @@ export function useSpecState(initialText: string) {
         } catch {
           // ignore
         }
-        workerRef.current?.postMessage({ id, rawText, files });
+        workerRef.current?.postMessage({ id, rawText, files, rootFilename: getRootFilename() });
       } catch {
         setSpec(parseSync(rawText));
       }
@@ -97,7 +98,7 @@ export function useSpecState(initialText: string) {
     return () => {
       if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
     };
-  }, [rawText]);
+  }, [rawText, fileRevision]);
 
   return { rawText, setRawText, spec };
 }
