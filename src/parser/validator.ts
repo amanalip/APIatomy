@@ -103,7 +103,7 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     !Array.isArray(rawDoc.webhooks);
   if (
     (!rawDoc.paths || typeof rawDoc.paths !== 'object' || Array.isArray(rawDoc.paths)) &&
-    !hasWebhookRoot
+    !(rawDoc.paths === undefined && hasWebhookRoot)
   ) {
     diagnostics.push({
       id: 'missing-paths-object',

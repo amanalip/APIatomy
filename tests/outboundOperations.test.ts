@@ -52,5 +52,6 @@ it('validates webhook-only roots without marking their payload schemas unused', 
   const text = JSON.stringify({ openapi: '3.1.0', info: { title: 'Webhook only', version: '1' }, webhooks: { delivered: { post: { requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/Payload' } } } }, responses: { 200: { description: 'ok' } } } } }, components: { schemas: { Payload: { type: 'string' } } } });
   const parsed = parseApiSpec(text);
   expect(parsed.endpoints).toHaveLength(1);
+  expect(parseApiSpec(JSON.stringify({ ...JSON.parse(text), paths: [] })).diagnostics.some((item) => item.id === 'missing-paths-object')).toBe(true);
   expect(parsed.diagnostics.some((item) => item.id === 'missing-paths-object' || item.id.includes('unused-schema-Payload') || item.id.startsWith('missing-path-param-'))).toBe(false);
 });
