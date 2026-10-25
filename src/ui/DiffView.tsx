@@ -69,8 +69,17 @@ export const DiffView: React.FC<DiffViewProps> = ({
     e.target.value = '';
   };
 
-  const useCurrentForOld = () => setOldText(encodeProject(captureProject(currentText)));
-  const useCurrentForNew = () => setNewText(encodeProject(captureProject(currentText)));
+  const [inputError, setInputError] = useState<string | null>(null);
+  const useCurrent = (setter: (text: string) => void) => {
+    try {
+      setter(encodeProject(captureProject(currentText)));
+      setInputError(null);
+    } catch (error) {
+      setInputError(error instanceof Error ? error.message : 'Unable to snapshot current project');
+    }
+  };
+  const useCurrentForOld = () => useCurrent(setOldText);
+  const useCurrentForNew = () => useCurrent(setNewText);
 
   return (
     <div className="p-4 space-y-4 text-xs">
@@ -82,6 +91,11 @@ export const DiffView: React.FC<DiffViewProps> = ({
         not default to Petstore for user APIs.
       </p>
 
+      {inputError && (
+        <p role="alert" className="text-red-700 dark:text-red-300">
+          {inputError}
+        </p>
+      )}
       {(oldParseError || newParseError) && (
         <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 space-y-1">
           {oldParseError && (
