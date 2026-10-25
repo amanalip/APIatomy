@@ -7,6 +7,14 @@ description: Implement or review changes in the APIatomy repository, especially 
 
 Read the repository's `AGENTS.md` for shared conventions. Keep changes within the user's request and preserve the browser-only architecture.
 
+## Track improvements through commits
+
+When implementing a tracked improvement, create at least eight focused, substantive commits per improvement. This is a per-improvement minimum, not eight commits across the entire checklist. Plan useful increments before implementation, such as state handling, production behavior, UI integration, recovery, accessibility, regression coverage, browser verification fixes, and documentation. Adapt those increments to the actual change; do not create empty commits, artificial churn, or unrelated work to meet the count.
+
+Every commit must have a descriptive subject identifying the improvement ID and a detailed body explaining the user-facing problem, what changed, why the approach was chosen, and validation performed with results or limitations. Record the commit hashes against the corresponding improvement in its tracking document, and mark it complete only after the requested behavior and required checks are verified. Preserve this history rather than squashing away the improvement's tracking commits unless the user requests a different structure.
+
+When pushing is authorized by the user, push all of the improvement's commits to the intended branch and report the pushed commit range. These tracking instructions do not independently authorize pushing, publishing, or deployment. A documentation-only request records the plan and workflow without implementing the improvements or manufacturing their implementation commits. A later explicit user instruction about commit structure takes precedence.
+
 ## Choose the production path
 
 - File imports: `src/share/importService.ts` prepares uploads and drops without mutating active state. Root selection uses parsed top-level version fields. Reject ambiguous roots and retain the old project on failure. Abort and suppress stale import results when users switch projects.
