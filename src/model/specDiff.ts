@@ -167,6 +167,8 @@ function mediaBreaks(
 
 export function classifyChange(oldEp: EndpointModel, newEp: EndpointModel): ChangeClass {
   if (stableValue(oldEp, true) === stableValue(newEp, true)) return 'documentation-only';
+  if ((oldEp.kind && oldEp.kind !== 'endpoint') || (newEp.kind && newEp.kind !== 'endpoint'))
+    return 'breaking';
   if (oldEp.method !== newEp.method || oldEp.path !== newEp.path) return 'breaking';
   for (const param of newEp.parameters) {
     const old = oldEp.parameters.find((p) => p.name === param.name && p.in === param.in);
@@ -231,6 +233,13 @@ function hasParseError(spec: ApiSpecModel | null, raw: string): boolean {
   return spec.diagnostics.some(
     (d) => d.severity === 'error' && (d.source === 'syntax' || d.id === 'parse-crash')
   );
+}
+
+function operationLabel(endpoint: EndpointModel): string {
+  const label = `${endpoint.method} ${endpoint.path}`;
+  return endpoint.kind && endpoint.kind !== 'endpoint'
+    ? `${endpoint.kind}: ${label} (${endpoint.id})`
+    : label;
 }
 
 export function compareSpecTexts(oldText: string, newText: string) {
@@ -305,15 +314,15 @@ export function compareSpecTexts(oldText: string, newText: string) {
     };
   }
 
-  const oldIds = new Set(oldSpec.endpoints.map((e) => `${e.method} ${e.path}`));
-  const newIds = new Set(newSpec.endpoints.map((e) => `${e.method} ${e.path}`));
-  const added = newSpec.endpoints.filter((e) => !oldIds.has(`${e.method} ${e.path}`));
-  const removed = oldSpec.endpoints.filter((e) => !newIds.has(`${e.method} ${e.path}`));
+  const oldIds = new Set(oldSpec.endpoints.map((e) => operationLabel(e)));
+  const newIds = new Set(newSpec.endpoints.map((e) => operationLabel(e)));
+  const added = newSpec.endpoints.filter((e) => !oldIds.has(operationLabel(e)));
+  const removed = oldSpec.endpoints.filter((e) => !newIds.has(operationLabel(e)));
   const changedDetails: Array<{ key: string; cls: ChangeClass; fields: FieldChange[] }> = [];
   for (const e of newSpec.endpoints) {
-    const key = `${e.method} ${e.path}`;
+    const key = operationLabel(e);
     if (oldIds.has(key)) {
-      const oldEp = oldSpec.endpoints.find((o) => `${o.method} ${o.path}` === key)!;
+      const oldEp = oldSpec.endpoints.find((o) => operationLabel(o) === key)!;
       const authChanged = [...oldEp.security, ...e.security].some(
         (requirement) =>
           stableValue(ownValue(oldSpec.securitySchemes, requirement.name), true) !==
