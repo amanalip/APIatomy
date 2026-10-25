@@ -1,3 +1,4 @@
+import { FolderImport } from './FolderImport';
 import React, { useState, useRef, useEffect } from 'react';
 import { ApiSpecModel } from '../model';
 import { SAMPLE_SPECS, SampleSpecOption } from '../samples';
@@ -323,6 +324,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
+        <FolderImport onImportFiles={onImportFiles} />
         {/* Upload Spec */}
         <button
           onClick={() => fileInputRef.current?.click()}
