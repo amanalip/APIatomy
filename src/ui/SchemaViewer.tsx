@@ -1,3 +1,4 @@
+import { useSchemaNavigation } from '../hooks/useSchemaNavigation';
 import { ExampleDirection } from '../model/exampleDirection';
 import { ownValue } from '../utils/dictionary';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -20,6 +21,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
   selectedSchemaName,
   onSelectSchema,
 }) => {
+  const navigation = useSchemaNavigation(selectedSchemaName);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSchemaName, setActiveSchemaName] = useState<string>(
     selectedSchemaName || Object.keys(schemas)[0] || ''
@@ -130,7 +132,9 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
   return (
     <div className="flex h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-150">
       {/* Left List of Schema Names */}
-      <div className="w-64 border-r border-slate-200 dark:border-slate-800 flex flex-col bg-white/70 dark:bg-slate-900/40">
+      <div
+        className={`${navigation.showDetails ? 'hidden md:flex' : 'flex'} w-full md:w-64 shrink-0 min-w-0 border-r border-slate-200 dark:border-slate-800 flex-col bg-white/70 dark:bg-slate-900/40`}
+      >
         <div className="p-3 border-b border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
             <span>Schemas</span>
@@ -209,6 +213,8 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                       key={name}
                       ref={isSelected ? activeSchemaRef : undefined}
                       onClick={() => {
+                        navigation.openDetails();
+                        navigation.openDetails();
                         setActiveSchemaName(name);
                         onSelectSchema?.(name, s);
                       }}
@@ -244,6 +250,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                   key={name}
                   ref={isSelected ? activeSchemaRef : undefined}
                   onClick={() => {
+                    navigation.openDetails();
                     setActiveSchemaName(name);
                     onSelectSchema?.(name, s);
                   }}
@@ -273,7 +280,9 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
       </div>
 
       {/* Right Schema Detail / Tree Inspector */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
+      <div
+        className={`${navigation.showDetails ? 'flex' : 'hidden md:flex'} w-full min-w-0 flex-1 flex-col overflow-hidden bg-slate-50 dark:bg-slate-950`}
+      >
         {activeSchema ? (
           <>
             {/* Header */}
@@ -355,6 +364,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                     schema={activeSchema}
                     schemas={schemas}
                     onNavigateRef={(target) => {
+                      navigation.openDetails();
                       setActiveSchemaName(target);
                       if (ownValue(schemas, target))
                         onSelectSchema?.(target, ownValue(schemas, target));
