@@ -55,7 +55,7 @@ describe('cURL shell argument safety', () => {
       if (contentType.includes('json')) {
         expect(JSON.parse(args[args.indexOf('-d') + 1])).toEqual({ value: hostile });
       } else {
-        expect(args).toContain(`${hostile}=value`);
+        expect(args).toContain(`value=${hostile}`);
       }
     }
   );
