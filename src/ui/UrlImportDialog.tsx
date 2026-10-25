@@ -8,7 +8,11 @@ import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface UrlImportDialogProps {
   onClose: () => void;
-  onLoad: (text: string, url: string) => void | boolean | Promise<void | boolean>;
+  onLoad: (
+    text: string,
+    url: string,
+    signal?: AbortSignal
+  ) => void | boolean | Promise<void | boolean>;
 }
 
 export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoad }) => {
@@ -73,7 +77,7 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
       if (!text.trim()) throw new Error('Empty response');
       validateImportProject(decodeProject(text));
       if (closedRef.current || controller.signal.aborted || abortRef.current !== controller) return;
-      if ((await onLoad(text, trimmed)) !== false) closeDialog();
+      if ((await onLoad(text, trimmed, controller.signal)) !== false) closeDialog();
     } catch (err) {
       if (closedRef.current || abortRef.current !== controller) return;
       const msg = err instanceof Error ? err.message : String(err);

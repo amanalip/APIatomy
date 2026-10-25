@@ -200,9 +200,9 @@ export function App() {
     }
   };
 
-  const handleLoadFromUrl = async (text: string, url: string) => {
+  const handleLoadFromUrl = async (text: string, url: string, signal?: AbortSignal) => {
     const project = validateImportProject(decodeProject(text));
-    if (!(await confirmReplacement())) return false;
+    if (!(await confirmReplacement()) || signal?.aborted) return false;
     draft.setDirty(false);
     cancelFileImport();
     restoreProject(project);
@@ -469,7 +469,7 @@ export function App() {
       {isUrlDialogOpen && (
         <UrlImportDialog
           onClose={() => setIsUrlDialogOpen(false)}
-          onLoad={(text, url) => handleLoadFromUrl(text, url)}
+          onLoad={(text, url, signal) => handleLoadFromUrl(text, url, signal)}
         />
       )}
       {isShareOpen && (
