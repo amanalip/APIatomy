@@ -157,3 +157,34 @@ export async function trashWorkspace(id: string): Promise<string> {
   });
   return token;
 }
+
+export async function restoreDeletedWorkspace(token: string): Promise<void> {
+  await mutateTrash((live, trash) => {
+    const request = trash.get(token);
+    request.onsuccess = () => {
+      const record = request.result as TrashRecord | undefined;
+      if (!record) return;
+      live.add(record.workspace);
+      trash.delete(token);
+    };
+  });
+}
+
+export async function listDeletedWorkspaces(): Promise<DeletedWorkspace[]> {
+  const db = await openDb();
+  try {
+    return await new Promise<DeletedWorkspace[]>((resolve, reject) => {
+      const tx = db.transaction(TRASH, 'readonly');
+      const request = tx.objectStore(TRASH).getAll();
+      tx.oncomplete = () =>
+        resolve(
+          (request.result as TrashRecord[])
+            .map(({ token, id, deletedAt }) => ({ token, id, deletedAt }))
+            .sort((a, b) => b.deletedAt - a.deletedAt)
+        );
+      tx.onerror = () => reject(tx.error);
+    });
+  } finally {
+    db.close();
+  }
+}
