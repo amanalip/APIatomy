@@ -22,7 +22,7 @@ export function PayloadViewer({
   const [tab, setTab] = useState<'schema' | 'examples'>(media.schema ? 'schema' : 'examples');
   const [selection, setSelection] = useState('');
   const id = useId();
-  const { copied, copy } = useCopy();
+  const { copied, copy, setCopied } = useCopy();
   const [copyError, setCopyError] = useState(false);
   const options = useMemo(() => {
     const values = suppliedPayloadExamples(media);
@@ -92,6 +92,7 @@ export function PayloadViewer({
                 onChange={(event) => {
                   setSelection(event.target.value);
                   setCopyError(false);
+                  setCopied(false);
                 }}
                 className="ml-2 max-w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-1"
               >
