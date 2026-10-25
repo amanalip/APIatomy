@@ -453,6 +453,7 @@ export function App() {
           {activeView === 'diff' && (
             <div className="flex-1 h-full overflow-auto bg-white dark:bg-slate-950">
               <DiffView
+                initializationError={comparison.error}
                 oldText={comparison.oldText}
                 newText={comparison.newText}
                 onOldChange={comparison.setOldText}

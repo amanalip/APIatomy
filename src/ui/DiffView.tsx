@@ -5,6 +5,7 @@ import { compareSpecTexts } from '../model/specDiff';
 import { Upload, FileText } from 'lucide-react';
 
 interface DiffViewProps {
+  initializationError?: string | null;
   oldText: string;
   newText: string;
   currentText: string;
@@ -13,6 +14,7 @@ interface DiffViewProps {
 }
 
 export const DiffView: React.FC<DiffViewProps> = ({
+  initializationError,
   oldText,
   newText,
   currentText,
@@ -59,12 +61,12 @@ export const DiffView: React.FC<DiffViewProps> = ({
   }, [debouncedOld, debouncedNew]);
 
   const pendingImports = useRef(new Map<string, AbortController>());
-  useEffect(
-    () => () => {
-      for (const controller of pendingImports.current.values()) controller.abort();
-    },
-    []
-  );
+  useEffect(() => {
+    const imports = pendingImports.current;
+    return () => {
+      for (const controller of imports.values()) controller.abort();
+    };
+  }, []);
   const replaceSide = (side: string, setter: (text: string) => void, text: string) => {
     pendingImports.current.get(side)?.abort();
     pendingImports.current.delete(side);
@@ -110,10 +112,12 @@ export const DiffView: React.FC<DiffViewProps> = ({
         API Diff - Compare two specs
       </h2>
       <p className="text-slate-600 dark:text-slate-400">
-        Choose Old and New specs explicitly. Supports current editor, upload, URL and workspace. Do
-        not default to Petstore for user APIs.
+        Compare independent snapshots. Use current copies the complete editor project. Upload a root
+        with its dependencies, or paste a specification or exported project. Editor changes do not
+        replace these inputs.
       </p>
 
+      {initializationError && <p role="alert">{initializationError}</p>}
       {inputError && (
         <p role="alert" className="text-red-700 dark:text-red-300">
           {inputError}
@@ -174,6 +178,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
               Upload
             </button>
             <input
+              aria-label="Upload old project"
               ref={oldInputRef}
               type="file"
               accept=".yaml,.yml,.json"
@@ -189,6 +194,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
             Clear old specification
           </button>
           <textarea
+            aria-label="Old specification"
             value={oldText}
             onChange={(e) => replaceSide('old', setOldText, e.target.value)}
             placeholder="Paste Old spec here"
@@ -219,6 +225,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
               Upload
             </button>
             <input
+              aria-label="Upload new project"
               ref={newInputRef}
               type="file"
               accept=".yaml,.yml,.json"
@@ -234,6 +241,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
             Clear new specification
           </button>
           <textarea
+            aria-label="New specification"
             value={newText}
             onChange={(e) => replaceSide('new', setNewText, e.target.value)}
             placeholder="Paste New spec here"
