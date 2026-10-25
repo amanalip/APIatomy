@@ -1,6 +1,6 @@
 # User-facing improvements - October 25, 2026
 
-This review prioritizes actionable changes that protect user work, improve correctness, and make API exploration more useful. All ten items below are pending implementation. The earlier review's completed fixes are recorded separately in `improvements_oct19.md`.
+This review prioritizes actionable changes that protect user work, improve correctness, and make API exploration more useful. Items OCT25-01 through OCT25-05 are implemented and verified. Items OCT25-06 through OCT25-10 remain pending. The earlier review's completed fixes are recorded separately in `improvements_oct19.md`.
 
 Review evidence: source inspection and selected local browser exercises. All 311 unit tests passed. The full browser regression suite was not run during this review. Findings explicitly described as confirmed were exercised locally; other workflow gaps and proposed improvements were identified through source inspection.
 
@@ -17,58 +17,63 @@ Review evidence: source inspection and selected local browser exercises. All 311
 
 ### OCT25-01: Prevent accidental loss of work
 
-- [ ] Complete
+- [x] Complete
 - **Problem:** Refreshing returns to the sample unless the user saved or shared. Switching samples or projects replaces edits immediately.
 - **Change:** Add local draft recovery, a visible unsaved-changes indicator, and protection before replacing edited content.
 - **User benefit:** Users can recover their API edits after a refresh or accidental navigation and understand whether work is saved.
 - **Acceptance criteria:** Restore the complete draft project, including dependencies and root filename; show saved versus unsaved state; allow users to save, discard, or cancel before replacing edited content; handle unavailable browser storage without blocking editing.
 - **References:** `src/App.tsx`, `src/utils/workspaceStore.ts`, `src/share/project.ts`.
-- **Commits:** Pending, minimum eight substantive commits.
-- **Validation and pushed range:** Pending.
+- **Implementation:** Implemented complete-project IndexedDB recovery, immediate dirty tracking, visible persistence status, storage failure guidance, unload protection, and save/discard/cancel replacement decisions. Save-before-replacement backups reject collisions atomically. Shared links take precedence over local recovery, and newer edits or dependency revisions suppress stale recovery.
+- **Commits:** `bf8fd06`, `2f5edbf`, `fdec834`, `4830da0`, `efb470d`, `9e0291a`, `08013c0`, `893d90a`, `1456ae5`, `c21b931`, `997d7eb`, `972fe63`, `3368cfc` (13 focused commits, each with a detailed message).
+- **Validation and pushed range:** Focused production regressions and the full repository checks passed. Browser coverage passed on Chromium, Firefox, and mobile Chrome; see the verification record below. Commits are local; no push was requested.
 
 ### OCT25-02: Reject invalid imports before replacing the current API
 
-- [ ] Complete
+- [x] Complete
 - **Problem:** Confirmed that a file containing `this is not an API` is accepted by the import service. The upload caller replaces the current project and reports `Spec loaded`.
 - **Change:** Validate syntax and the API root before committing an import. Display import errors while retaining the current project.
 - **User benefit:** An incorrect file or URL response cannot unexpectedly replace useful work with an invalid document.
 - **Acceptance criteria:** Reject malformed syntax and non-API roots for uploads, drops, project envelopes, and URL imports; preserve current content and dependencies on failure; show a useful error; keep superseded asynchronous imports from replacing newer work. Distinguish fatal import failures from nonfatal specification diagnostics so users can still inspect imperfect APIs.
 - **References:** `src/share/importService.ts`, `src/ui/UrlImportDialog.tsx`, `src/App.tsx`.
-- **Commits:** Pending, minimum eight substantive commits.
-- **Validation and pushed range:** Pending.
+- **Implementation:** Implemented shared fatal validation for API roots, project-envelope roots, and dependency syntax before upload, drop, or URL replacement. Invalid inputs retain the current API; lint findings remain inspectable. URL cancellation remains effective while an unsaved-work decision is pending.
+- **Commits:** `64889ab`, `ce540a0`, `8c66e5a`, `9266c94`, `d451295`, `64c1c41`, `853bbca`, `34d6448` (8 focused commits, each with a detailed message).
+- **Validation and pushed range:** Focused production regressions and the full repository checks passed. Browser coverage passed on Chromium, Firefox, and mobile Chrome; see the verification record below. Commits are local; no push was requested.
 
 ### OCT25-03: Preserve comparisons when switching tabs
 
-- [ ] Complete
+- [x] Complete
 - **Problem:** Entering an old specification, visiting Endpoints, and returning to Diff clears the baseline. The new comparison input also resets when the view remounts.
 - **Change:** Retain both comparison inputs until the user explicitly clears or replaces them. Do not silently replace an independently selected new specification when the main editor changes.
 - **User benefit:** Users can investigate endpoints and schemas without rebuilding their comparison.
 - **Acceptance criteria:** Preserve both inputs and their project dependencies across view changes; retain independent comparison content during main-editor edits; provide explicit replacement and clear actions; keep old and new reference contexts isolated.
 - **References:** `src/ui/DiffView.tsx`, `src/App.tsx`, `src/model/specDiff.ts`.
-- **Commits:** Pending, minimum eight substantive commits.
-- **Validation and pushed range:** Pending.
+- **Implementation:** Moved independent old/new comparison snapshots into app-owned state. Added explicit current-project replacement, independent clear actions, labeled inputs, isolated multi-file uploads, and per-side cancellation of superseded reads. Main-editor changes and tab navigation no longer reset comparison inputs.
+- **Commits:** `dfe562f`, `341ddd1`, `11df08f`, `b545d9f`, `c788fca`, `d124a37`, `e82057a`, `52adaa7`, `49be3e4` (9 focused commits, each with a detailed message).
+- **Validation and pushed range:** Focused production regressions and the full repository checks passed. Browser coverage passed on Chromium, Firefox, and mobile Chrome; see the verification record below. Commits are local; no push was requested.
 
 ### OCT25-04: Make diff results explain what users must change
 
-- [ ] Complete
+- [x] Complete
 - **Problem:** Confirmed that an empty baseline displays zero changes, which can look like a successful comparison. Actual changes show the endpoint and classification without identifying the affected field.
 - **Change:** Show `Choose both specifications` before a comparison is ready. Add expandable field-level before/after details and a breaking-changes filter.
 - **User benefit:** Users can identify required integration changes without manually searching two specifications.
 - **Acceptance criteria:** Distinguish incomplete, parsing, invalid, unchanged, and changed comparisons; show field paths, before/after values, and reasons for compatibility classifications; support filtering to breaking changes; keep large result sets usable. For example, show `Response price: number -> string` under the affected endpoint.
 - **References:** `src/ui/DiffView.tsx`, `src/model/specDiff.ts`.
-- **Commits:** Pending, minimum eight substantive commits.
-- **Validation and pushed range:** Pending.
+- **Implementation:** Added incomplete, comparing, invalid, unchanged, and changed readiness states. Production semantic diff results now include bounded field paths, before/after values, and actionable reasons. Changed endpoints, schemas, and authentication definitions expose details; a breaking-endpoint filter and Show more controls support focused review.
+- **Commits:** `321c37c`, `78c9e04`, `cd872c9`, `8813229`, `6eb6846`, `4bce1f6`, `c2a005f`, `0f1ba25`, `d05bfbd` (9 focused commits, each with a detailed message).
+- **Validation and pushed range:** Focused production regressions and the full repository checks passed. Browser coverage passed on Chromium, Firefox, and mobile Chrome; see the verification record below. Commits are local; no push was requested.
 
 ### OCT25-05: Make generated requests usable for the selected payload type
 
-- [ ] Complete
+- [x] Complete
 - **Problem:** Confirmed that generated JSON request bodies include `readOnly` properties. XML bodies receive the placeholder `field=value`, and users cannot select among supported request content types.
 - **Change:** Add request content-type selection, omit read-only fields from generated request bodies, and clearly explain unsupported payload generation.
 - **User benefit:** Copied requests better match the API contract and require fewer manual corrections.
 - **Acceptance criteria:** Generate direction-aware examples, excluding read-only request fields and write-only fields from generated response examples; respect the selected media type in payloads and headers; offer useful handling or an explicit limitation for XML and binary bodies; preserve explicit examples and existing shell-quoting guarantees.
 - **References:** `src/ui/CurlGenerator.tsx`, `src/model/mockGenerator.ts`, `src/ui/EndpointDetails.tsx`.
-- **Commits:** Pending, minimum eight substantive commits.
-- **Validation and pushed range:** Pending.
+- **Implementation:** Added request content-type selection and matching payload headers, request/response schema projection, typed form examples, literal multipart handling, and explicit XML/binary payload-file limitations. Generated requests omit read-only fields, generated response mode omits write-only fields, and supplied examples remain literal data.
+- **Commits:** `85b9eaf`, `7ed52bd`, `444e52b`, `fbf6a15`, `613326c`, `f92db3b`, `ceaaf17`, `47f7c12` (8 focused commits, each with a detailed message).
+- **Validation and pushed range:** Focused production regressions and the full repository checks passed. Browser coverage passed on Chromium, Firefox, and mobile Chrome; see the verification record below. Commits are local; no push was requested.
 
 ### OCT25-06: Protect saved workspaces from silent overwrite and deletion
 
@@ -124,3 +129,13 @@ Review evidence: source inspection and selected local browser exercises. All 311
 - **References:** `src/ui/SchemaViewer.tsx`, `src/ui/DiffView.tsx`, `src/App.tsx`.
 - **Commits:** Pending, minimum eight substantive commits.
 - **Validation and pushed range:** Pending.
+
+## Implementation verification for OCT25-01 through OCT25-05
+
+- `npm run check` passed: strict TypeScript, source text enforcement, lint, formatting, 340 unit tests across 48 files, coverage thresholds, and a production build. Configured line coverage is 84.39%.
+- `npm run e2e -- --project=chromium --project=firefox --project='Mobile Chrome'` passed all 66 scenarios, including seven new scenarios on each browser configuration.
+- New browser coverage includes edited draft recovery, cancelled replacement, save-before-replacement and backup reopening, multi-file dependency recovery, invalid upload preservation, comparison persistence and clearing, breaking-change evidence, and selected request media with unsupported-generation guidance.
+- The five new workflow scenarios were also attempted in WebKit. Browser launch failed before execution because the host lacks `libicu74` and `libflite1`. Local Safari/WebKit behavior remains unverified; the existing Ubuntu CI workflow installs browser dependencies.
+- The updated development skill passed its validator. `git diff --check` and `npm run check:text` passed.
+- XML and arbitrary binary payload generation remains unsupported by design: commands identify the file to supply and show an explicit limitation. Compatibility classification remains conservative, and field explanations are capped at 200 per traversal with visible truncation guidance. Recovery requires browser storage and does not replace explicit backups.
+- Each improvement has at least eight substantive commits with detailed messages, recorded above. No commits were pushed and no deployment was performed.

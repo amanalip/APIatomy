@@ -216,6 +216,15 @@ The reusable [$apiatomy-development skill](.agents/skills/apiatomy-development/S
 
 Workspace saves, private links, and downloaded `apiatomy-project.json` files preserve uploaded project dependencies. Upload a project file through the regular Upload action to restore it. Plain YAML and JSON specs and older workspace records remain supported.
 
+The current project also has an automatic local recovery draft, including uploaded dependencies. The status strip distinguishes unsaved edits from an explicitly saved workspace and shows whether draft storage succeeded. Refresh restores the draft; opening a shared link takes precedence. Replacing edited work offers Save and continue, Discard changes, or Cancel. Recovery depends on browser storage: use a named workspace or download a project file when storage is unavailable.
+
+Uploads, drops, project files, and URL responses are checked for fatal syntax and API-root errors before replacing the current project. Invalid imports retain the current API. Specifications with nonfatal lint findings, such as missing metadata or unresolved references, remain available for inspection.
+
+Diff keeps independent old and new snapshots while you explore other tabs or edit the main specification. Use current explicitly replaces one snapshot, Upload accepts a root with dependencies, and each side has its own Clear action. Incomplete and invalid comparisons are distinguished from unchanged APIs. Expand changed endpoints, schemas, or authentication definitions to inspect field paths and before/after values. The breaking-endpoint filter focuses on removed or potentially incompatible endpoints; large endpoint result lists have Show more controls.
+
+The cURL preview lets you select a request content type. Generated requests exclude read-only fields, and the schema example viewer offers request and response modes that exclude read-only and write-only fields respectively. Supplied examples remain literal user data. XML and other unsupported generation paths clearly identify the payload file you must supply, rather than producing an unrelated form body.
+
+
 ### Production Build
 
 ```bash
