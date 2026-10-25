@@ -1,3 +1,4 @@
+import { validateImportProject } from './share/validateImport';
 import { useDraftRecovery } from './hooks/useDraftRecovery';
 import { DraftStatus } from './ui/DraftStatus';
 import { UnsavedChangesDialog } from './ui/UnsavedChangesDialog';
@@ -200,10 +201,10 @@ export function App() {
   };
 
   const handleLoadFromUrl = async (text: string, url: string) => {
+    const project = validateImportProject(decodeProject(text));
     if (!(await confirmReplacement())) return false;
     draft.setDirty(false);
     cancelFileImport();
-    const project = decodeProject(text);
     restoreProject(project);
     setRawText(project.specText);
     editorPaneRef.current?.setContent(project.specText);

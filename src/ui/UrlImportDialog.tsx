@@ -1,3 +1,5 @@
+import { decodeProject } from '../share/project';
+import { validateImportProject } from '../share/validateImport';
 import { readImportResponse } from '../utils/readImportResponse';
 import { createPortal } from 'react-dom';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -69,6 +71,8 @@ export const UrlImportDialog: React.FC<UrlImportDialogProps> = ({ onClose, onLoa
       const text = await readImportResponse(res, controller.signal);
       if (closedRef.current || controller.signal.aborted || abortRef.current !== controller) return;
       if (!text.trim()) throw new Error('Empty response');
+      validateImportProject(decodeProject(text));
+      if (closedRef.current || controller.signal.aborted || abortRef.current !== controller) return;
       if ((await onLoad(text, trimmed)) !== false) closeDialog();
     } catch (err) {
       if (closedRef.current || abortRef.current !== controller) return;
