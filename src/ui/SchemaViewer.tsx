@@ -308,12 +308,16 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
           onClick={() => {
             navigation.backToList();
             requestAnimationFrame(() => {
-              (activeSchemaRef.current || searchInputRef.current)?.focus({ preventScroll: true });
               const scroll =
                 listContainerRef.current?.querySelector<HTMLElement>('[data-virtual-scroll]') ||
                 listContainerRef.current;
-              if (scroll && listPositionRef.current !== null)
+              if (scroll && listPositionRef.current !== null) {
                 scroll.scrollTop = listPositionRef.current;
+                scroll.dispatchEvent(new Event('scroll', { bubbles: true }));
+              }
+              requestAnimationFrame(() =>
+                (activeSchemaRef.current || searchInputRef.current)?.focus({ preventScroll: true })
+              );
             });
           }}
         >

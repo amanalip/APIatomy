@@ -32,10 +32,8 @@ export function VirtualList<T>({
   useEffect(() => {
     if (!ref.current) return;
     const maximum = Math.max(0, items.length * itemHeight - height);
-    if (ref.current.scrollTop > maximum) {
-      ref.current.scrollTop = maximum;
-      setScrollTop(maximum);
-    }
+    ref.current.scrollTop = Math.min(ref.current.scrollTop, maximum);
+    setScrollTop(ref.current.scrollTop);
   }, [items.length, itemHeight, height]);
 
   const onScroll = (e: React.UIEvent<HTMLDivElement>) => setScrollTop(e.currentTarget.scrollTop);
