@@ -264,7 +264,11 @@ export function App() {
     return true;
   };
 
-  const { handleSelectDiagnostic } = useDiagnosticNavigation(editorPaneRef, setIsEditorOpen);
+  const { handleSelectDiagnostic } = useDiagnosticNavigation(
+    editorPaneRef,
+    setIsEditorOpen,
+    (filename) => selectEditorFile(filename || rootFilename)
+  );
 
   const handleNavigateToSchema = (schemaName: string, _schema: SchemaModel) => {
     setSelectedSchemaName(schemaName);

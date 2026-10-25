@@ -254,7 +254,7 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
                       onSelectDiagnostic?.(diag);
                     }
                   }}
-                  aria-label={`Go to ${diag.severity} at line ${diag.line ?? 1}: ${diag.message}`}
+                  aria-label={`Go to ${diag.severity}${diag.filename ? ` in ${diag.filename}` : ''} at line ${diag.line ?? 1}: ${diag.message}`}
                   className="flex flex-col gap-1 p-2.5 hover:bg-slate-100/80 dark:hover:bg-slate-900/80 cursor-pointer transition focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:outline-none"
                 >
                   <div className="flex items-center justify-between">
@@ -280,7 +280,8 @@ export const DiagnosticsBar: React.FC<DiagnosticsBarProps> = ({
                       )}
                       {diag.line && (
                         <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] border border-slate-200 dark:border-slate-700">
-                          Line {diag.line}
+                          {diag.filename ? `${diag.filename}:` : 'Line '}
+                          {diag.line}
                         </span>
                       )}
                     </div>

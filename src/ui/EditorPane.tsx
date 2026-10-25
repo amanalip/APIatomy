@@ -87,6 +87,10 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
         view.focus();
       },
       setContent: (text: string) => {
+        if (debounceTimerRef.current !== null) {
+          window.clearTimeout(debounceTimerRef.current);
+          debounceTimerRef.current = null;
+        }
         if (!editorViewRef.current) return;
         const view = editorViewRef.current;
         if (view.state.doc.toString() !== text) {
