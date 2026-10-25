@@ -71,7 +71,11 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
   }, []);
 
   useEffect(() => {
-    if (navigation.showDetails && window.matchMedia('(max-width: 767px)').matches)
+    if (
+      navigation.showDetails &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(max-width: 767px)').matches
+    )
       detailHeadingRef.current?.focus();
   }, [navigation.showDetails, activeSchemaName]);
 
@@ -211,7 +215,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                 items={schemaNames}
                 scrollToIndex={schemaNames.indexOf(activeSchemaName)}
                 height={Math.max(300, schemaListHeight || 500)}
-                itemHeight={36}
+                itemHeight={48}
                 renderItem={(name) => {
                   const isSelected = activeSchemaName === name;
                   const s = ownValue(schemas, name);
@@ -224,7 +228,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                         setActiveSchemaName(name);
                         onSelectSchema?.(name, s);
                       }}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono transition text-left mx-1 ${
+                      className={`w-full flex items-center justify-between px-2.5 py-3 md:py-1.5 min-h-11 rounded-lg text-xs font-mono transition text-left mx-1 ${
                         isSelected
                           ? 'bg-indigo-600 text-white font-semibold shadow'
                           : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900'
@@ -260,7 +264,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                     setActiveSchemaName(name);
                     onSelectSchema?.(name, s);
                   }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-mono transition text-left ${
+                  className={`w-full flex items-center justify-between px-2.5 py-3 md:py-1.5 min-h-11 rounded-lg text-xs font-mono transition text-left ${
                     isSelected
                       ? 'bg-indigo-600 text-white font-semibold shadow'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-white'
@@ -303,9 +307,9 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
         {activeSchema ? (
           <>
             {/* Header */}
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 flex items-center justify-between">
+            <div className="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-2">
               <div className="min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Box className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
                   <h2
                     ref={detailHeadingRef}
@@ -409,8 +413,8 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                       <option value="response">Response (exclude write-only)</option>
                     </select>
                   </label>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">
                         Format:
                       </span>
