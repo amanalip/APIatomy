@@ -92,7 +92,7 @@ describe('multi-file project persistence', () => {
   });
   it('loads pre-project workspace records', async () => {
     await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open('apiatomy_workspaces', 1);
+      const request = indexedDB.open('apiatomy_workspaces');
       request.onupgradeneeded = () => request.result.createObjectStore('specs', { keyPath: 'id' });
       request.onsuccess = () => {
         const db = request.result;

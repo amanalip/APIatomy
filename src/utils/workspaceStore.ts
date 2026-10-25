@@ -2,6 +2,15 @@ import { captureProject, SpecProject } from '../share/project';
 
 const DB_NAME = 'apiatomy_workspaces';
 const STORE = 'specs';
+const TRASH = 'trash';
+export interface DeletedWorkspace {
+  token: string;
+  id: string;
+  deletedAt: number;
+}
+interface TrashRecord extends DeletedWorkspace {
+  workspace: WorkspaceRecord;
+}
 export interface WorkspaceData extends SpecProject {
   title?: string;
 }
@@ -12,10 +21,12 @@ interface WorkspaceRecord extends WorkspaceData {
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
+    const req = indexedDB.open(DB_NAME, 2);
     req.onupgradeneeded = () => {
       if (!req.result.objectStoreNames.contains(STORE))
         req.result.createObjectStore(STORE, { keyPath: 'id' });
+      if (!req.result.objectStoreNames.contains(TRASH))
+        req.result.createObjectStore(TRASH, { keyPath: 'token' });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
