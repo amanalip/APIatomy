@@ -44,10 +44,11 @@ export async function saveWorkspace(
   id: string,
   specText: string,
   title?: string,
-  project = captureProject(specText)
+  project = captureProject(specText),
+  overwrite = true
 ): Promise<void> {
   await transaction('readwrite', (store) =>
-    store.put({ ...project, id, specText, title, savedAt: Date.now() })
+    store[overwrite ? 'put' : 'add']({ ...project, id, specText, title, savedAt: Date.now() })
   );
 }
 

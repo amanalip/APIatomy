@@ -46,3 +46,9 @@ it('handles missing sources, unchanged names, and empty names', async () => {
   await expect(renameWorkspace('source', 'source')).resolves.toBeUndefined();
   await expect(renameWorkspace('source', ' ')).rejects.toThrow('cannot be empty');
 });
+
+it('can save a replacement backup without overwriting an existing workspace', async () => {
+  await saveWorkspace('preserve', 'original');
+  await expect(saveWorkspace('preserve', 'replacement', undefined, { specText: 'replacement', files: {} }, false)).rejects.toThrow();
+  expect((await loadWorkspace('preserve'))?.specText).toBe('original');
+});

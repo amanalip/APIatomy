@@ -39,3 +39,18 @@ it('does not replace a shared API with the local draft', async () => {
   await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
   expect(recover).not.toHaveBeenCalled();
 });
+
+it('keeps editing available when browser storage is unavailable', async () => {
+  vi.stubGlobal('indexedDB', undefined);
+  function Harness() {
+    const [text, setText] = useState('editable');
+    const draft = useDraftRecovery(text, (p) => setText(p.specText));
+    return <button onClick={() => { setText('still editable'); draft.setDirty(true); }}>{text} {draft.status}</button>;
+  }
+  view = mount(<Harness />);
+  await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+  expect(view.container.textContent).toContain('Local recovery unavailable');
+  act(() => view!.container.querySelector('button')!.click());
+  expect(view.container.textContent).toContain('still editable');
+  vi.unstubAllGlobals();
+});

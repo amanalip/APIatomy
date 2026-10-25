@@ -7,7 +7,7 @@ import { saveWorkspace } from './utils/workspaceStore';
 import { importProjectFiles } from './share/importService';
 import { useToast } from './ui/Toast';
 import { ownValue } from './utils/dictionary';
-import { decodeProject, restoreProject } from './share/project';
+import { captureProject, decodeProject, restoreProject } from './share/project';
 import React, { useState, useEffect, useRef } from 'react';
 import { EndpointModel, SchemaModel } from './model';
 import { PETSTORE_SPEC } from './samples/petstore';
@@ -85,36 +85,38 @@ export function App() {
     editorPaneRef.current?.setContent(project.specText);
   });
   const [replacement, setReplacement] = useState<((proceed: boolean) => void) | null>(null);
+  const replacementRef = useRef<((proceed: boolean) => void) | null>(null);
+  useEffect(() => () => replacementRef.current?.(false), []);
   const dirtyRef = useRef(draft.dirty);
   useEffect(() => {
     dirtyRef.current = draft.dirty;
   }, [draft.dirty]);
   const confirmReplacement = () => {
     if (!dirtyRef.current) return Promise.resolve(true);
-    return new Promise<boolean>((resolve) => setReplacement(() => resolve));
+    replacementRef.current?.(false);
+    return new Promise<boolean>((resolve) => {
+      replacementRef.current = resolve;
+      setReplacement(() => resolve);
+    });
   };
   const confirmRef = useRef(confirmReplacement);
   useEffect(() => {
     confirmRef.current = confirmReplacement;
   });
   const chooseReplacement = async (choice: 'save' | 'discard' | 'cancel') => {
-    if (!replacement) return;
+    if (!replacement || replacementRef.current !== replacement) return;
     if (choice === 'save') {
       const name = prompt('Save changes as workspace:', `${spec.title} draft`);
       if (!name) return;
       try {
-        // A unique name avoids overwriting a saved workspace during replacement.
-        const { listWorkspaces } = await import('./utils/workspaceStore');
-        if ((await listWorkspaces()).some((workspace) => workspace.id === name)) {
-          showToast('Choose a new workspace name to preserve the existing workspace', 'error');
-          return;
-        }
-        await saveWorkspace(name, rawText, spec.title);
+        await saveWorkspace(name, rawText, spec.title, captureProject(rawText), false);
       } catch (error) {
         showToast(error instanceof Error ? error.message : 'Save failed', 'error');
         return;
       }
     }
+    if (replacementRef.current !== replacement) return;
+    replacementRef.current = null;
     replacement(choice !== 'cancel');
     setReplacement(null);
   };
