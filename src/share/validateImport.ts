@@ -22,7 +22,10 @@ export function validateImportProject(project: SpecProject): SpecProject {
   for (const [name, text] of Object.entries(project.files)) {
     if (name === project.rootFilename) continue;
     const result = parseRawText(text);
-    const error = result.diagnostics.find((item) => item.severity === 'error');
+    const error = result.diagnostics.find(
+      (item) =>
+        item.severity === 'error' && !['root-not-object', 'json-root-object'].includes(item.id)
+    );
     if (error) throw new Error(`${name}: ${error.message}`);
   }
   return project;

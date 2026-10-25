@@ -66,15 +66,14 @@ it('cancels pending file reads without applying their results', async () => {
   resolve(root);
   await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
 });
-it('supports the FileReader fallback and accepts invalid standalone specs for editor diagnostics', async () => {
+it('uses the FileReader fallback and rejects malformed standalone imports', async () => {
   const malformed = 'openapi: [';
-  const project = await importProjectFiles([new File([malformed], 'broken.yaml')]);
-  expect(project.specText).toBe(malformed);
+  await expect(importProjectFiles([new File([malformed], 'broken.yaml')])).rejects.toThrow('broken.yaml');
 });
 it('can import exported project files larger than 5 MB', async () => {
   const encoded = encodeProject({
     specText: root,
-    files: { 'a.yaml': 'x'.repeat(3 * 1024 * 1024), 'b.yaml': 'y'.repeat(3 * 1024 * 1024) },
+    files: { 'a.yaml': '#'.repeat(3 * 1024 * 1024), 'b.yaml': '#'.repeat(3 * 1024 * 1024) },
   });
   const project = await importProjectFiles([file('project.json', encoded)]);
   expect(project.files['b.yaml'].length).toBe(3 * 1024 * 1024);
