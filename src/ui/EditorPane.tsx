@@ -47,12 +47,13 @@ export interface EditorPaneRef {
 interface EditorPaneProps {
   value: string;
   onChange: (value: string) => void;
+  onEdit?: () => void;
   onImportFiles: (files: File[]) => void;
   format?: 'yaml' | 'json';
 }
 
 export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
-  ({ value, onChange, onImportFiles, format = 'yaml' }, ref) => {
+  ({ value, onChange, onEdit, onImportFiles, format = 'yaml' }, ref) => {
     const { theme } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const editorViewRef = useRef<EditorView | null>(null);
@@ -60,6 +61,8 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
     const languageCompartmentRef = useRef<Compartment>(new Compartment());
     const [isDragging, setIsDragging] = useState(false);
     const debounceTimerRef = useRef<number | null>(null);
+    const onEditRef = useRef(onEdit);
+    onEditRef.current = onEdit;
     const onChangeRef = useRef(onChange);
     useEffect(() => {
       onChangeRef.current = onChange;
@@ -113,6 +116,7 @@ export const EditorPane = forwardRef<EditorPaneRef, EditorPaneProps>(
             }
             return;
           }
+          onEditRef.current?.();
           const docString = update.state.doc.toString();
           if (debounceTimerRef.current) {
             window.clearTimeout(debounceTimerRef.current);

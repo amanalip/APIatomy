@@ -14,6 +14,7 @@ import {
 interface WorkspaceDialogProps {
   currentText: string;
   currentTitle?: string;
+  onSaved?: (text: string) => void;
   onClose: () => void;
   onLoad: (project: WorkspaceData) => void | boolean | Promise<void | boolean>;
 }
@@ -21,6 +22,7 @@ interface WorkspaceDialogProps {
 export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
   currentText,
   currentTitle,
+  onSaved,
   onClose,
   onLoad,
 }) => {
@@ -57,6 +59,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
     try {
       setError(null);
       await saveWorkspace(id, currentText, currentTitle);
+      onSaved?.(currentText);
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed');

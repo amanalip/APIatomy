@@ -342,6 +342,10 @@ export function App() {
                 ref={editorPaneRef}
                 value={rawText}
                 onImportFiles={handleImportFiles}
+                onEdit={() => {
+                  dirtyRef.current = true;
+                  draft.setDirty(true);
+                }}
                 onChange={(newText) => {
                   cancelFileImport();
                   draft.setDirty(true);
@@ -484,6 +488,9 @@ export function App() {
         <WorkspaceDialog
           currentText={rawText}
           currentTitle={spec.title}
+          onSaved={(text) => {
+            if (text === rawText) draft.setDirty(false);
+          }}
           onClose={() => setIsWorkspaceOpen(false)}
           onLoad={async (project) => {
             if (!(await confirmReplacement())) return false;

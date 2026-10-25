@@ -48,5 +48,15 @@ export function useDraftRecovery(rawText: string, onRecover: (project: SpecProje
     return () => window.clearTimeout(timer);
   }, [rawText, revision, dirty, ready]);
 
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+
   return { dirty, setDirty, status, ready };
 }
