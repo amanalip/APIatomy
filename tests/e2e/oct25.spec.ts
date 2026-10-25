@@ -53,3 +53,17 @@ test('explains response changes and distinguishes an incomplete comparison', asy
   await page.getByRole('checkbox', { name: 'Breaking endpoint changes only' }).check();
   await expect(page.getByText('Changed (1)', { exact: true })).toBeVisible();
 });
+
+test('selects request payload media and explains unsupported generation', async ({ page }) => {
+  await page.goto('/');
+  const specification = JSON.stringify({ openapi: '3.0.3', info: { title: 'Payload selection', version: '1' }, paths: { '/payload': { post: { requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'string', readOnly: true }, name: { type: 'string' } } } }, 'application/xml': { schema: { type: 'object' } } } }, responses: { 200: { description: 'ok' } } } } } });
+  await page.locator('#spec-upload-input').setInputFiles({ name: 'payload.json', mimeType: 'application/json', buffer: Buffer.from(specification) });
+  await page.getByRole('button', { name: 'POST /payload', exact: true }).click();
+  await page.getByRole('button', { name: 'cURL Snippet' }).click();
+  const preview = page.getByRole('region', { name: 'Generated cURL command preview' });
+  await expect(preview).not.toContainText('"id"');
+  await page.getByLabel('Request content type', { exact: true }).selectOption('application/xml');
+  await expect(preview).toContainText('Content-Type: application/xml');
+  await expect(preview).toContainText('@payload.xml');
+  await expect(page.getByText(/Automatic payload generation for application\/xml is unsupported/)).toBeVisible();
+});
