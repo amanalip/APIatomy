@@ -25,3 +25,17 @@ test('rejects a non-API upload without replacing the current API', async ({ page
   await expect(page.locator('header')).toContainText('Swagger Petstore');
   await expect(page.getByText('Spec loaded', { exact: true })).toHaveCount(0);
 });
+
+test('preserves comparison inputs across tabs and supports independent clearing', async ({ page }) => {
+  await page.goto('/');
+  await selectView(page, /^Diff$/);
+  await page.getByRole('textbox', { name: 'Old specification', exact: true }).fill('openapi: 3.0.3\ninfo: {title: Baseline, version: "1"}\npaths: {}');
+  await page.getByRole('textbox', { name: 'New specification', exact: true }).fill('openapi: 3.0.3\ninfo: {title: Independent, version: "2"}\npaths: {}');
+  await selectView(page, /^Endpoints/);
+  await selectView(page, /^Diff$/);
+  await expect(page.getByRole('textbox', { name: 'Old specification', exact: true })).toHaveValue(/Baseline/);
+  await expect(page.getByRole('textbox', { name: 'New specification', exact: true })).toHaveValue(/Independent/);
+  await page.getByRole('button', { name: 'Clear old specification' }).click();
+  await expect(page.getByRole('textbox', { name: 'Old specification', exact: true })).toHaveValue('');
+  await expect(page.getByRole('textbox', { name: 'New specification', exact: true })).toHaveValue(/Independent/);
+});
