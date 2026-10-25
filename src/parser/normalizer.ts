@@ -456,10 +456,12 @@ export function normalizeSpec(
     rawDoc: doc,
   });
 
-  const allDiagnostics = [...diagnostics, ...validationDiagnostics].map((item) => ({
-    ...item,
-    filename: context.basePath || undefined,
-  }));
+  const allDiagnostics: DiagnosticItem[] = [...diagnostics, ...validationDiagnostics].map(
+    (item) => ({
+      ...item,
+      filename: context.basePath || undefined,
+    })
+  );
   allDiagnostics.push(...projectDiagnostics(context.files || new Map(), context.basePath, rawText));
 
   return {
