@@ -1,3 +1,4 @@
+import { importProjectFiles } from '../share/importService';
 import { captureProject, encodeProject } from '../share/project';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { compareSpecTexts } from '../model/specDiff';
@@ -57,29 +58,51 @@ export const DiffView: React.FC<DiffViewProps> = ({
     return compareSpecTexts(debouncedOld, debouncedNew);
   }, [debouncedOld, debouncedNew]);
 
-  const handleFile = (setter: (t: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      if (text) setter(text);
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+  const pendingImports = useRef(new Map<string, AbortController>());
+  useEffect(
+    () => () => {
+      for (const controller of pendingImports.current.values()) controller.abort();
+    },
+    []
+  );
+  const replaceSide = (side: string, setter: (text: string) => void, text: string) => {
+    pendingImports.current.get(side)?.abort();
+    pendingImports.current.delete(side);
+    setter(text);
   };
+  const handleFile =
+    (side: string, setter: (text: string) => void) =>
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.currentTarget.files || []);
+      event.currentTarget.value = '';
+      if (!files.length) return;
+      pendingImports.current.get(side)?.abort();
+      const controller = new AbortController();
+      pendingImports.current.set(side, controller);
+      try {
+        const project = await importProjectFiles(files, controller.signal);
+        if (controller.signal.aborted || pendingImports.current.get(side) !== controller) return;
+        setter(encodeProject(project));
+        setInputError(null);
+      } catch (error) {
+        if (!controller.signal.aborted)
+          setInputError(error instanceof Error ? error.message : 'Import failed');
+      } finally {
+        if (pendingImports.current.get(side) === controller) pendingImports.current.delete(side);
+      }
+    };
 
   const [inputError, setInputError] = useState<string | null>(null);
-  const useCurrent = (setter: (text: string) => void) => {
+  const useCurrent = (side: string, setter: (text: string) => void) => {
     try {
-      setter(encodeProject(captureProject(currentText)));
+      replaceSide(side, setter, encodeProject(captureProject(currentText)));
       setInputError(null);
     } catch (error) {
       setInputError(error instanceof Error ? error.message : 'Unable to snapshot current project');
     }
   };
-  const useCurrentForOld = () => useCurrent(setOldText);
-  const useCurrentForNew = () => useCurrent(setNewText);
+  const useCurrentForOld = () => useCurrent('old', setOldText);
+  const useCurrentForNew = () => useCurrent('new', setNewText);
 
   return (
     <div className="p-4 space-y-4 text-xs">
@@ -154,19 +177,20 @@ export const DiffView: React.FC<DiffViewProps> = ({
               ref={oldInputRef}
               type="file"
               accept=".yaml,.yml,.json"
+              multiple
               className="hidden"
-              onChange={handleFile(oldText ? setOldText : setOldText)}
+              onChange={handleFile('old', setOldText)}
             />
           </div>
           <button
-            onClick={() => setOldText('')}
+            onClick={() => replaceSide('old', setOldText, '')}
             className="text-xs text-blue-700 dark:text-blue-300 hover:underline"
           >
             Clear old specification
           </button>
           <textarea
             value={oldText}
-            onChange={(e) => setOldText(e.target.value)}
+            onChange={(e) => replaceSide('old', setOldText, e.target.value)}
             placeholder="Paste Old spec here"
             className="w-full h-32 p-2 text-[11px] font-mono bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded"
           />
@@ -198,19 +222,20 @@ export const DiffView: React.FC<DiffViewProps> = ({
               ref={newInputRef}
               type="file"
               accept=".yaml,.yml,.json"
+              multiple
               className="hidden"
-              onChange={handleFile(setNewText)}
+              onChange={handleFile('new', setNewText)}
             />
           </div>
           <button
-            onClick={() => setNewText('')}
+            onClick={() => replaceSide('new', setNewText, '')}
             className="text-xs text-blue-700 dark:text-blue-300 hover:underline"
           >
             Clear new specification
           </button>
           <textarea
             value={newText}
-            onChange={(e) => setNewText(e.target.value)}
+            onChange={(e) => replaceSide('new', setNewText, e.target.value)}
             placeholder="Paste New spec here"
             className="w-full h-32 p-2 text-[11px] font-mono bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded"
           />
