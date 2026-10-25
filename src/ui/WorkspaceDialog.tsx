@@ -39,6 +39,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
   const [updateId, setUpdateId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const busyRef = useRef(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const trapRef = useFocusTrap(true);
 
@@ -66,6 +67,8 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
       setError('Enter a workspace name');
       return;
     }
+    if (busyRef.current) return;
+    busyRef.current = true;
     setSaving(true);
     try {
       setError(null);
@@ -85,6 +88,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
             : 'Save failed'
       );
     } finally {
+      busyRef.current = false;
       setSaving(false);
     }
   };
@@ -101,12 +105,19 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
   };
 
   const handleDelete = async (id: string) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setSaving(true);
     try {
+      setError(null);
       await trashWorkspace(id);
       setMessage(`Deleted workspace "${id}". Use Undo deletion to restore it.`);
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed');
+    } finally {
+      busyRef.current = false;
+      setSaving(false);
     }
   };
 
@@ -206,6 +217,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
                     <button
                       disabled={saving}
                       aria-label={`Undo deletion of ${item.id}`}
+                      disabled={saving}
                       onClick={async () => {
                         setSaving(true);
                         try {
@@ -257,6 +269,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
                       <Save className="w-3 h-3" />
                     </button>
                     <button
+                      disabled={saving}
                       onClick={() => handleOpen(ws.id)}
                       className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-600"
                       title="Open workspace"
@@ -264,6 +277,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
                       <FolderOpen className="w-3 h-3" />
                     </button>
                     <button
+                      disabled={saving}
                       onClick={async () => {
                         const newName = prompt('Rename workspace:', ws.id);
                         if (!newName || newName === ws.id) return;
@@ -281,6 +295,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
                       <Edit2 className="w-3 h-3" />
                     </button>
                     <button
+                      disabled={saving}
                       onClick={() => handleDelete(ws.id)}
                       className="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 border border-transparent hover:border-red-200 dark:hover:border-red-800"
                       title="Delete"
