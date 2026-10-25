@@ -474,6 +474,30 @@ export function normalizeSpec(
           consumedSchemaRefs: Array.from(consumedSchemaRefs),
           producedSchemaRefs: Array.from(producedSchemaRefs),
         });
+        if (isRecord(op.callbacks)) {
+          for (const [name, rawCallback] of Object.entries(op.callbacks)) {
+            const callback = resolveObject(
+              rawCallback,
+              operationContext,
+              'callback',
+              `${location}/${pathKey}/${method}/callbacks/${name}`
+            );
+            if (!callback) continue;
+            for (const [expression, rawItem] of Object.entries(callback.value)) {
+              if (expression.startsWith('x-')) continue;
+              const callbackContext = callback.fieldContexts?.get(expression) || callback.context;
+              parsePaths(
+                { [expression]: rawItem },
+                callbackContext,
+                'callback',
+                `${location}/${pathKey}/${method}/callbacks/${name}`,
+                endpointId,
+                name,
+                depth + 1
+              );
+            }
+          }
+        }
       }
     }
   }
@@ -482,7 +506,7 @@ export function normalizeSpec(
 
   // Run linter / validator
   const validationDiagnostics = validateSpec({
-    endpoints,
+    endpoints: endpoints.filter((endpoint) => !endpoint.kind || endpoint.kind === 'endpoint'),
     schemas,
     rawText,
     rawDoc: doc,
