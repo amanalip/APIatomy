@@ -35,7 +35,7 @@ it.each([
   'properties',
 ])('keeps structural changes to a property named %s', (name) => {
   expect(compareSpecTexts(spec(name, 'string'), spec(name, 'integer')).changedDetails).toEqual([
-    { key: 'get /test', cls: 'breaking' },
+    expect.objectContaining({ key: 'get /test', cls: 'breaking', fields: expect.arrayContaining([expect.objectContaining({ path: `responses[200].content[application/json].schema.properties.${name}.type`, before: 'string', after: 'integer' })]) }),
   ]);
 });
 it('still classifies actual schema documentation as documentation-only', () => {
