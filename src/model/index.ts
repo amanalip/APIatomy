@@ -39,6 +39,10 @@ export interface SecurityRequirementModel {
 }
 
 export interface EndpointModel {
+  kind?: 'endpoint' | 'webhook' | 'callback';
+  parentEndpointId?: string;
+  callbackName?: string;
+  expression?: string;
   id: string;
   method: HttpMethod;
   path: string;
