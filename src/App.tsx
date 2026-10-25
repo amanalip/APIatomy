@@ -1,3 +1,4 @@
+import { useComparisonInputs } from './hooks/useComparisonInputs';
 import { validateImportProject } from './share/validateImport';
 import { useDraftRecovery } from './hooks/useDraftRecovery';
 import { DraftStatus } from './ui/DraftStatus';
@@ -63,7 +64,7 @@ export function App() {
   const [selectedSchemaName, setSelectedSchemaName] = useState<string | undefined>(undefined);
   const { editorWidth, setEditorWidth, handleMouseDownResize } = useResizableEditor(420);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-  const [diffOldText, setDiffOldText] = useState<string | null>(null);
+  const comparison = useComparisonInputs(rawText, activeView === 'diff');
   const [isUrlDialogOpen, setIsUrlDialogOpen] = useState(false);
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -269,12 +270,6 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  useEffect(() => {
-    if (activeView === 'diff' && diffOldText === null) {
-      setDiffOldText('');
-    }
-  }, [activeView, diffOldText]);
-
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-150">
       <Onboarding />
@@ -457,7 +452,13 @@ export function App() {
           {/* View 4: Diff */}
           {activeView === 'diff' && (
             <div className="flex-1 h-full overflow-auto bg-white dark:bg-slate-950">
-              <DiffView oldText={diffOldText ?? ''} newText={rawText} />
+              <DiffView
+                oldText={comparison.oldText}
+                newText={comparison.newText}
+                onOldChange={comparison.setOldText}
+                onNewChange={comparison.setNewText}
+                currentText={rawText}
+              />
             </div>
           )}
         </div>

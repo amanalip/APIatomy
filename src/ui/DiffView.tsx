@@ -6,15 +6,20 @@ import { Upload, FileText } from 'lucide-react';
 interface DiffViewProps {
   oldText: string;
   newText: string;
+  currentText: string;
+  onOldChange: (text: string) => void;
+  onNewChange: (text: string) => void;
 }
 
-export const DiffView: React.FC<DiffViewProps> = ({ oldText: initialOld, newText: initialNew }) => {
-  const [oldText, setOldText] = useState(initialOld);
-  const [newText, setNewText] = useState(() => encodeProject(captureProject(initialNew)));
+export const DiffView: React.FC<DiffViewProps> = ({
+  oldText,
+  newText,
+  currentText,
+  onOldChange: setOldText,
+  onNewChange: setNewText,
+}) => {
   const [debouncedOld, setDebouncedOld] = useState(oldText);
   const [debouncedNew, setDebouncedNew] = useState(newText);
-  React.useEffect(() => setOldText(initialOld), [initialOld]);
-  React.useEffect(() => setNewText(encodeProject(captureProject(initialNew))), [initialNew]);
 
   useEffect(() => {
     const isLarge =
@@ -64,8 +69,8 @@ export const DiffView: React.FC<DiffViewProps> = ({ oldText: initialOld, newText
     e.target.value = '';
   };
 
-  const useCurrentForOld = () => setOldText(encodeProject(captureProject(initialNew)));
-  const useCurrentForNew = () => setNewText(encodeProject(captureProject(initialNew)));
+  const useCurrentForOld = () => setOldText(encodeProject(captureProject(currentText)));
+  const useCurrentForNew = () => setNewText(encodeProject(captureProject(currentText)));
 
   return (
     <div className="p-4 space-y-4 text-xs">
