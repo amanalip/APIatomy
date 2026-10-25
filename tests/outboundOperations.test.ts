@@ -38,3 +38,12 @@ it('warns when recursive callback exploration reaches its supported depth', () =
   expect(spec.diagnostics.some((item) => item.id.startsWith('outbound-depth-'))).toBe(true);
   expect(spec.endpoints.length).toBeLessThan(12);
 });
+
+it('bounds branching callback expansion and warns rather than silently omitting it', () => {
+  const callbacks = Object.fromEntries(['one', 'two', 'three'].map((name) => [name, { $ref: '#/components/callbacks/repeat' }]));
+  const nested = { post: { responses: { 200: { description: 'ok' } }, callbacks } };
+  const text = JSON.stringify({ openapi: '3.1.0', paths: { '/register': nested }, components: { callbacks: { repeat: { '{$request.query.url}': nested } } } });
+  const spec = parseApiSpec(text);
+  expect(spec.endpoints.filter((ep) => ep.kind === 'callback').length).toBe(2000);
+  expect(spec.diagnostics.some((item) => item.id === 'outbound-count-limit')).toBe(true);
+});

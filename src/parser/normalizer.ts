@@ -287,6 +287,18 @@ export function normalizeSpec(
         : undefined;
 
       for (const [methodKey, opObj] of Object.entries(pi)) {
+        if (kind !== 'endpoint' && outboundCount >= 2000) {
+          if (!warnedOutboundLimit)
+            diagnostics.push({
+              id: 'outbound-count-limit',
+              severity: 'warning',
+              source: 'ref',
+              message:
+                'Showing the first 2000 outbound operations. Inspect the source for additional webhook or callback contracts.',
+            });
+          warnedOutboundLimit = true;
+          return;
+        }
         const method = methodKey.toLowerCase() as HttpMethod;
         if (!validMethods.includes(method)) continue;
         if (typeof opObj !== 'object' || opObj === null) continue;
