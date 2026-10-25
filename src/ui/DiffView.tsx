@@ -146,7 +146,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
   const useCurrentForNew = () => useCurrent('new', setNewText);
 
   return (
-    <div className="p-4 space-y-4 text-xs">
+    <div className="min-w-0 p-3 sm:p-4 space-y-4 text-xs break-words">
       <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
         API Diff - Compare two specs
       </h2>
@@ -201,8 +201,8 @@ export const DiffView: React.FC<DiffViewProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="min-w-0 space-y-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
           <div className="font-semibold text-slate-800 dark:text-slate-200">Old spec</div>
           <div className="flex flex-wrap gap-1">
             <button
@@ -249,7 +249,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
           )}
         </div>
 
-        <div className="space-y-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+        <div className="min-w-0 space-y-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
           <div className="font-semibold text-slate-800 dark:text-slate-200">New spec</div>
           <div className="flex flex-wrap gap-1">
             <button
@@ -313,7 +313,10 @@ export const DiffView: React.FC<DiffViewProps> = ({
                 Added ({breakingOnly ? 0 : added.length})
               </div>
               {(!breakingOnly ? added : []).slice(0, visibleLimit).map((e) => (
-                <div key={e.id} className="font-mono text-emerald-800 dark:text-emerald-200">
+                <div
+                  key={e.id}
+                  className="font-mono break-all text-emerald-800 dark:text-emerald-200"
+                >
                   {e.method.toUpperCase()} {e.path}
                 </div>
               ))}
@@ -324,7 +327,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
                 Removed ({removed.length}) - breaking
               </div>
               {removed.slice(0, visibleLimit).map((e) => (
-                <div key={e.id} className="font-mono text-red-800 dark:text-red-200">
+                <div key={e.id} className="font-mono break-all text-red-800 dark:text-red-200">
                   {e.method.toUpperCase()} {e.path}
                 </div>
               ))}
@@ -367,7 +370,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
           )}
           {!breakingOnly && (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
                   <div className="font-semibold text-slate-700 dark:text-slate-300">Schemas</div>
                   <div className="text-slate-600 dark:text-slate-400">
@@ -422,7 +425,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
                   <div className="font-semibold text-slate-700 dark:text-slate-300">Servers</div>
                   {addedServers.length === 0 && removedServers.length === 0 ? (
