@@ -13,6 +13,7 @@ export function useDraftRecovery(rawText: string, onRecover: (project: SpecProje
     latest.current = { rawText, onRecover, revision };
   });
   const queue = useRef(Promise.resolve());
+  const storageFailed = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +35,10 @@ export function useDraftRecovery(rawText: string, onRecover: (project: SpecProje
         } else setStatus('Local recovery ready');
       })
       .catch(() => {
-        if (!cancelled) setStatus('Local recovery unavailable. Save or download your work.');
+        if (!cancelled) {
+          storageFailed.current = true;
+          setStatus('Local recovery unavailable. Save or download your work.');
+        }
       })
       .finally(() => {
         if (!cancelled) setReady(true);
@@ -47,7 +51,7 @@ export function useDraftRecovery(rawText: string, onRecover: (project: SpecProje
   useEffect(() => {
     if (!ready) return;
     const project = captureProject(rawText);
-    setStatus('Saving local draft...');
+    if (!storageFailed.current) setStatus('Saving local draft...');
     let active = true;
     const timer = window.setTimeout(() => {
       queue.current = queue.current

@@ -7,7 +7,7 @@ import { mount } from './reactHarness';
 import { restoreProject } from '../src/share/project';
 
 let view: ReturnType<typeof mount> | undefined;
-afterEach(() => { view?.unmount(); view = undefined; vi.restoreAllMocks(); history.replaceState(null, '', '/'); });
+afterEach(() => { view?.unmount(); view = undefined; vi.restoreAllMocks(); vi.unstubAllGlobals(); history.replaceState(null, '', '/'); });
 const project = { specText: 'openapi: 3.0.3', rootFilename: 'api/root.yaml', files: { 'api/types/pet.yaml': 'type: string' } };
 
 it('round trips root context and dependencies independently of workspaces', async () => {
