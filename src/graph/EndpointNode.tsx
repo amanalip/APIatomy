@@ -34,6 +34,11 @@ export const EndpointNode: React.FC<NodeProps> = memo(({ data, selected }) => {
         className="!w-2.5 !h-2.5 !bg-slate-400 !border-2 !border-white dark:!border-slate-900"
       />
 
+      {nodeData.endpoint.kind && nodeData.endpoint.kind !== 'endpoint' && (
+        <div className="text-[10px] font-semibold text-purple-700 dark:text-purple-300">
+          {nodeData.endpoint.kind}
+        </div>
+      )}
       <div className="flex items-center gap-2 mb-1.5">
         <span
           className={`px-2 py-0.5 text-[11px] font-mono font-bold rounded shadow-sm ${methodConfig.badgeBg}`}

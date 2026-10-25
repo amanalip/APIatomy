@@ -80,6 +80,20 @@ export function computeApiTopologyGraph(
       },
     });
 
+    if (ep.parentEndpointId) {
+      const parentId = `ep_${ep.parentEndpointId}`;
+      const edgeId = `${parentId}->${nodeId}:callback`;
+      dagreGraph.setEdge(parentId, nodeId, {}, edgeId);
+      edges.push({
+        id: edgeId,
+        source: parentId,
+        target: nodeId,
+        type: 'customEdge',
+        style: { stroke: '#9333ea', strokeWidth: 1.5 },
+        data: { label: 'calls back', type: 'callback' },
+      });
+    }
+
     // Edges from Endpoint to Consumed Schemas (Request)
     for (const schemaName of ep.consumedSchemaRefs) {
       if (!ownValue(spec.schemas, schemaName)) continue; // Guard against broken/missing schema references
