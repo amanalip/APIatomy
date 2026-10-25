@@ -41,3 +41,18 @@ test('edits uploaded dependencies and retains changes through project recovery',
   await expect(page.getByRole('heading', { name: 'Pet', exact: true })).toBeVisible();
   await expect(page.getByText('integer', { exact: true }).first()).toBeVisible();
 });
+
+test('explores outbound webhooks and callback destinations', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Samples', exact: true }).click();
+  await page.getByRole('menuitem').filter({ hasText: 'Webhooks' }).click();
+  await page.getByLabel('Operation kind', { exact: true }).selectOption('webhook');
+  await expect(page.getByRole('button', { name: 'webhook POST orderShipped', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'webhook POST orderShipped', exact: true }).click();
+  await expect(page.getByText('Outbound webhook', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Close details', exact: true }).click();
+  await page.getByLabel('Operation kind', { exact: true }).selectOption('callback');
+  await page.getByRole('button', { name: 'callback POST {$request.body#/callbackUrl}', exact: true }).click();
+  await expect(page.getByText('Destination: {$request.body#/callbackUrl}', { exact: true })).toBeVisible();
+  await expect(page.getByText('Triggered by post_/subscriptions', { exact: true })).toBeVisible();
+});
