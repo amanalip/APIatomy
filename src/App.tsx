@@ -86,13 +86,17 @@ export function App() {
   });
   const [replacement, setReplacement] = useState<((proceed: boolean) => void) | null>(null);
   const dirtyRef = useRef(draft.dirty);
-  dirtyRef.current = draft.dirty;
+  useEffect(() => {
+    dirtyRef.current = draft.dirty;
+  }, [draft.dirty]);
   const confirmReplacement = () => {
     if (!dirtyRef.current) return Promise.resolve(true);
     return new Promise<boolean>((resolve) => setReplacement(() => resolve));
   };
   const confirmRef = useRef(confirmReplacement);
-  confirmRef.current = confirmReplacement;
+  useEffect(() => {
+    confirmRef.current = confirmReplacement;
+  });
   const chooseReplacement = async (choice: 'save' | 'discard' | 'cancel') => {
     if (!replacement) return;
     if (choice === 'save') {
@@ -338,9 +342,12 @@ export function App() {
                 ref={editorPaneRef}
                 value={rawText}
                 onImportFiles={handleImportFiles}
-                onEdit={() => {
+                onEdit={(text) => {
                   dirtyRef.current = true;
+                  cancelFileImport();
                   draft.setDirty(true);
+                  setRawText(text);
+                  setSourceUrl(null);
                 }}
                 onChange={(newText) => {
                   cancelFileImport();

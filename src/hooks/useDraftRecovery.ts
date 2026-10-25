@@ -9,7 +9,9 @@ export function useDraftRecovery(rawText: string, onRecover: (project: SpecProje
   const [ready, setReady] = useState(false);
   const [status, setStatus] = useState('Checking local recovery');
   const latest = useRef({ rawText, onRecover });
-  latest.current = { rawText, onRecover };
+  useEffect(() => {
+    latest.current = { rawText, onRecover };
+  });
   const queue = useRef(Promise.resolve());
 
   useEffect(() => {
@@ -39,6 +41,7 @@ export function useDraftRecovery(rawText: string, onRecover: (project: SpecProje
   useEffect(() => {
     if (!ready) return;
     const project = captureProject(rawText);
+    setStatus('Saving local draft...');
     const timer = window.setTimeout(() => {
       queue.current = queue.current
         .then(() => saveDraft({ project, dirty }))
