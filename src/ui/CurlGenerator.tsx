@@ -26,6 +26,12 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [wrap, setWrap] = useState(false);
+  const [contentType, setContentType] = useState('');
+  const mediaTypes = endpoint.requestBody?.content || [];
+  const selectedMedia =
+    mediaTypes.find((media) => media.contentType === contentType) ||
+    mediaTypes.find((media) => media.contentType.toLowerCase().includes('json')) ||
+    mediaTypes[0];
   const [selectedServerUrl, setSelectedServerUrl] = useState<string>(
     (endpoint.servers && endpoint.servers[0]?.url) || servers[0]?.url || FALLBACK_SERVER_URL
   );
@@ -72,19 +78,32 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({
       selectedServerUrl,
       activeServer,
       securitySchemes,
-      selectedAuth
+      selectedAuth,
+      selectedMedia?.contentType
     );
-  }, [endpoint, selectedServerUrl, activeServer, securitySchemes, selectedAuth]);
+  }, [endpoint, selectedServerUrl, activeServer, securitySchemes, selectedAuth, selectedMedia]);
 
   const bodyIssues = useMemo(() => {
-    const media = endpoint.requestBody?.content?.find((item) =>
-      item.contentType.toLowerCase().includes('json')
-    );
-    if (!media?.schema) return [];
+    if (!selectedMedia) return [];
+    const lower = selectedMedia.contentType.toLowerCase();
+    const supported =
+      lower.includes('json') ||
+      lower.includes('multipart/form-data') ||
+      lower.includes('application/x-www-form-urlencoded');
+    const explicitText = typeof selectedMedia.example === 'string';
+    if (!supported && !explicitText)
+      return [
+        `Automatic payload generation for ${selectedMedia.contentType} is unsupported. Replace the payload file with your own content before running this command.`,
+      ];
+    if (!selectedMedia.schema || !supported) return [];
     return generateMockExample(
-      media.example !== undefined ? { ...media.schema, example: media.example } : media.schema
+      selectedMedia.example !== undefined
+        ? { ...selectedMedia.schema, example: selectedMedia.example }
+        : selectedMedia.schema,
+      {},
+      'request'
     ).issues;
-  }, [endpoint]);
+  }, [selectedMedia]);
 
   const handleCopy = async () => {
     const success = await copyTextToClipboard(curlCommand);
@@ -168,6 +187,23 @@ export const CurlGenerator: React.FC<CurlGeneratorProps> = ({
         </div>
       </div>
 
+      {mediaTypes.length > 0 && (
+        <label className="flex flex-wrap items-center gap-2 text-xs mb-3">
+          Request content type
+          <select
+            aria-label="Request content type"
+            value={selectedMedia?.contentType || ''}
+            onChange={(event) => setContentType(event.target.value)}
+            className="max-w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1"
+          >
+            {mediaTypes.map((media) => (
+              <option key={media.contentType} value={media.contentType}>
+                {media.contentType}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {bodyIssues.length > 0 && (
         <p role="status" className="mb-2 text-xs text-amber-800 dark:text-amber-200">
           Request example needs review: {bodyIssues.join(' ')}
