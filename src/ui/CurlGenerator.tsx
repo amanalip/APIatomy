@@ -209,7 +209,8 @@ export function buildCurlCommand(
   selectedServerUrl: string,
   activeServer?: ServerModel,
   securitySchemes?: Record<string, SecuritySchemeModel>,
-  selectedAuthIndex = 0
+  selectedAuthIndex = 0,
+  selectedContentType?: string
 ): string {
   let rawUrl = normalizeServerUrl(selectedServerUrl);
 
@@ -443,6 +444,7 @@ export function buildCurlCommand(
   if (endpoint.requestBody && endpoint.requestBody.content.length > 0) {
     // Prefer JSON if available, otherwise first content type (case-insensitive per RFC 7231)
     const primaryMedia =
+      endpoint.requestBody.content.find((c) => c.contentType === selectedContentType) ||
       endpoint.requestBody.content.find((c) => c.contentType.toLowerCase().includes('json')) ||
       endpoint.requestBody.content[0];
     const lowerType = primaryMedia.contentType.toLowerCase();
@@ -493,5 +495,5 @@ export function buildCurlCommand(
 
 export function generateSampleJsonFromSchema(schema?: SchemaModel): string {
   if (!schema) return '{}';
-  return JSON.stringify(generateMockExample(schema).value, null, 2);
+  return JSON.stringify(generateMockExample(schema, {}, 'request').value, null, 2);
 }
