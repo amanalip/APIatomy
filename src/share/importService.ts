@@ -1,3 +1,4 @@
+import { validateImportProject } from './validateImport';
 import { parseRawText } from '../parser/yamlJson';
 import { normalizeFilePath } from '../parser/fileMap';
 import { dictionary, hasOwn } from '../utils/dictionary';
@@ -110,5 +111,7 @@ export async function importProjectFiles(
   if (rootFilename) normalized[rootFilename] = project.specText;
   project = { ...project, files: normalized, rootFilename };
   encodeProject(project); // Validate individual, aggregate, and serialized sizes before committing.
+  validateImportProject(project);
+  checkCancelled(signal);
   return project;
 }
