@@ -29,6 +29,15 @@ export function VirtualList<T>({
     }
   }, [scrollToIndex, itemHeight, height]);
 
+  useEffect(() => {
+    if (!ref.current) return;
+    const maximum = Math.max(0, items.length * itemHeight - height);
+    if (ref.current.scrollTop > maximum) {
+      ref.current.scrollTop = maximum;
+      setScrollTop(maximum);
+    }
+  }, [items.length, itemHeight, height]);
+
   const onScroll = (e: React.UIEvent<HTMLDivElement>) => setScrollTop(e.currentTarget.scrollTop);
 
   const totalHeight = items.length * itemHeight;
@@ -37,7 +46,13 @@ export function VirtualList<T>({
   const visible = items.slice(start, end);
 
   return (
-    <div ref={ref} onScroll={onScroll} style={{ height, overflow: 'auto' }} className="relative">
+    <div
+      data-virtual-scroll="true"
+      ref={ref}
+      onScroll={onScroll}
+      style={{ height, overflow: 'auto' }}
+      className="relative"
+    >
       <div style={{ height: totalHeight, position: 'relative' }}>
         <div
           style={{

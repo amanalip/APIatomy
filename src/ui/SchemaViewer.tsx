@@ -31,6 +31,14 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
   const [mockFormat, setMockFormat] = useState<'json' | 'yaml'>('json');
   const [copiedExample, setCopiedExample] = useState(false);
   const [copiedSchemaAst, setCopiedSchemaAst] = useState(false);
+  const listPositionRef = useRef<number | null>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  const rememberListPosition = () => {
+    const scroll =
+      listContainerRef.current?.querySelector<HTMLElement>('[data-virtual-scroll]') ||
+      listContainerRef.current;
+    listPositionRef.current = scroll?.scrollTop ?? 0;
+  };
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const activeSchemaRef = useRef<HTMLButtonElement>(null);
@@ -186,7 +194,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div ref={listContainerRef} className="flex-1 overflow-y-auto p-2 space-y-1">
           {schemaNames.length === 0 ? (
             <div className="text-center py-8 text-slate-600 dark:text-slate-500 text-xs space-y-2 px-2">
               <div className="mx-auto w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
@@ -224,6 +232,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                       key={name}
                       ref={isSelected ? activeSchemaRef : undefined}
                       onClick={() => {
+                        rememberListPosition();
                         navigation.openDetails();
                         setActiveSchemaName(name);
                         onSelectSchema?.(name, s);
@@ -260,6 +269,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                   key={name}
                   ref={isSelected ? activeSchemaRef : undefined}
                   onClick={() => {
+                    rememberListPosition();
                     navigation.openDetails();
                     setActiveSchemaName(name);
                     onSelectSchema?.(name, s);
@@ -297,9 +307,14 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
           className="md:hidden shrink-0 self-start m-3 rounded border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
           onClick={() => {
             navigation.backToList();
-            requestAnimationFrame(() =>
-              (activeSchemaRef.current || searchInputRef.current)?.focus()
-            );
+            requestAnimationFrame(() => {
+              (activeSchemaRef.current || searchInputRef.current)?.focus({ preventScroll: true });
+              const scroll =
+                listContainerRef.current?.querySelector<HTMLElement>('[data-virtual-scroll]') ||
+                listContainerRef.current;
+              if (scroll && listPositionRef.current !== null)
+                scroll.scrollTop = listPositionRef.current;
+            });
           }}
         >
           Back to schemas
@@ -389,6 +404,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                     schema={activeSchema}
                     schemas={schemas}
                     onNavigateRef={(target) => {
+                      rememberListPosition();
                       navigation.openDetails();
                       setActiveSchemaName(target);
                       if (ownValue(schemas, target))
