@@ -35,7 +35,7 @@ export function PayloadViewer({
   const generated = useMemo(
     () =>
       selected?.generated && media.schema
-        ? generateMockExample(media.schema, schemas, direction)
+        ? generateMockExample({ ...media.schema, example: undefined }, schemas, direction)
         : undefined,
     [selected, media.schema, schemas, direction]
   );

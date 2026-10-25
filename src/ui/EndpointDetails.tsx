@@ -404,7 +404,12 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                         )}
                       </div>
 
-                      <PayloadViewer media={c} direction="request" schemas={schemas}>
+                      <PayloadViewer
+                        key={endpoint.id + c.contentType}
+                        media={c}
+                        direction="request"
+                        schemas={schemas}
+                      >
                         {c.schema && (
                           <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
                             <SchemaPropertyTree
@@ -570,23 +575,22 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                                   )}
                                 </div>
 
-                                {c.schema ? (
-                                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
-                                    <SchemaPropertyTree
-                                      schema={c.schema}
-                                      schemas={schemas}
-                                      onSelectSchema={onSelectSchema}
-                                    />
-                                  </div>
-                                ) : c.example ? (
-                                  <pre className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
-                                    <code>
-                                      {typeof c.example === 'object'
-                                        ? JSON.stringify(c.example, null, 2)
-                                        : String(c.example)}
-                                    </code>
-                                  </pre>
-                                ) : null}
+                                <PayloadViewer
+                                  key={endpoint.id + c.contentType}
+                                  media={c}
+                                  direction="response"
+                                  schemas={schemas}
+                                >
+                                  {c.schema && (
+                                    <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
+                                      <SchemaPropertyTree
+                                        schema={c.schema}
+                                        schemas={schemas}
+                                        onSelectSchema={onSelectSchema}
+                                      />
+                                    </div>
+                                  )}
+                                </PayloadViewer>
                               </div>
                             ))}
                           </div>
