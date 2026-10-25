@@ -1,3 +1,4 @@
+import { ExampleDirection, schemaForDirection } from './exampleDirection';
 import { SchemaModel } from './index';
 import { MAX_MOCK_ARRAY_ITEMS, MAX_MOCK_DEPTH } from '../utils/schemaRefs';
 import { dictionary, hasOwn, ownValue } from '../utils/dictionary';
@@ -355,8 +356,10 @@ function validate(
 
 export function generateMockExample(
   schema: SchemaModel,
-  allSchemas: Record<string, SchemaModel> = {}
+  allSchemas: Record<string, SchemaModel> = {},
+  direction: ExampleDirection = 'neutral'
 ): MockExample {
+  schema = schemaForDirection(schema, allSchemas, direction);
   const issues: string[] = [];
   let value: unknown;
   try {
