@@ -1,3 +1,4 @@
+import { describeFieldChanges, FieldChange } from './diffDetails';
 import { hasOwn } from '../utils/dictionary';
 import { ownValue } from '../utils/dictionary';
 import { decodeProject } from '../share/project';
@@ -264,7 +265,7 @@ export function compareSpecTexts(oldText: string, newText: string) {
       added: [] as EndpointModel[],
       removed: [] as EndpointModel[],
       changed: [] as string[],
-      changedDetails: [] as Array<{ key: string; cls: ChangeClass }>,
+      changedDetails: [] as Array<{ key: string; cls: ChangeClass; fields: FieldChange[] }>,
       oldSpec,
       newSpec,
       addedSchemas: [] as string[],
@@ -286,7 +287,7 @@ export function compareSpecTexts(oldText: string, newText: string) {
       added: [] as EndpointModel[],
       removed: [] as EndpointModel[],
       changed: [] as string[],
-      changedDetails: [] as Array<{ key: string; cls: ChangeClass }>,
+      changedDetails: [] as Array<{ key: string; cls: ChangeClass; fields: FieldChange[] }>,
       oldSpec,
       newSpec,
       addedSchemas: [] as string[],
@@ -307,7 +308,7 @@ export function compareSpecTexts(oldText: string, newText: string) {
   const newIds = new Set(newSpec.endpoints.map((e) => `${e.method} ${e.path}`));
   const added = newSpec.endpoints.filter((e) => !oldIds.has(`${e.method} ${e.path}`));
   const removed = oldSpec.endpoints.filter((e) => !newIds.has(`${e.method} ${e.path}`));
-  const changedDetails: Array<{ key: string; cls: ChangeClass }> = [];
+  const changedDetails: Array<{ key: string; cls: ChangeClass; fields: FieldChange[] }> = [];
   for (const e of newSpec.endpoints) {
     const key = `${e.method} ${e.path}`;
     if (oldIds.has(key)) {
@@ -318,7 +319,22 @@ export function compareSpecTexts(oldText: string, newText: string) {
           stableValue(ownValue(newSpec.securitySchemes, requirement.name), true)
       );
       if (stableValue(oldEp) !== stableValue(e) || authChanged) {
-        changedDetails.push({ key, cls: authChanged ? 'breaking' : classifyChange(oldEp, e) });
+        const fields = describeFieldChanges(
+          JSON.parse(stableValue(oldEp)),
+          JSON.parse(stableValue(e))
+        );
+        if (authChanged)
+          fields.push(
+            ...describeFieldChanges(
+              JSON.parse(stableValue(oldSpec.securitySchemes)),
+              JSON.parse(stableValue(newSpec.securitySchemes))
+            ).map((field) => ({ ...field, path: `securitySchemes.${field.path}` }))
+          );
+        changedDetails.push({
+          key,
+          cls: authChanged ? 'breaking' : classifyChange(oldEp, e),
+          fields,
+        });
       }
     }
   }
