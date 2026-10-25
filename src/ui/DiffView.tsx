@@ -109,27 +109,29 @@ export const DiffView: React.FC<DiffViewProps> = ({
     pendingImports.current.delete(side);
     setter(text);
   };
-  const handleFile =
-    (side: string, setter: (text: string) => void) =>
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(event.currentTarget.files || []);
-      event.currentTarget.value = '';
-      if (!files.length) return;
-      pendingImports.current.get(side)?.abort();
-      const controller = new AbortController();
-      pendingImports.current.set(side, controller);
-      try {
-        const project = await importProjectFiles(files, controller.signal);
-        if (controller.signal.aborted || pendingImports.current.get(side) !== controller) return;
-        setter(encodeProject(project));
-        setInputError(null);
-      } catch (error) {
-        if (!controller.signal.aborted)
-          setInputError(error instanceof Error ? error.message : 'Import failed');
-      } finally {
-        if (pendingImports.current.get(side) === controller) pendingImports.current.delete(side);
-      }
-    };
+  const handleFile = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    side: string,
+    setter: (text: string) => void
+  ) => {
+    const files = Array.from(event.currentTarget.files || []);
+    event.currentTarget.value = '';
+    if (!files.length) return;
+    pendingImports.current.get(side)?.abort();
+    const controller = new AbortController();
+    pendingImports.current.set(side, controller);
+    try {
+      const project = await importProjectFiles(files, controller.signal);
+      if (controller.signal.aborted || pendingImports.current.get(side) !== controller) return;
+      setter(encodeProject(project));
+      setInputError(null);
+    } catch (error) {
+      if (!controller.signal.aborted)
+        setInputError(error instanceof Error ? error.message : 'Import failed');
+    } finally {
+      if (pendingImports.current.get(side) === controller) pendingImports.current.delete(side);
+    }
+  };
 
   const [inputError, setInputError] = useState<string | null>(null);
   const useCurrent = (side: string, setter: (text: string) => void) => {
@@ -224,7 +226,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
               accept=".yaml,.yml,.json"
               multiple
               className="hidden"
-              onChange={handleFile('old', setOldText)}
+              onChange={(event) => void handleFile(event, 'old', setOldText)}
             />
           </div>
           <button
@@ -271,7 +273,7 @@ export const DiffView: React.FC<DiffViewProps> = ({
               accept=".yaml,.yml,.json"
               multiple
               className="hidden"
-              onChange={handleFile('new', setNewText)}
+              onChange={(event) => void handleFile(event, 'new', setNewText)}
             />
           </div>
           <button
