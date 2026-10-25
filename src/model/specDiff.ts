@@ -1,3 +1,4 @@
+import { validateImportProject } from '../share/validateImport';
 import { describeFieldChanges, FieldChange } from './diffDetails';
 import { hasOwn } from '../utils/dictionary';
 import { ownValue } from '../utils/dictionary';
@@ -240,7 +241,7 @@ export function compareSpecTexts(oldText: string, newText: string) {
 
   if (oldText.trim()) {
     try {
-      const project = decodeProject(oldText);
+      const project = validateImportProject(decodeProject(oldText));
       oldSpec = parseApiSpec(project.specText, project);
       oldParseError = hasParseError(oldSpec, oldText);
     } catch {
@@ -251,7 +252,7 @@ export function compareSpecTexts(oldText: string, newText: string) {
 
   if (newText.trim()) {
     try {
-      const project = decodeProject(newText);
+      const project = validateImportProject(decodeProject(newText));
       newSpec = parseApiSpec(project.specText, project);
       newParseError = hasParseError(newSpec, newText);
     } catch {

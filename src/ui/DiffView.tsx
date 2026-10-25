@@ -2,7 +2,9 @@ import { DiffFieldChanges } from './DiffFieldChanges';
 import { importProjectFiles } from '../share/importService';
 import { captureProject, encodeProject } from '../share/project';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { compareSpecTexts } from '../model/specDiff';
+import { describeFieldChanges } from '../model/diffDetails';
+import { ownValue } from '../utils/dictionary';
+import { compareSpecTexts, stableValue } from '../model/specDiff';
 import { Upload, FileText } from 'lucide-react';
 
 interface DiffViewProps {
@@ -374,6 +376,19 @@ export const DiffView: React.FC<DiffViewProps> = ({
                   </div>
                   <div className="text-amber-700 dark:text-amber-300">
                     Changed ({changedSchemas.length}): {changedSchemas.join(', ') || 'None'}
+                    {changedSchemas.map((name) => (
+                      <details key={name} className="my-2">
+                        <summary className="cursor-pointer break-all">
+                          Schema {name}: review changes
+                        </summary>
+                        <DiffFieldChanges
+                          fields={describeFieldChanges(
+                            JSON.parse(stableValue(ownValue(oldSpec!.schemas, name))),
+                            JSON.parse(stableValue(ownValue(newSpec!.schemas, name)))
+                          )}
+                        />
+                      </details>
+                    ))}
                   </div>
                 </div>
                 <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
@@ -388,6 +403,19 @@ export const DiffView: React.FC<DiffViewProps> = ({
                   </div>
                   <div className="text-amber-700 dark:text-amber-300">
                     Changed ({changedSecurity.length}): {changedSecurity.join(', ') || 'None'}
+                    {changedSecurity.map((name) => (
+                      <details key={name} className="my-2">
+                        <summary className="cursor-pointer break-all">
+                          Authentication {name}: review changes
+                        </summary>
+                        <DiffFieldChanges
+                          fields={describeFieldChanges(
+                            JSON.parse(stableValue(ownValue(oldSpec!.securitySchemes, name))),
+                            JSON.parse(stableValue(ownValue(newSpec!.securitySchemes, name)))
+                          )}
+                        />
+                      </details>
+                    ))}
                   </div>
                 </div>
               </div>
