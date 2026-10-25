@@ -146,13 +146,17 @@ export async function trashWorkspace(id: string): Promise<string> {
     const request = live.get(id);
     request.onsuccess = () => {
       if (!request.result) return;
-      trash.add({
-        token,
-        id,
-        deletedAt: Date.now(),
-        workspace: request.result,
-      } satisfies TrashRecord);
-      live.delete(id);
+      try {
+        trash.add({
+          token,
+          id,
+          deletedAt: Date.now(),
+          workspace: request.result,
+        } satisfies TrashRecord);
+        live.delete(id);
+      } catch {
+        live.transaction.abort();
+      }
     };
   });
   return token;
@@ -164,8 +168,12 @@ export async function restoreDeletedWorkspace(token: string): Promise<void> {
     request.onsuccess = () => {
       const record = request.result as TrashRecord | undefined;
       if (!record) return;
-      live.add(record.workspace);
-      trash.delete(token);
+      try {
+        live.add(record.workspace);
+        trash.delete(token);
+      } catch {
+        live.transaction.abort();
+      }
     };
   });
 }
