@@ -57,9 +57,11 @@ export function useDraftRecovery(rawText: string, onRecover: (project: SpecProje
       queue.current = queue.current
         .then(() => saveDraft({ project, dirty }))
         .then(() => {
+          storageFailed.current = false;
           if (active) setStatus('Draft stored locally');
         })
         .catch(() => {
+          storageFailed.current = true;
           if (active) setStatus('Local recovery unavailable. Save or download your work.');
         });
     }, 300);

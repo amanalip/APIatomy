@@ -118,7 +118,8 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
         </div>
         <div className="p-4 space-y-3">
           <p className="text-xs text-slate-600 dark:text-slate-400">
-            Stored only in this browser. Explicit save, no autosave.
+            Named workspaces save only when you choose Save locally. A separate recovery draft is
+            stored automatically in this browser.
           </p>
           <button
             onClick={handleSave}

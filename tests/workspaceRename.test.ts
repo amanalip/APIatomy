@@ -14,7 +14,7 @@ const project = {
 };
 afterEach(async () => {
   vi.restoreAllMocks();
-  for (const id of ['source', 'destination']) await deleteWorkspace(id);
+  for (const id of ['source', 'destination', 'preserve']) await deleteWorkspace(id);
 });
 it('renames a complete project without changing its contents', async () => {
   await saveWorkspace('source', project.specText, 'Title', project);

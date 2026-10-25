@@ -67,3 +67,39 @@ test('selects request payload media and explains unsupported generation', async 
   await expect(preview).toContainText('@payload.xml');
   await expect(page.getByText(/Automatic payload generation for application\/xml is unsupported/)).toBeVisible();
 });
+
+test('saves edited work before replacing it and can reopen the backup', async ({ page }) => {
+  await page.goto('/');
+  if (await page.getByRole('button', { name: 'Show editor pane' }).isVisible()) await page.getByRole('button', { name: 'Show editor pane' }).click();
+  await page.getByRole('textbox', { name: 'Specification editor' }).fill('openapi: 3.0.3\ninfo: {title: Saved before replacement, version: "1"}\npaths: {}');
+  await expect(page.locator('header')).toContainText('Saved before replacement');
+  await page.getByRole('button', { name: 'Samples', exact: true }).click();
+  await page.getByRole('menuitem').first().click();
+  page.once('dialog', (dialog) => dialog.accept('Recovery backup'));
+  await page.getByRole('button', { name: 'Save and continue' }).click();
+  await expect(page.getByRole('dialog', { name: 'Save your changes?' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Workspaces', exact: true }).click();
+  await page.getByRole('button', { name: 'Open workspace' }).click();
+  await expect(page.locator('header')).toContainText('Saved before replacement');
+  await expect(page.getByText('No unsaved changes', { exact: true })).toBeVisible();
+});
+
+test('recovers edited multi-file projects with their dependency context', async ({ page }) => {
+  await page.goto('/');
+  const root = JSON.stringify({ openapi: '3.0.3', info: { title: 'Multi-file draft', version: '1' }, paths: { '/draft': { get: { responses: { 200: { description: 'ok', content: { 'application/json': { schema: { $ref: './models.yaml#/Pet' } } } } } } } } });
+  await page.locator('#spec-upload-input').setInputFiles([
+    { name: 'root.json', mimeType: 'application/json', buffer: Buffer.from(root) },
+    { name: 'models.yaml', mimeType: 'text/yaml', buffer: Buffer.from('Pet:\n  type: object\n  properties:\n    recoveredField:\n      type: integer') },
+  ]);
+  await expect(page.locator('header')).toContainText('Multi-file draft');
+  if (await page.getByRole('button', { name: 'Show editor pane' }).isVisible()) await page.getByRole('button', { name: 'Show editor pane' }).click();
+  await page.getByRole('textbox', { name: 'Specification editor' }).fill(root.replace('Multi-file draft', 'Edited multi-file draft'));
+  await expect(page.locator('header')).toContainText('Edited multi-file draft');
+  await expect(page.getByText('Draft stored locally', { exact: true })).toBeVisible();
+  page.on('dialog', (dialog) => dialog.accept());
+  await page.reload();
+  await expect(page.locator('header')).toContainText('Edited multi-file draft');
+  await page.getByRole('button', { name: 'GET /draft', exact: true }).click();
+  await expect(page.getByText('recoveredField', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Unresolved/)).toHaveCount(0);
+});
