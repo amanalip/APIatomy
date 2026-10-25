@@ -158,6 +158,12 @@ export const DiffView: React.FC<DiffViewProps> = ({
               onChange={handleFile(oldText ? setOldText : setOldText)}
             />
           </div>
+          <button
+            onClick={() => setOldText('')}
+            className="text-xs text-blue-700 dark:text-blue-300 hover:underline"
+          >
+            Clear old specification
+          </button>
           <textarea
             value={oldText}
             onChange={(e) => setOldText(e.target.value)}
@@ -196,6 +202,12 @@ export const DiffView: React.FC<DiffViewProps> = ({
               onChange={handleFile(setNewText)}
             />
           </div>
+          <button
+            onClick={() => setNewText('')}
+            className="text-xs text-blue-700 dark:text-blue-300 hover:underline"
+          >
+            Clear new specification
+          </button>
           <textarea
             value={newText}
             onChange={(e) => setNewText(e.target.value)}
