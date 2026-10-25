@@ -1,3 +1,7 @@
+import { useDraftRecovery } from './hooks/useDraftRecovery';
+import { DraftStatus } from './ui/DraftStatus';
+import { UnsavedChangesDialog } from './ui/UnsavedChangesDialog';
+import { saveWorkspace } from './utils/workspaceStore';
 import { importProjectFiles } from './share/importService';
 import { useToast } from './ui/Toast';
 import { ownValue } from './utils/dictionary';
@@ -73,6 +77,41 @@ export function App() {
   useEffect(() => () => fileImportRef.current?.abort(), []);
 
   const editorPaneRef = useRef<EditorPaneRef>(null);
+  const draft = useDraftRecovery(rawText, (project) => {
+    restoreProject(project);
+    setRawText(project.specText);
+    editorPaneRef.current?.setContent(project.specText);
+  });
+  const [replacement, setReplacement] = useState<((proceed: boolean) => void) | null>(null);
+  const dirtyRef = useRef(draft.dirty);
+  dirtyRef.current = draft.dirty;
+  const confirmReplacement = () => {
+    if (!dirtyRef.current) return Promise.resolve(true);
+    return new Promise<boolean>((resolve) => setReplacement(() => resolve));
+  };
+  const confirmRef = useRef(confirmReplacement);
+  confirmRef.current = confirmReplacement;
+  const chooseReplacement = async (choice: 'save' | 'discard' | 'cancel') => {
+    if (!replacement) return;
+    if (choice === 'save') {
+      const name = prompt('Save changes as workspace:', `${spec.title} draft`);
+      if (!name) return;
+      try {
+        // A unique name avoids overwriting a saved workspace during replacement.
+        const { listWorkspaces } = await import('./utils/workspaceStore');
+        if ((await listWorkspaces()).some((workspace) => workspace.id === name)) {
+          showToast('Choose a new workspace name to preserve the existing workspace', 'error');
+          return;
+        }
+        await saveWorkspace(name, rawText, spec.title);
+      } catch (error) {
+        showToast(error instanceof Error ? error.message : 'Save failed', 'error');
+        return;
+      }
+    }
+    replacement(choice !== 'cancel');
+    setReplacement(null);
+  };
 
   // Keep selected endpoint in sync when spec changes
   useEffect(() => {
@@ -84,13 +123,15 @@ export function App() {
 
   // Listen to hash changes in browser
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleHashChange = async () => {
       if (window.location.hash) {
         const decompressed = decompressSpecFromHash(window.location.hash);
         if (decompressed) {
           try {
             const project = decodeProject(decompressed);
+            if (!(await confirmRef.current())) return;
             cancelFileImport();
+            draft.setDirty(false);
             restoreProject(project);
             setRawText(project.specText);
             editorPaneRef.current?.setContent(project.specText);
@@ -110,7 +151,9 @@ export function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const handleSelectSample = (sample: SampleSpecOption) => {
+  const handleSelectSample = async (sample: SampleSpecOption) => {
+    if (!(await confirmReplacement())) return;
+    draft.setDirty(false);
     cancelFileImport();
     setRawText(sample.spec);
     editorPaneRef.current?.setContent(sample.spec);
@@ -142,6 +185,9 @@ export function App() {
     try {
       const project = await importProjectFiles(files, controller.signal);
       if (controller.signal.aborted || fileImportRef.current !== controller) return;
+      if (!(await confirmReplacement())) return;
+      if (controller.signal.aborted || fileImportRef.current !== controller) return;
+      draft.setDirty(false);
       restoreProject(project);
       handleUploadText(project.specText);
       showToast('Spec loaded', 'success');
@@ -153,7 +199,9 @@ export function App() {
     }
   };
 
-  const handleLoadFromUrl = (text: string, url: string) => {
+  const handleLoadFromUrl = async (text: string, url: string) => {
+    if (!(await confirmReplacement())) return false;
+    draft.setDirty(false);
     cancelFileImport();
     const project = decodeProject(text);
     restoreProject(project);
@@ -169,6 +217,7 @@ export function App() {
         window.location.hash = '';
       }
     }
+    return true;
   };
 
   const { handleSelectDiagnostic } = useDiagnosticNavigation(editorPaneRef, setIsEditorOpen);
@@ -228,6 +277,7 @@ export function App() {
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden font-sans transition-colors duration-150">
       <Onboarding />
+      {replacement && <UnsavedChangesDialog onChoose={chooseReplacement} />}
       {/* Header Navigation */}
       <Header
         spec={spec}
@@ -248,6 +298,11 @@ export function App() {
         }}
       />
 
+      <DraftStatus
+        dirty={draft.dirty}
+        status={draft.status}
+        onSave={() => setIsWorkspaceOpen(true)}
+      />
       {/* Main Split-Pane Workspace */}
       <main id="main-content" className="flex-1 flex overflow-hidden relative">
         {/* Mobile backdrop */}
@@ -289,6 +344,7 @@ export function App() {
                 onImportFiles={handleImportFiles}
                 onChange={(newText) => {
                   cancelFileImport();
+                  draft.setDirty(true);
                   setRawText(newText);
                   if (sourceUrl !== null) setSourceUrl(null);
                 }}
@@ -429,7 +485,9 @@ export function App() {
           currentText={rawText}
           currentTitle={spec.title}
           onClose={() => setIsWorkspaceOpen(false)}
-          onLoad={(project) => {
+          onLoad={async (project) => {
+            if (!(await confirmReplacement())) return false;
+            draft.setDirty(false);
             cancelFileImport();
             restoreProject(project);
             setRawText(project.specText);
@@ -445,6 +503,7 @@ export function App() {
               }
             }
             setIsWorkspaceOpen(false);
+            return true;
           }}
         />
       )}

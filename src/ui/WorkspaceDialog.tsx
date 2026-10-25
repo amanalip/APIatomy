@@ -15,7 +15,7 @@ interface WorkspaceDialogProps {
   currentText: string;
   currentTitle?: string;
   onClose: () => void;
-  onLoad: (project: WorkspaceData) => void;
+  onLoad: (project: WorkspaceData) => void | boolean | Promise<void | boolean>;
 }
 
 export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
@@ -69,8 +69,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
     try {
       const ws = await loadWorkspace(id);
       if (ws) {
-        onLoad(ws);
-        onClose();
+        if ((await onLoad(ws)) !== false) onClose();
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Open failed');
