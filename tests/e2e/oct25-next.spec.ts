@@ -1,3 +1,6 @@
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test, expect, selectView, selectSchema } from './fixtures';
 
 test('workspace saves reject collisions and deletion can be undone after reopening', async ({ page }) => {
@@ -90,4 +93,30 @@ test('mobile schema Back retains search and comparison inputs stack', async ({ p
   const newInput = await page.getByRole('textbox', { name: 'New specification', exact: true }).boundingBox();
   expect(newInput!.y).toBeGreaterThan(oldInput!.y + oldInput!.height);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test('imports nested folders without flattening duplicate basenames', async ({ page }) => {
+  await page.goto('/');
+  const folderInput = page.locator('#project-folder-input');
+  test.skip(!(await folderInput.evaluate((input) => input.hasAttribute('webkitdirectory'))), 'Browser uses the multi-file fallback');
+  const directory = await mkdtemp(join(tmpdir(), 'apiatomy-folder-'));
+  try {
+    await mkdir(join(directory, 'a')); await mkdir(join(directory, 'b'));
+    await writeFile(join(directory, 'root.json'), JSON.stringify({ openapi: '3.0.3', info: { title: 'Nested folder', version: '1' }, paths: {}, components: { schemas: { First: { $ref: './a/pet.yaml#/Pet' }, Second: { $ref: './b/pet.yaml#/Pet' } } } }));
+    await writeFile(join(directory, 'a/pet.yaml'), 'Pet: {type: string}');
+    await writeFile(join(directory, 'b/pet.yaml'), 'Pet: {type: boolean}');
+    await writeFile(join(directory, 'notes.txt'), 'Ignore this unrelated file');
+    await folderInput.setInputFiles(directory);
+    await expect(page.locator('header')).toContainText('Nested folder');
+    if (await page.getByRole('button', { name: 'Show editor pane' }).isVisible()) await page.getByRole('button', { name: 'Show editor pane' }).click();
+    const files = page.getByRole('navigation', { name: 'Project files' });
+    await expect(files.getByRole('button', { name: /a\/pet.yaml$/ })).toBeVisible();
+    await expect(files.getByRole('button', { name: /b\/pet.yaml$/ })).toBeVisible();
+    await expect(files.getByText('Root', { exact: true })).toBeVisible();
+    if (await page.getByRole('button', { name: 'Close editor', exact: true }).isVisible()) await page.getByRole('button', { name: 'Close editor', exact: true }).click();
+    await selectView(page, /^Schemas/);
+    await selectSchema(page, 'Second');
+    await expect(page.getByRole('heading', { name: 'Second', exact: true })).toBeVisible();
+    await expect(page.getByText('boolean', { exact: true }).first()).toBeVisible();
+  } finally { await rm(directory, { recursive: true, force: true }); }
 });
