@@ -404,7 +404,6 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                     schema={activeSchema}
                     schemas={schemas}
                     onNavigateRef={(target) => {
-                      rememberListPosition();
                       navigation.openDetails();
                       setActiveSchemaName(target);
                       if (ownValue(schemas, target))
