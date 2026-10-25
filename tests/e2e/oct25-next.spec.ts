@@ -71,3 +71,21 @@ test('shows named examples beside response schemas and preserves falsy values', 
     await expect(payload.getByLabel('Response application/json example value')).toHaveText(value);
   }
 });
+
+test('mobile schema Back retains search and comparison inputs stack', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'Dedicated narrow-screen navigation regression');
+  await page.goto('/');
+  await selectView(page, /^Schemas/);
+  await page.getByLabel('Search schemas', { exact: true }).fill('Pet');
+  await page.getByRole('button', { name: 'Pet', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Pet', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Search schemas', { exact: true })).toBeHidden();
+  await page.getByRole('button', { name: 'Back to schemas' }).click();
+  await expect(page.getByLabel('Search schemas', { exact: true })).toHaveValue('Pet');
+  await expect(page.getByRole('button', { name: 'Pet', exact: true })).toBeFocused();
+  await selectView(page, /^Diff$/);
+  const oldInput = await page.getByRole('textbox', { name: 'Old specification', exact: true }).boundingBox();
+  const newInput = await page.getByRole('textbox', { name: 'New specification', exact: true }).boundingBox();
+  expect(newInput!.y).toBeGreaterThan(oldInput!.y + oldInput!.height);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
