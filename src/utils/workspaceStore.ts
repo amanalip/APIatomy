@@ -118,3 +118,42 @@ export async function renameWorkspace(id: string, newId: string): Promise<void> 
     db.close();
   }
 }
+
+async function mutateTrash(
+  operation: (live: IDBObjectStore, trash: IDBObjectStore) => void
+): Promise<void> {
+  const db = await openDb();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction([STORE, TRASH], 'readwrite');
+      tx.oncomplete = () => resolve();
+      tx.onerror = tx.onabort = () =>
+        reject(tx.error || new Error('Workspace recovery failed. The original data was retained.'));
+      try {
+        operation(tx.objectStore(STORE), tx.objectStore(TRASH));
+      } catch {
+        tx.abort();
+      }
+    });
+  } finally {
+    db.close();
+  }
+}
+
+export async function trashWorkspace(id: string): Promise<string> {
+  const token = crypto.randomUUID();
+  await mutateTrash((live, trash) => {
+    const request = live.get(id);
+    request.onsuccess = () => {
+      if (!request.result) return;
+      trash.add({
+        token,
+        id,
+        deletedAt: Date.now(),
+        workspace: request.result,
+      } satisfies TrashRecord);
+      live.delete(id);
+    };
+  });
+  return token;
+}
