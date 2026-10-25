@@ -27,7 +27,7 @@ function setup() {
     click([...document.querySelectorAll('button')].find((b) => b.textContent === 'Load')!);
   return { pending, onLoad, onClose, load };
 }
-const response = (text = 'NEW SPEC') =>
+const response = (text = 'openapi: 3.0.3\npaths: {}') =>
   ({ ok: true, headers: new Headers(), text: async () => text }) as Response;
 it.each(['close', 'escape', 'backdrop', 'unmount'])(
   'suppresses pending results after %s',
@@ -58,8 +58,8 @@ it('prevents duplicate Enter submissions and ignores a cancelled request after r
   expect(pending).toHaveLength(2);
   await act(async () => pending[0].resolve(response('STALE')));
   expect(onLoad).not.toHaveBeenCalled();
-  await act(async () => pending[1].resolve(response('LATEST')));
-  expect(onLoad).toHaveBeenCalledWith('LATEST', 'https://example.com/api.json');
+  await act(async () => pending[1].resolve(response('openapi: 3.0.3\ninfo: {title: LATEST}\npaths: {}')));
+  expect(onLoad).toHaveBeenCalledWith('openapi: 3.0.3\ninfo: {title: LATEST}\npaths: {}', 'https://example.com/api.json', expect.any(AbortSignal));
 });
 it('cancels an oversized stream without trusting the declared length', async () => {
   const cancel = vi.fn();
@@ -86,4 +86,16 @@ it('decodes UTF-8 split across network chunks', async () => {
     },
   });
   expect(await readImportResponse(new Response(stream), new AbortController().signal)).toBe('é🧪');
+});
+
+it('keeps invalid URL responses out of app state and allows retry', async () => {
+  const { pending, onLoad, onClose, load } = setup();
+  load();
+  await act(async () => pending[0].resolve(response('<html>Not an API</html>')));
+  expect(onLoad).not.toHaveBeenCalled();
+  expect(onClose).not.toHaveBeenCalled();
+  expect(document.body.textContent).toContain('Specification');
+  load();
+  await act(async () => pending[1].resolve(response()));
+  expect(onLoad).toHaveBeenCalledTimes(1);
 });
