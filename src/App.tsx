@@ -1,3 +1,6 @@
+import { editProjectFile } from './share/projectEditing';
+import { ProjectFileList } from './ui/ProjectFileList';
+import { getFileMap, getRootFilename, getFileRevision, subscribeFileMap } from './parser/fileMap';
 import { useComparisonInputs } from './hooks/useComparisonInputs';
 import { validateImportProject } from './share/validateImport';
 import { useDraftRecovery } from './hooks/useDraftRecovery';
@@ -8,7 +11,7 @@ import { importProjectFiles } from './share/importService';
 import { useToast } from './ui/Toast';
 import { ownValue } from './utils/dictionary';
 import { captureProject, decodeProject, restoreProject } from './share/project';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useSyncExternalStore } from 'react';
 import { EndpointModel, SchemaModel } from './model';
 import { PETSTORE_SPEC } from './samples/petstore';
 import { SampleSpecOption } from './samples';
@@ -53,6 +56,14 @@ export function App() {
     return PETSTORE_SPEC;
   });
   const { rawText, setRawText, spec } = useSpecState(initialText);
+  const fileRevision = useSyncExternalStore(subscribeFileMap, getFileRevision);
+  const projectFiles = useMemo(() => getFileMap(), [fileRevision]);
+  const rootFilename = getRootFilename() || 'spec.yaml';
+  const [selectedFile, setSelectedFile] = useState<string | undefined>();
+  const dependency =
+    selectedFile !== undefined && selectedFile !== rootFilename && projectFiles.has(selectedFile);
+  const editorText = dependency ? projectFiles.get(selectedFile)! : rawText;
+  const activeFilename = dependency ? selectedFile! : rootFilename;
 
   const [activeView, setActiveView] = useState<'endpoints' | 'schemas' | 'graph' | 'diff'>(
     'endpoints'
@@ -80,6 +91,7 @@ export function App() {
 
   const editorPaneRef = useRef<EditorPaneRef>(null);
   const draft = useDraftRecovery(rawText, (project) => {
+    setSelectedFile(undefined);
     restoreProject(project);
     setRawText(project.specText);
     editorPaneRef.current?.setContent(project.specText);
@@ -121,6 +133,26 @@ export function App() {
     setReplacement(null);
   };
 
+  const selectEditorFile = (filename: string) => {
+    setSelectedFile(filename === rootFilename ? undefined : filename);
+    editorPaneRef.current?.setContent(
+      filename === rootFilename ? rawText : projectFiles.get(filename) || ''
+    );
+  };
+  const handleEditorEdit = (text: string) => {
+    try {
+      if (dependency) editProjectFile(activeFilename, text, rawText);
+      else setRawText(text);
+      dirtyRef.current = true;
+      cancelFileImport();
+      draft.setDirty(true);
+      setSourceUrl(null);
+    } catch (error) {
+      editorPaneRef.current?.setContent(editorText);
+      showToast(error instanceof Error ? error.message : 'Cannot edit this file', 'error');
+    }
+  };
+
   // Keep selected endpoint in sync when spec changes
   useEffect(() => {
     if (selectedEndpoint) {
@@ -140,6 +172,7 @@ export function App() {
             if (!(await confirmRef.current())) return;
             cancelFileImport();
             draft.setDirty(false);
+            setSelectedFile(undefined);
             restoreProject(project);
             setRawText(project.specText);
             editorPaneRef.current?.setContent(project.specText);
@@ -167,6 +200,7 @@ export function App() {
     editorPaneRef.current?.setContent(sample.spec);
     setSelectedEndpoint(null);
     setSourceUrl(null);
+    setSelectedFile(undefined);
     setFileMap({});
     window.location.hash = '';
   };
@@ -196,6 +230,7 @@ export function App() {
       if (!(await confirmReplacement())) return;
       if (controller.signal.aborted || fileImportRef.current !== controller) return;
       draft.setDirty(false);
+      setSelectedFile(undefined);
       restoreProject(project);
       handleUploadText(project.specText);
       showToast('Spec loaded', 'success');
@@ -212,6 +247,7 @@ export function App() {
     if (!(await confirmReplacement()) || signal?.aborted) return false;
     draft.setDirty(false);
     cancelFileImport();
+    setSelectedFile(undefined);
     restoreProject(project);
     setRawText(project.specText);
     editorPaneRef.current?.setContent(project.specText);
@@ -339,27 +375,27 @@ export function App() {
               <span className="text-[10px] text-slate-600 dark:text-slate-400">Live Parser</span>
             </div>
 
+            <ProjectFileList
+              files={Array.from(new Set([rootFilename, ...projectFiles.keys()])).sort()}
+              root={rootFilename}
+              active={activeFilename}
+              onSelect={selectEditorFile}
+            />
+            <div className="px-3 py-1 text-xs font-mono break-all" role="status">
+              Editing: {activeFilename}
+            </div>
             <div className="flex-1 overflow-hidden">
               <EditorPane
                 ref={editorPaneRef}
-                value={rawText}
+                value={editorText}
                 onImportFiles={handleImportFiles}
-                onEdit={(text) => {
-                  dirtyRef.current = true;
-                  cancelFileImport();
-                  draft.setDirty(true);
-                  setRawText(text);
-                  setSourceUrl(null);
-                }}
-                onChange={(newText) => {
-                  cancelFileImport();
-                  draft.setDirty(true);
-                  setRawText(newText);
-                  if (sourceUrl !== null) setSourceUrl(null);
+                onEdit={handleEditorEdit}
+                onChange={() => {
+                  /* Immediate edits are committed by onEdit. */
                 }}
                 format={(() => {
                   // Strip BOM(s) before detection (handles concatenated files)
-                  const t = rawText.replace(/^\uFEFF+/, '').trim();
+                  const t = editorText.replace(/^\uFEFF+/, '').trim();
                   const isJson = t.startsWith('{') || t.startsWith('[');
                   if (isJson) return 'json';
                   return 'yaml';
@@ -508,6 +544,7 @@ export function App() {
             if (!(await confirmReplacement())) return false;
             draft.setDirty(false);
             cancelFileImport();
+            setSelectedFile(undefined);
             restoreProject(project);
             setRawText(project.specText);
             editorPaneRef.current?.setContent(project.specText);
