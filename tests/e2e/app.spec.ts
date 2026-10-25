@@ -110,8 +110,8 @@ test('multi-file projects survive workspace saves, links, and downloaded share f
   await expect(page.getByRole('heading', { name: 'User', exact: true })).toBeVisible();
   await expect(page.getByText('Persisted address', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Workspaces', exact: true }).click();
-  page.once('dialog', (dialog) => dialog.accept('Multi file workspace'));
-  await page.getByRole('button', { name: 'Save locally' }).click();
+  await page.getByLabel('New workspace name').fill('Multi file workspace');
+  await page.getByRole('button', { name: 'Save as new' }).click();
   await expect(page.getByText('Multi file workspace', { exact: true })).toBeVisible();
   await page
     .getByRole('dialog', { name: 'Workspaces' })

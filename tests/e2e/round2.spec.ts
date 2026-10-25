@@ -54,8 +54,8 @@ test('workspace rename collision preserves both saved projects', async ({ page }
   await page.goto('/');
   await page.getByRole('button', { name: 'Workspaces', exact: true }).click();
   for (const name of ['Source', 'Destination']) {
-    page.once('dialog', (dialog) => dialog.accept(name));
-    await page.getByRole('button', { name: 'Save locally' }).click();
+    await page.getByLabel('New workspace name').fill(name);
+    await page.getByRole('button', { name: 'Save as new' }).click();
     await expect(page.getByText(name, { exact: true })).toBeVisible();
   }
   page.once('dialog', (dialog) => dialog.accept('Destination'));
