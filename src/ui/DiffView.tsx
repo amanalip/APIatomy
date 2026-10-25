@@ -22,6 +22,8 @@ export const DiffView: React.FC<DiffViewProps> = ({
   onOldChange: setOldText,
   onNewChange: setNewText,
 }) => {
+  const [breakingOnly, setBreakingOnly] = useState(false);
+  const [visibleLimit, setVisibleLimit] = useState(30);
   const [debouncedOld, setDebouncedOld] = useState(oldText);
   const [debouncedNew, setDebouncedNew] = useState(newText);
 
@@ -87,6 +89,11 @@ export const DiffView: React.FC<DiffViewProps> = ({
           : changeCount
             ? 'Comparison ready. Review the changes below.'
             : 'Specifications are unchanged.';
+
+  const visibleChanges = changedDetails.filter(
+    (change) => !breakingOnly || change.cls === 'breaking'
+  );
+  useEffect(() => setVisibleLimit(30), [debouncedOld, debouncedNew, breakingOnly]);
 
   const pendingImports = useRef(new Map<string, AbortController>());
   useEffect(() => {
@@ -288,23 +295,31 @@ export const DiffView: React.FC<DiffViewProps> = ({
 
       {ready && (
         <>
-          <div className="grid grid-cols-3 gap-3">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={breakingOnly}
+              onChange={(event) => setBreakingOnly(event.target.checked)}
+            />
+            Breaking endpoint changes only
+          </label>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
             <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
               <div className="font-semibold text-emerald-700 dark:text-emerald-300">
-                Added ({added.length})
+                Added ({breakingOnly ? 0 : added.length})
               </div>
-              {added.map((e) => (
+              {(!breakingOnly ? added : []).slice(0, visibleLimit).map((e) => (
                 <div key={e.id} className="font-mono text-emerald-800 dark:text-emerald-200">
                   {e.method.toUpperCase()} {e.path}
                 </div>
               ))}
-              {added.length === 0 && <div className="text-slate-500">None</div>}
+              {(breakingOnly || added.length === 0) && <div className="text-slate-500">None</div>}
             </div>
             <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
               <div className="font-semibold text-red-700 dark:text-red-300">
                 Removed ({removed.length}) - breaking
               </div>
-              {removed.map((e) => (
+              {removed.slice(0, visibleLimit).map((e) => (
                 <div key={e.id} className="font-mono text-red-800 dark:text-red-200">
                   {e.method.toUpperCase()} {e.path}
                 </div>
@@ -313,9 +328,9 @@ export const DiffView: React.FC<DiffViewProps> = ({
             </div>
             <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
               <div className="font-semibold text-amber-700 dark:text-amber-300">
-                Changed ({changed.length})
+                Changed ({visibleChanges.length})
               </div>
-              {changedDetails.map((change) => (
+              {visibleChanges.slice(0, visibleLimit).map((change) => (
                 <details
                   key={change.key}
                   className="rounded border border-amber-200 dark:border-amber-800 p-2 my-2"
@@ -333,99 +348,112 @@ export const DiffView: React.FC<DiffViewProps> = ({
                   <DiffFieldChanges fields={change.fields} />
                 </details>
               ))}
-              {changed.length === 0 && <div className="text-slate-500">None</div>}
+              {visibleChanges.length === 0 && <div className="text-slate-500">None</div>}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-              <div className="font-semibold text-slate-700 dark:text-slate-300">Schemas</div>
-              <div className="text-slate-600 dark:text-slate-400">
-                Added ({addedSchemas.length}): {addedSchemas.join(', ') || 'None'}
-              </div>
-              <div className="text-slate-600 dark:text-slate-400">
-                Removed ({removedSchemas.length}): {removedSchemas.join(', ') || 'None'}
-              </div>
-              <div className="text-amber-700 dark:text-amber-300">
-                Changed ({changedSchemas.length}): {changedSchemas.join(', ') || 'None'}
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-              <div className="font-semibold text-slate-700 dark:text-slate-300">
-                Security Schemes
-              </div>
-              <div className="text-slate-600 dark:text-slate-400">
-                Added ({addedSecurity.length}): {addedSecurity.join(', ') || 'None'}
-              </div>
-              <div className="text-slate-600 dark:text-slate-400">
-                Removed ({removedSecurity.length}): {removedSecurity.join(', ') || 'None'}
-              </div>
-              <div className="text-amber-700 dark:text-amber-300">
-                Changed ({changedSecurity.length}): {changedSecurity.join(', ') || 'None'}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-              <div className="font-semibold text-slate-700 dark:text-slate-300">Servers</div>
-              {addedServers.length === 0 && removedServers.length === 0 ? (
-                <div className="text-slate-500">No server changes</div>
-              ) : (
-                <>
-                  {addedServers.length > 0 && (
-                    <div className="text-emerald-700 dark:text-emerald-300">
-                      Added: {addedServers.map((s) => s.url).join(', ')}
-                    </div>
-                  )}
-                  {removedServers.length > 0 && (
-                    <div className="text-red-700 dark:text-red-300">
-                      Removed: {removedServers.map((s) => s.url).join(', ')}
-                    </div>
-                  )}
-                </>
-              )}
-              {oldSpec &&
-                newSpec &&
-                oldSpec.servers.length === newSpec.servers.length &&
-                addedServers.length === 0 &&
-                removedServers.length === 0 && (
-                  <div className="text-slate-500">
-                    Servers: {oldSpec.servers.length} to {newSpec.servers.length}
+          {Math.max(breakingOnly ? 0 : added.length, removed.length, visibleChanges.length) >
+            visibleLimit && (
+            <button
+              onClick={() => setVisibleLimit((limit) => limit + 30)}
+              className="rounded border px-3 py-2"
+            >
+              Show more endpoint changes
+            </button>
+          )}
+          {!breakingOnly && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                  <div className="font-semibold text-slate-700 dark:text-slate-300">Schemas</div>
+                  <div className="text-slate-600 dark:text-slate-400">
+                    Added ({addedSchemas.length}): {addedSchemas.join(', ') || 'None'}
                   </div>
-                )}
-            </div>
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-              <div className="font-semibold text-slate-700 dark:text-slate-300">
-                Global Metadata
-              </div>
-              {globalChanges.length === 0 ? (
-                <div className="text-slate-500">No global changes</div>
-              ) : (
-                globalChanges.map((g) => (
-                  <div key={g} className="text-amber-700 dark:text-amber-300">
-                    {g}
+                  <div className="text-slate-600 dark:text-slate-400">
+                    Removed ({removedSchemas.length}): {removedSchemas.join(', ') || 'None'}
                   </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {oldSpec && newSpec && (
-            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-              <div className="font-semibold text-slate-700 dark:text-slate-300">Summary</div>
-              <div className="text-slate-600 dark:text-slate-400">
-                Schemas: {Object.keys(oldSpec.schemas).length} to{' '}
-                {Object.keys(newSpec.schemas).length} (
-                {Object.keys(newSpec.schemas).length - Object.keys(oldSpec.schemas).length > 0
-                  ? '+'
-                  : ''}
-                {Object.keys(newSpec.schemas).length - Object.keys(oldSpec.schemas).length}),
-                Servers: {oldSpec.servers.length} to {newSpec.servers.length}, Security:{' '}
-                {Object.keys(oldSpec.securitySchemes).length} to{' '}
-                {Object.keys(newSpec.securitySchemes).length}
+                  <div className="text-amber-700 dark:text-amber-300">
+                    Changed ({changedSchemas.length}): {changedSchemas.join(', ') || 'None'}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                  <div className="font-semibold text-slate-700 dark:text-slate-300">
+                    Security Schemes
+                  </div>
+                  <div className="text-slate-600 dark:text-slate-400">
+                    Added ({addedSecurity.length}): {addedSecurity.join(', ') || 'None'}
+                  </div>
+                  <div className="text-slate-600 dark:text-slate-400">
+                    Removed ({removedSecurity.length}): {removedSecurity.join(', ') || 'None'}
+                  </div>
+                  <div className="text-amber-700 dark:text-amber-300">
+                    Changed ({changedSecurity.length}): {changedSecurity.join(', ') || 'None'}
+                  </div>
+                </div>
               </div>
-            </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                  <div className="font-semibold text-slate-700 dark:text-slate-300">Servers</div>
+                  {addedServers.length === 0 && removedServers.length === 0 ? (
+                    <div className="text-slate-500">No server changes</div>
+                  ) : (
+                    <>
+                      {addedServers.length > 0 && (
+                        <div className="text-emerald-700 dark:text-emerald-300">
+                          Added: {addedServers.map((s) => s.url).join(', ')}
+                        </div>
+                      )}
+                      {removedServers.length > 0 && (
+                        <div className="text-red-700 dark:text-red-300">
+                          Removed: {removedServers.map((s) => s.url).join(', ')}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {oldSpec &&
+                    newSpec &&
+                    oldSpec.servers.length === newSpec.servers.length &&
+                    addedServers.length === 0 &&
+                    removedServers.length === 0 && (
+                      <div className="text-slate-500">
+                        Servers: {oldSpec.servers.length} to {newSpec.servers.length}
+                      </div>
+                    )}
+                </div>
+                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                  <div className="font-semibold text-slate-700 dark:text-slate-300">
+                    Global Metadata
+                  </div>
+                  {globalChanges.length === 0 ? (
+                    <div className="text-slate-500">No global changes</div>
+                  ) : (
+                    globalChanges.map((g) => (
+                      <div key={g} className="text-amber-700 dark:text-amber-300">
+                        {g}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {oldSpec && newSpec && (
+                <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                  <div className="font-semibold text-slate-700 dark:text-slate-300">Summary</div>
+                  <div className="text-slate-600 dark:text-slate-400">
+                    Schemas: {Object.keys(oldSpec.schemas).length} to{' '}
+                    {Object.keys(newSpec.schemas).length} (
+                    {Object.keys(newSpec.schemas).length - Object.keys(oldSpec.schemas).length > 0
+                      ? '+'
+                      : ''}
+                    {Object.keys(newSpec.schemas).length - Object.keys(oldSpec.schemas).length}),
+                    Servers: {oldSpec.servers.length} to {newSpec.servers.length}, Security:{' '}
+                    {Object.keys(oldSpec.securitySchemes).length} to{' '}
+                    {Object.keys(newSpec.securitySchemes).length}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </>
       )}
