@@ -31,6 +31,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
   const [mockFormat, setMockFormat] = useState<'json' | 'yaml'>('json');
   const [copiedExample, setCopiedExample] = useState(false);
   const [copiedSchemaAst, setCopiedSchemaAst] = useState(false);
+  const detailHeadingRef = useRef<HTMLHeadingElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const activeSchemaRef = useRef<HTMLButtonElement>(null);
   const [schemaListRef, schemaListHeight] = useResizeObserver<HTMLDivElement>();
@@ -68,6 +69,11 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
     window.addEventListener('keydown', handleGlobalKey);
     return () => window.removeEventListener('keydown', handleGlobalKey);
   }, []);
+
+  useEffect(() => {
+    if (navigation.showDetails && window.matchMedia('(max-width: 767px)').matches)
+      detailHeadingRef.current?.focus();
+  }, [navigation.showDetails, activeSchemaName]);
 
   // Sync if selectedSchemaName changes from parent or if current active schema is removed
   useEffect(() => {
@@ -283,6 +289,17 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
       <div
         className={`${navigation.showDetails ? 'flex' : 'hidden md:flex'} w-full min-w-0 flex-1 flex-col overflow-hidden bg-slate-50 dark:bg-slate-950`}
       >
+        <button
+          className="md:hidden shrink-0 self-start m-3 rounded border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm"
+          onClick={() => {
+            navigation.backToList();
+            requestAnimationFrame(() =>
+              (activeSchemaRef.current || searchInputRef.current)?.focus()
+            );
+          }}
+        >
+          Back to schemas
+        </button>
         {activeSchema ? (
           <>
             {/* Header */}
@@ -290,7 +307,11 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <Box className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
-                  <h2 className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100">
+                  <h2
+                    ref={detailHeadingRef}
+                    tabIndex={-1}
+                    className="outline-none break-all text-sm font-mono font-bold text-slate-900 dark:text-slate-100"
+                  >
                     {activeSchemaName}
                   </h2>
                   <span className="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">
