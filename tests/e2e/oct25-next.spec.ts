@@ -120,3 +120,22 @@ test('imports nested folders without flattening duplicate basenames', async ({ p
     await expect(page.getByText('boolean', { exact: true }).first()).toBeVisible();
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
+
+test('mobile schema Back restores virtual list scroll position', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'Dedicated narrow-screen scroll regression');
+  await page.goto('/');
+  const schemas = Object.fromEntries(Array.from({ length: 220 }, (_, index) => ['Schema' + String(index).padStart(3, '0'), { type: 'string' }]));
+  await page.locator('#spec-upload-input').setInputFiles({ name: 'schemas.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ openapi: '3.0.3', info: { title: 'Large schemas', version: '1' }, paths: {}, components: { schemas } })) });
+  await selectView(page, /^Schemas/);
+  const scroller = page.locator('[data-virtual-scroll="true"]');
+  await scroller.evaluate((element) => { element.scrollTop = 48 * 140; });
+  const selected = page.getByRole('button', { name: 'Schema145', exact: true });
+  await expect(selected).toBeVisible();
+  await selected.scrollIntoViewIfNeeded();
+  const before = await scroller.evaluate((element) => element.scrollTop);
+  await selected.click();
+  await expect(page.getByRole('heading', { name: 'Schema145', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to schemas' }).click();
+  await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBeCloseTo(before, 0);
+  await expect(selected).toBeFocused();
+});
