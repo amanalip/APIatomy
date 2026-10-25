@@ -20,3 +20,9 @@ export async function selectView(page: Page, name: RegExp) {
     await page.getByRole('button', { name }).click();
   }
 }
+
+export async function selectSchema(page: Page, name: string | RegExp) {
+  const back = page.getByRole('button', { name: 'Back to schemas', exact: true });
+  if (await back.isVisible()) await back.click();
+  await page.getByRole('button', { name, exact: typeof name === 'string' }).click();
+}

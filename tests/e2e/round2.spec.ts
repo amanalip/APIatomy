@@ -1,4 +1,4 @@
-import { test, expect, selectView } from './fixtures';
+import { test, expect, selectView, selectSchema } from './fixtures';
 
 const spec = (schemas: object) =>
   JSON.stringify({
@@ -38,6 +38,7 @@ test('project drops restore sidecars and standalone drops clear them', async ({ 
   const closeEditor = page.getByRole('button', { name: 'Close editor' });
   if (await closeEditor.isVisible()) await closeEditor.click();
   await selectView(page, /^Schemas/);
+  await selectSchema(page, 'User');
   await expect(page.getByText('Restored sidecar', { exact: true }).first()).toBeVisible();
   if (await showEditor.isVisible()) await showEditor.click();
   await drop(root, 'standalone.json');
@@ -86,11 +87,11 @@ test('mock preview honors supported constraints and exposes limitations', async 
     ),
   });
   await selectView(page, /^Schemas/);
-  await page.getByRole('button', { name: /Constrained/ }).click();
+  await selectSchema(page, /Constrained/);
   await page.getByRole('button', { name: 'Mock Data', exact: true }).click();
   const preview = page.getByRole('region', { name: 'Mock data preview in JSON format' });
   const value = JSON.parse((await preview.textContent())!);
   expect([...value].sort()).toEqual([1, 2, 3]);
-  await page.getByRole('button', { name: /Unsupported/ }).click();
+  await selectSchema(page, /Unsupported/);
   await expect(page.getByText(/Example needs review:.*pattern constraints/)).toBeVisible();
 });

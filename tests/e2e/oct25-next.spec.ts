@@ -1,4 +1,4 @@
-import { test, expect, selectView } from './fixtures';
+import { test, expect, selectView, selectSchema } from './fixtures';
 
 test('workspace saves reject collisions and deletion can be undone after reopening', async ({ page }) => {
   await page.goto('/');
@@ -33,11 +33,13 @@ test('edits uploaded dependencies and retains changes through project recovery',
   await expect(page.getByText('Draft stored locally', { exact: true })).toBeVisible();
   if (await page.getByRole('button', { name: 'Close editor', exact: true }).isVisible()) await page.getByRole('button', { name: 'Close editor', exact: true }).click();
   await selectView(page, /^Schemas/);
+  await selectSchema(page, 'Pet');
   await expect(page.getByRole('heading', { name: 'Pet', exact: true })).toBeVisible();
   await expect(page.getByText('integer', { exact: true }).first()).toBeVisible();
   page.on('dialog', (dialog) => dialog.accept());
   await page.reload();
   await selectView(page, /^Schemas/);
+  await selectSchema(page, 'Pet');
   await expect(page.getByRole('heading', { name: 'Pet', exact: true })).toBeVisible();
   await expect(page.getByText('integer', { exact: true }).first()).toBeVisible();
 });

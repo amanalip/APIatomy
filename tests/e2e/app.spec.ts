@@ -1,4 +1,4 @@
-import { test, expect, selectView } from './fixtures';
+import { test, expect, selectView, selectSchema } from './fixtures';
 
 test('full workflow: sample, endpoint, cURL, schema, graph, share and reload', async ({ page }) => {
   await page.goto('/');
@@ -107,6 +107,7 @@ test('multi-file projects survive workspace saves, links, and downloaded share f
     },
   ]);
   await selectView(page, /^Schemas/);
+  await selectSchema(page, 'User');
   await expect(page.getByRole('heading', { name: 'User', exact: true })).toBeVisible();
   await expect(page.getByText('Persisted address', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Workspaces', exact: true }).click();
@@ -121,6 +122,7 @@ test('multi-file projects survive workspace saves, links, and downloaded share f
   await page.getByRole('button', { name: 'Workspaces', exact: true }).click();
   await page.getByRole('button', { name: 'Open workspace', exact: true }).click();
   await selectView(page, /^Schemas/);
+  await selectSchema(page, 'User');
   await expect(page.getByText('Persisted address', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Share', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Share spec' });
@@ -138,5 +140,6 @@ test('multi-file projects survive workspace saves, links, and downloaded share f
   await page.goto('/');
   await page.locator('#spec-upload-input').setInputFiles(path!);
   await selectView(page, /^Schemas/);
+  await selectSchema(page, 'User');
   await expect(page.getByText('Persisted address', { exact: true })).toBeVisible();
 });
