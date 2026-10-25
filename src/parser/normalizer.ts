@@ -1,3 +1,4 @@
+import { normalizeExamples } from './examples';
 import { projectDiagnostics } from './projectDiagnostics';
 import { dictionary } from '../utils/dictionary';
 import { getRootFilename, getFileMap } from './fileMap';
@@ -339,7 +340,7 @@ export function normalizeSpec(
                   contentType: cType,
                   schema,
                   example: m.example,
-                  examples: typeof m.examples === 'object' ? (m.examples as any) : undefined,
+                  examples: normalizeExamples(m.examples, bodyContext),
                 });
               }
             }
@@ -396,7 +397,10 @@ export function normalizeSpec(
                     contentType: cType,
                     schema,
                     example: m.example,
-                    examples: typeof m.examples === 'object' ? (m.examples as any) : undefined,
+                    examples: normalizeExamples(
+                      m.examples,
+                      response.fieldContexts?.get('content') || responseContext
+                    ),
                   });
                 }
               }
