@@ -227,6 +227,8 @@ export function normalizeSpec(
 
   const validMethods: readonly HttpMethod[] = VALID_HTTP_METHODS as unknown as HttpMethod[];
 
+  let outboundCount = 0;
+  let warnedOutboundLimit = false;
   function parsePaths(
     paths: Record<string, unknown>,
     source: RefResolutionContext,
@@ -248,6 +250,18 @@ export function normalizeSpec(
       return;
     }
     for (const [pathKey, rawPathItem] of Object.entries(paths)) {
+      if (kind !== 'endpoint' && outboundCount >= 2000) {
+        if (!warnedOutboundLimit)
+          diagnostics.push({
+            id: 'outbound-count-limit',
+            severity: 'warning',
+            source: 'ref',
+            message:
+              'Showing the first 2000 outbound operations. Inspect the source for additional webhook or callback contracts.',
+          });
+        warnedOutboundLimit = true;
+        return;
+      }
       if (typeof rawPathItem !== 'object' || rawPathItem === null) continue;
       const pathItem = resolveObject(rawPathItem, source, 'path item', `${location}/${pathKey}`);
       if (!pathItem) continue;
@@ -457,6 +471,7 @@ export function normalizeSpec(
           kind === 'endpoint'
             ? `${method}_${pathKey}`
             : `${kind}_${JSON.stringify([parentEndpointId, callbackName, pathKey, method])}`;
+        if (kind !== 'endpoint') outboundCount++;
         endpoints.push({
           id: endpointId,
           ...(kind !== 'endpoint'
