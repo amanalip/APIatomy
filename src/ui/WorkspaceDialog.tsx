@@ -7,7 +7,10 @@ import {
   listWorkspaces,
   saveWorkspace,
   loadWorkspace,
-  deleteWorkspace,
+  trashWorkspace,
+  restoreDeletedWorkspace,
+  listDeletedWorkspaces,
+  DeletedWorkspace,
   renameWorkspace,
   WorkspaceData,
 } from '../utils/workspaceStore';
@@ -30,6 +33,7 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
   const [workspaces, setWorkspaces] = useState<
     Array<{ id: string; title?: string; savedAt: number }>
   >([]);
+  const [deleted, setDeleted] = useState<DeletedWorkspace[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState(currentTitle || 'my-spec');
   const [updateId, setUpdateId] = useState<string | null>(null);
@@ -40,8 +44,9 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
 
   const refresh = async () => {
     try {
-      const list = await listWorkspaces();
+      const [list, trash] = await Promise.all([listWorkspaces(), listDeletedWorkspaces()]);
       setWorkspaces(list);
+      setDeleted(trash);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to load workspaces');
     }
@@ -97,7 +102,8 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteWorkspace(id);
+      await trashWorkspace(id);
+      setMessage(`Deleted workspace "${id}". Use Undo deletion to restore it.`);
       await refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed');
@@ -186,6 +192,43 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
             <p role="alert" className="text-xs text-red-600 dark:text-red-400">
               {error}
             </p>
+          )}
+          {deleted.length > 0 && (
+            <details
+              className="text-xs rounded border border-slate-200 dark:border-slate-700 p-2"
+              open
+            >
+              <summary>Deleted workspaces ({deleted.length})</summary>
+              <div className="max-h-32 overflow-auto">
+                {deleted.map((item) => (
+                  <div key={item.token} className="flex items-center justify-between gap-2 py-2">
+                    <span className="truncate">{item.id}</span>
+                    <button
+                      disabled={saving}
+                      aria-label={`Undo deletion of ${item.id}`}
+                      onClick={async () => {
+                        setSaving(true);
+                        try {
+                          setError(null);
+                          await restoreDeletedWorkspace(item.token);
+                          setMessage(`Restored workspace "${item.id}"`);
+                          await refresh();
+                        } catch {
+                          setError(
+                            'Unable to restore. If the name is in use, rename that workspace first. Your deleted project is retained.'
+                          );
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      className="shrink-0 rounded border px-2 py-1"
+                    >
+                      Undo deletion
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </details>
           )}
           <div className="space-y-1 max-h-64 overflow-auto">
             {workspaces.length === 0 ? (
