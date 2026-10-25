@@ -86,6 +86,23 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 overflow-hidden shadow-2xl transition-colors duration-150">
+      {endpoint.kind && endpoint.kind !== 'endpoint' && (
+        <div className="border-b border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/30 p-3 text-xs space-y-1">
+          <strong>
+            {endpoint.kind === 'webhook'
+              ? 'Outbound webhook'
+              : `Outbound callback: ${endpoint.callbackName}`}
+          </strong>
+          <p className="font-mono break-all">Destination: {endpoint.expression || endpoint.path}</p>
+          {endpoint.parentEndpointId && (
+            <p className="break-all">Triggered by {endpoint.parentEndpointId}</p>
+          )}
+          <p>
+            The receiving URL is supplied by your integration. Runtime expressions are preserved as
+            written.
+          </p>
+        </div>
+      )}
       {/* Header */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-950/70 flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -176,7 +193,19 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
       {/* Body Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {activeTab === 'curl' ? (
-          <CurlGenerator endpoint={endpoint} servers={servers} securitySchemes={securitySchemes} />
+          endpoint.kind && endpoint.kind !== 'endpoint' ? (
+            <p role="status" className="text-xs">
+              This is an outbound operation. Supply the receiver URL from your integration before
+              constructing a request; the documented name or runtime expression is not an API server
+              path.
+            </p>
+          ) : (
+            <CurlGenerator
+              endpoint={endpoint}
+              servers={servers}
+              securitySchemes={securitySchemes}
+            />
+          )
         ) : (
           <>
             {/* Deprecation Warning */}

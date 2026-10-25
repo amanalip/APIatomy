@@ -16,6 +16,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
   selectedEndpoint,
   onSelectEndpoint,
 }) => {
+  const [operationKind, setOperationKind] = useState('all');
   const [page, setPage] = useState(0);
   const pageSize = 100;
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,6 +63,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
   // Filtered endpoints
   const filteredEndpoints = useMemo(() => {
     return endpoints.filter((ep) => {
+      if (operationKind !== 'all' && (ep.kind || 'endpoint') !== operationKind) return false;
       // Method filter
       if (selectedMethod !== 'all' && ep.method !== selectedMethod) return false;
 
@@ -84,7 +86,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
 
       return true;
     });
-  }, [endpoints, selectedMethod, selectedTag, searchQuery]);
+  }, [endpoints, selectedMethod, selectedTag, searchQuery, operationKind]);
 
   const pageCount = Math.max(1, Math.ceil(filteredEndpoints.length / pageSize));
   const currentPage = Math.min(page, pageCount - 1);
@@ -92,7 +94,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
     () => filteredEndpoints.slice(currentPage * pageSize, (currentPage + 1) * pageSize),
     [filteredEndpoints, currentPage]
   );
-  useEffect(() => setPage(0), [searchQuery, selectedMethod, selectedTag, endpoints]);
+  useEffect(() => setPage(0), [searchQuery, selectedMethod, selectedTag, endpoints, operationKind]);
   useEffect(() => {
     const index = filteredEndpoints.findIndex((ep) => ep.id === selectedEndpoint?.id);
     if (index >= 0) setPage(Math.floor(index / pageSize));
@@ -155,6 +157,27 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-150">
+      <label className="flex flex-wrap items-center gap-2 px-4 pt-3 text-xs">
+        Operation kind
+        <select
+          aria-label="Operation kind"
+          value={operationKind}
+          onChange={(event) => setOperationKind(event.target.value)}
+          className="rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1"
+        >
+          <option value="all">All operations ({endpoints.length})</option>
+          <option value="endpoint">
+            API endpoints ({endpoints.filter((ep) => !ep.kind || ep.kind === 'endpoint').length})
+          </option>
+          <option value="webhook">
+            Webhooks ({endpoints.filter((ep) => ep.kind === 'webhook').length})
+          </option>
+          <option value="callback">
+            Callbacks ({endpoints.filter((ep) => ep.kind === 'callback').length})
+          </option>
+        </select>
+      </label>
+
       {/* Top Search & Filter Bar */}
       <div className="p-3 border-b border-slate-200 dark:border-slate-800 space-y-2.5 bg-white/70 dark:bg-slate-900/50 backdrop-blur">
         {/* Search */}
@@ -369,7 +392,7 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                             }
                           }}
                           aria-pressed={isSelected}
-                          aria-label={`${ep.method.toUpperCase()} ${ep.path}${ep.deprecated ? ' deprecated' : ''}`}
+                          aria-label={`${ep.kind && ep.kind !== 'endpoint' ? `${ep.kind} ` : ''}${ep.method.toUpperCase()} ${ep.path}${ep.deprecated ? ' deprecated' : ''}`}
                           className={`group cursor-pointer rounded-xl border p-2.5 transition flex flex-col gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                             isSelected
                               ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/50 shadow-md'
@@ -397,6 +420,13 @@ export const EndpointExplorer: React.FC<EndpointExplorerProps> = ({
                             )}
                           </div>
 
+                          {ep.kind && ep.kind !== 'endpoint' && (
+                            <span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300">
+                              {ep.kind === 'webhook'
+                                ? 'Webhook'
+                                : `Callback: ${ep.callbackName || 'unnamed'}`}
+                            </span>
+                          )}
                           {ep.summary && (
                             <div
                               className="text-[11px] text-slate-600 dark:text-slate-400 truncate pl-0.5"
