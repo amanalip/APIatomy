@@ -139,6 +139,8 @@ export interface TagModel {
 }
 
 export interface DiagnosticItem {
+  filename?: string;
+  reference?: string;
   id: string;
   severity: 'error' | 'warning' | 'info';
   message: string;

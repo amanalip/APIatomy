@@ -1,3 +1,4 @@
+import { projectDiagnostics } from './projectDiagnostics';
 import { dictionary } from '../utils/dictionary';
 import { getRootFilename, getFileMap } from './fileMap';
 import {
@@ -455,7 +456,11 @@ export function normalizeSpec(
     rawDoc: doc,
   });
 
-  const allDiagnostics = [...diagnostics, ...validationDiagnostics];
+  const allDiagnostics = [...diagnostics, ...validationDiagnostics].map((item) => ({
+    ...item,
+    filename: context.basePath || undefined,
+  }));
+  allDiagnostics.push(...projectDiagnostics(context.files || new Map(), context.basePath, rawText));
 
   return {
     title,
