@@ -1,5 +1,10 @@
 import { act } from 'react';
-import { expect, it } from 'vitest';
+import { beforeEach, afterEach, expect, it, vi } from 'vitest';
+beforeEach(() => {
+  Object.defineProperty(Element.prototype, 'scrollIntoView', { configurable: true, value: vi.fn() });
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { callback(0); return 0; });
+});
+afterEach(() => { vi.unstubAllGlobals(); delete (Element.prototype as any).scrollIntoView; });
 import { useSchemaNavigation } from '../src/hooks/useSchemaNavigation';
 import { mount, click, input } from './reactHarness';
 import { SchemaViewer } from '../src/ui/SchemaViewer';
