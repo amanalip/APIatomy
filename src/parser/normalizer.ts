@@ -226,149 +226,114 @@ export function normalizeSpec(
 
   const validMethods: readonly HttpMethod[] = VALID_HTTP_METHODS as unknown as HttpMethod[];
 
-  for (const [pathKey, rawPathItem] of Object.entries(rawPaths)) {
-    if (typeof rawPathItem !== 'object' || rawPathItem === null) continue;
-    const pathItem = resolveObject(rawPathItem, context, 'path item', `/paths/${pathKey}`);
-    if (!pathItem) continue;
-    const pi = pathItem.value;
-    const pathContext = pathItem.context;
-
-    // Common path-level parameters
-    const pathLevelParameters: ParameterModel[] = [];
-    if (Array.isArray(pi.parameters)) {
-      for (const p of pi.parameters) {
-        const parsedP = parseParameter(
-          p,
-          pathItem.fieldContexts?.get('parameters') || pathContext,
-          diagnostics,
-          rawText
-        );
-        if (parsedP) pathLevelParameters.push(parsedP);
-      }
+  function parsePaths(
+    paths: Record<string, unknown>,
+    source: RefResolutionContext,
+    kind: 'endpoint' | 'webhook' | 'callback',
+    location: string,
+    parentEndpointId?: string,
+    callbackName?: string,
+    depth = 0
+  ) {
+    if (depth > 8) {
+      diagnostics.push({
+        id: `outbound-depth-${location}`,
+        severity: 'warning',
+        source: 'ref',
+        message:
+          'Nested callback exploration stops after eight levels. Inspect the source for deeper callbacks.',
+        path: location,
+      });
+      return;
     }
+    for (const [pathKey, rawPathItem] of Object.entries(paths)) {
+      if (typeof rawPathItem !== 'object' || rawPathItem === null) continue;
+      const pathItem = resolveObject(rawPathItem, source, 'path item', `${location}/${pathKey}`);
+      if (!pathItem) continue;
+      const pi = pathItem.value;
+      const pathContext = pathItem.context;
 
-    const pathLevelServers: ServerModel[] | undefined = Array.isArray(pi.servers)
-      ? (pi.servers as ServerModel[])
-      : undefined;
-
-    for (const [methodKey, opObj] of Object.entries(pi)) {
-      const method = methodKey.toLowerCase() as HttpMethod;
-      if (!validMethods.includes(method)) continue;
-      if (typeof opObj !== 'object' || opObj === null) continue;
-
-      const operationContext = pathItem.fieldContexts?.get(methodKey) || pathContext;
-      const op = opObj as Record<string, unknown>;
-      const opId =
-        typeof op.operationId === 'string'
-          ? op.operationId
-          : `${method}_${pathKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
-
-      // Tags
-      const opTags =
-        Array.isArray(op.tags) && op.tags.length > 0 ? (op.tags as string[]) : ['Default'];
-
-      // Parameters
-      const operationParameters: ParameterModel[] = [];
-      if (Array.isArray(op.parameters)) {
-        for (const p of op.parameters) {
-          const parsedP = parseParameter(p, operationContext, diagnostics, rawText);
-          if (parsedP) operationParameters.push(parsedP);
-        }
-      }
-
-      // Merge path-level parameters with operation parameters
-      const mergedParams = [...pathLevelParameters];
-      for (const opParam of operationParameters) {
-        const existingIdx = mergedParams.findIndex(
-          (p) => p.name === opParam.name && p.in === opParam.in
-        );
-        if (existingIdx >= 0) {
-          mergedParams[existingIdx] = opParam;
-        } else {
-          mergedParams.push(opParam);
-        }
-      }
-
-      // Request Body
-      let requestBody: RequestBodyModel | undefined;
-      const consumedSchemaRefs = new Set<string>();
-
-      if (typeof op.requestBody === 'object' && op.requestBody !== null) {
-        const body = resolveObject(
-          op.requestBody,
-          operationContext,
-          'request body',
-          `/paths/${pathKey}/${method}/requestBody`
-        );
-        const rb = body?.value || {};
-        const bodyContext =
-          body?.fieldContexts?.get('content') || body?.context || operationContext;
-
-        const contentList: MediaTypeModel[] = [];
-
-        if (typeof rb.content === 'object' && rb.content !== null) {
-          for (const [cType, mediaObj] of Object.entries(rb.content as Record<string, unknown>)) {
-            if (typeof mediaObj === 'object' && mediaObj !== null) {
-              const m = mediaObj as Record<string, unknown>;
-              let schema: SchemaModel | undefined;
-              if (m.schema) {
-                schema = resolveSchema(m.schema, bodyContext);
-                collectSchemaRefs(schema, consumedSchemaRefs);
-              }
-              contentList.push({
-                contentType: cType,
-                schema,
-                example: m.example,
-                examples: typeof m.examples === 'object' ? (m.examples as any) : undefined,
-              });
-            }
-          }
-        }
-
-        requestBody = body
-          ? {
-              description: typeof rb.description === 'string' ? rb.description : undefined,
-              required: Boolean(rb.required),
-              content: contentList,
-            }
-          : undefined;
-      }
-
-      // Responses
-      const responses: ResponseModel[] = [];
-      const producedSchemaRefs = new Set<string>();
-
-      if (typeof op.responses === 'object' && op.responses !== null) {
-        for (const [code, respObj] of Object.entries(op.responses as Record<string, unknown>)) {
-          if (typeof respObj !== 'object' || respObj === null) {
-            responses.push({
-              statusCode: code,
-              description: String(respObj || ''),
-              content: [],
-            });
-            continue;
-          }
-
-          const response = resolveObject(
-            respObj,
-            operationContext,
-            'response',
-            `/paths/${pathKey}/${method}/responses/${code}`
+      // Common path-level parameters
+      const pathLevelParameters: ParameterModel[] = [];
+      if (Array.isArray(pi.parameters)) {
+        for (const p of pi.parameters) {
+          const parsedP = parseParameter(
+            p,
+            pathItem.fieldContexts?.get('parameters') || pathContext,
+            diagnostics,
+            rawText
           );
-          if (!response) continue;
-          const r = response.value;
-          const responseContext = response.context;
+          if (parsedP) pathLevelParameters.push(parsedP);
+        }
+      }
+
+      const pathLevelServers: ServerModel[] | undefined = Array.isArray(pi.servers)
+        ? (pi.servers as ServerModel[])
+        : undefined;
+
+      for (const [methodKey, opObj] of Object.entries(pi)) {
+        const method = methodKey.toLowerCase() as HttpMethod;
+        if (!validMethods.includes(method)) continue;
+        if (typeof opObj !== 'object' || opObj === null) continue;
+
+        const operationContext = pathItem.fieldContexts?.get(methodKey) || pathContext;
+        const op = opObj as Record<string, unknown>;
+        const opId =
+          typeof op.operationId === 'string'
+            ? op.operationId
+            : `${method}_${pathKey.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+        // Tags
+        const opTags =
+          Array.isArray(op.tags) && op.tags.length > 0 ? (op.tags as string[]) : ['Default'];
+
+        // Parameters
+        const operationParameters: ParameterModel[] = [];
+        if (Array.isArray(op.parameters)) {
+          for (const p of op.parameters) {
+            const parsedP = parseParameter(p, operationContext, diagnostics, rawText);
+            if (parsedP) operationParameters.push(parsedP);
+          }
+        }
+
+        // Merge path-level parameters with operation parameters
+        const mergedParams = [...pathLevelParameters];
+        for (const opParam of operationParameters) {
+          const existingIdx = mergedParams.findIndex(
+            (p) => p.name === opParam.name && p.in === opParam.in
+          );
+          if (existingIdx >= 0) {
+            mergedParams[existingIdx] = opParam;
+          } else {
+            mergedParams.push(opParam);
+          }
+        }
+
+        // Request Body
+        let requestBody: RequestBodyModel | undefined;
+        const consumedSchemaRefs = new Set<string>();
+
+        if (typeof op.requestBody === 'object' && op.requestBody !== null) {
+          const body = resolveObject(
+            op.requestBody,
+            operationContext,
+            'request body',
+            `/paths/${pathKey}/${method}/requestBody`
+          );
+          const rb = body?.value || {};
+          const bodyContext =
+            body?.fieldContexts?.get('content') || body?.context || operationContext;
 
           const contentList: MediaTypeModel[] = [];
 
-          if (typeof r.content === 'object' && r.content !== null) {
-            for (const [cType, mediaObj] of Object.entries(r.content as Record<string, unknown>)) {
+          if (typeof rb.content === 'object' && rb.content !== null) {
+            for (const [cType, mediaObj] of Object.entries(rb.content as Record<string, unknown>)) {
               if (typeof mediaObj === 'object' && mediaObj !== null) {
                 const m = mediaObj as Record<string, unknown>;
                 let schema: SchemaModel | undefined;
                 if (m.schema) {
-                  schema = resolveSchema(m.schema, responseContext);
-                  collectSchemaRefs(schema, producedSchemaRefs);
+                  schema = resolveSchema(m.schema, bodyContext);
+                  collectSchemaRefs(schema, consumedSchemaRefs);
                 }
                 contentList.push({
                   contentType: cType,
@@ -380,73 +345,140 @@ export function normalizeSpec(
             }
           }
 
-          responses.push({
-            statusCode: code,
-            description: typeof r.description === 'string' ? r.description : '',
-            content: contentList,
-            headers: parseHeaders(
-              r.headers,
-              responseContext,
-              `/paths/${pathKey}/${method}/responses/${code}/headers`
-            ),
-          });
+          requestBody = body
+            ? {
+                description: typeof rb.description === 'string' ? rb.description : undefined,
+                required: Boolean(rb.required),
+                content: contentList,
+              }
+            : undefined;
         }
-      }
 
-      // Security: preserve OR and AND semantics as alternatives
-      // effectiveSec array where each entry is AND group, OR between entries, {} means optional
-      const security: SecurityRequirementModel[] = [];
-      const securityAlternatives: SecurityRequirementModel[][] = [];
-      const effectiveSec = op.security !== undefined ? op.security : doc.security;
-      if (Array.isArray(effectiveSec)) {
-        if (effectiveSec.length === 0 && op.security !== undefined) {
-          securityAlternatives.push([]);
-        } else {
-          for (const secReq of effectiveSec) {
-            if (typeof secReq === 'object' && secReq !== null) {
-              const keys = Object.keys(secReq as Record<string, unknown>);
-              if (keys.length === 0) {
-                securityAlternatives.push([]);
-                continue;
+        // Responses
+        const responses: ResponseModel[] = [];
+        const producedSchemaRefs = new Set<string>();
+
+        if (typeof op.responses === 'object' && op.responses !== null) {
+          for (const [code, respObj] of Object.entries(op.responses as Record<string, unknown>)) {
+            if (typeof respObj !== 'object' || respObj === null) {
+              responses.push({
+                statusCode: code,
+                description: String(respObj || ''),
+                content: [],
+              });
+              continue;
+            }
+
+            const response = resolveObject(
+              respObj,
+              operationContext,
+              'response',
+              `/paths/${pathKey}/${method}/responses/${code}`
+            );
+            if (!response) continue;
+            const r = response.value;
+            const responseContext = response.context;
+
+            const contentList: MediaTypeModel[] = [];
+
+            if (typeof r.content === 'object' && r.content !== null) {
+              for (const [cType, mediaObj] of Object.entries(
+                r.content as Record<string, unknown>
+              )) {
+                if (typeof mediaObj === 'object' && mediaObj !== null) {
+                  const m = mediaObj as Record<string, unknown>;
+                  let schema: SchemaModel | undefined;
+                  if (m.schema) {
+                    schema = resolveSchema(m.schema, responseContext);
+                    collectSchemaRefs(schema, producedSchemaRefs);
+                  }
+                  contentList.push({
+                    contentType: cType,
+                    schema,
+                    example: m.example,
+                    examples: typeof m.examples === 'object' ? (m.examples as any) : undefined,
+                  });
+                }
               }
-              const group: SecurityRequirementModel[] = [];
-              for (const [secKey, scopes] of Object.entries(secReq as Record<string, unknown>)) {
-                const entry: SecurityRequirementModel = {
-                  name: secKey,
-                  scopes: Array.isArray(scopes) ? (scopes as string[]) : [],
-                };
-                group.push(entry);
-                security.push(entry);
+            }
+
+            responses.push({
+              statusCode: code,
+              description: typeof r.description === 'string' ? r.description : '',
+              content: contentList,
+              headers: parseHeaders(
+                r.headers,
+                responseContext,
+                `/paths/${pathKey}/${method}/responses/${code}/headers`
+              ),
+            });
+          }
+        }
+
+        // Security: preserve OR and AND semantics as alternatives
+        // effectiveSec array where each entry is AND group, OR between entries, {} means optional
+        const security: SecurityRequirementModel[] = [];
+        const securityAlternatives: SecurityRequirementModel[][] = [];
+        const effectiveSec = op.security !== undefined ? op.security : doc.security;
+        if (Array.isArray(effectiveSec)) {
+          if (effectiveSec.length === 0 && op.security !== undefined) {
+            securityAlternatives.push([]);
+          } else {
+            for (const secReq of effectiveSec) {
+              if (typeof secReq === 'object' && secReq !== null) {
+                const keys = Object.keys(secReq as Record<string, unknown>);
+                if (keys.length === 0) {
+                  securityAlternatives.push([]);
+                  continue;
+                }
+                const group: SecurityRequirementModel[] = [];
+                for (const [secKey, scopes] of Object.entries(secReq as Record<string, unknown>)) {
+                  const entry: SecurityRequirementModel = {
+                    name: secKey,
+                    scopes: Array.isArray(scopes) ? (scopes as string[]) : [],
+                  };
+                  group.push(entry);
+                  security.push(entry);
+                }
+                if (group.length > 0) securityAlternatives.push(group);
               }
-              if (group.length > 0) securityAlternatives.push(group);
             }
           }
         }
+
+        const opServers = Array.isArray(op.servers) ? (op.servers as ServerModel[]) : undefined;
+        const effectiveServers = opServers ?? pathLevelServers;
+
+        const endpointId =
+          kind === 'endpoint'
+            ? `${method}_${pathKey}`
+            : `${kind}_${JSON.stringify([parentEndpointId, callbackName, pathKey, method])}`;
+        endpoints.push({
+          id: endpointId,
+          ...(kind !== 'endpoint'
+            ? { kind, parentEndpointId, callbackName, expression: pathKey }
+            : {}),
+          method,
+          path: pathKey,
+          summary: typeof op.summary === 'string' ? op.summary : undefined,
+          description: typeof op.description === 'string' ? op.description : undefined,
+          operationId: opId,
+          tags: opTags,
+          deprecated: Boolean(op.deprecated),
+          parameters: mergedParams,
+          requestBody,
+          responses,
+          security,
+          securityAlternatives: securityAlternatives.length > 0 ? securityAlternatives : undefined,
+          servers: effectiveServers,
+          consumedSchemaRefs: Array.from(consumedSchemaRefs),
+          producedSchemaRefs: Array.from(producedSchemaRefs),
+        });
       }
-
-      const opServers = Array.isArray(op.servers) ? (op.servers as ServerModel[]) : undefined;
-      const effectiveServers = opServers ?? pathLevelServers;
-
-      endpoints.push({
-        id: `${method}_${pathKey}`,
-        method,
-        path: pathKey,
-        summary: typeof op.summary === 'string' ? op.summary : undefined,
-        description: typeof op.description === 'string' ? op.description : undefined,
-        operationId: opId,
-        tags: opTags,
-        deprecated: Boolean(op.deprecated),
-        parameters: mergedParams,
-        requestBody,
-        responses,
-        security,
-        securityAlternatives: securityAlternatives.length > 0 ? securityAlternatives : undefined,
-        servers: effectiveServers,
-        consumedSchemaRefs: Array.from(consumedSchemaRefs),
-        producedSchemaRefs: Array.from(producedSchemaRefs),
-      });
     }
   }
+  parsePaths(rawPaths, context, 'endpoint', '/paths');
+  if (isRecord(doc.webhooks)) parsePaths(doc.webhooks, context, 'webhook', '/webhooks');
 
   // Run linter / validator
   const validationDiagnostics = validateSpec({
