@@ -1,3 +1,4 @@
+import { DiffFieldChanges } from './DiffFieldChanges';
 import { importProjectFiles } from '../share/importService';
 import { captureProject, encodeProject } from '../share/project';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -314,16 +315,23 @@ export const DiffView: React.FC<DiffViewProps> = ({
               <div className="font-semibold text-amber-700 dark:text-amber-300">
                 Changed ({changed.length})
               </div>
-              {changedDetails.map((d) => (
-                <div
-                  key={d.key}
-                  className="font-mono text-amber-800 dark:text-amber-200 flex justify-between"
+              {changedDetails.map((change) => (
+                <details
+                  key={change.key}
+                  className="rounded border border-amber-200 dark:border-amber-800 p-2 my-2"
                 >
-                  <span>{d.key}</span>
-                  <span className="text-[10px] px-1 rounded bg-white/50 dark:bg-black/20">
-                    {d.cls}
-                  </span>
-                </div>
+                  <summary className="cursor-pointer font-mono break-all">
+                    {change.key} <strong>{change.cls}</strong>
+                  </summary>
+                  <p className="mt-2">
+                    {change.cls === 'breaking'
+                      ? 'Potential incompatibility: existing clients may need changes.'
+                      : change.cls === 'documentation-only'
+                        ? 'Documentation changed without a detected contract change.'
+                        : 'No breaking change detected by the compatibility rules.'}
+                  </p>
+                  <DiffFieldChanges fields={change.fields} />
+                </details>
               ))}
               {changed.length === 0 && <div className="text-slate-500">None</div>}
             </div>
