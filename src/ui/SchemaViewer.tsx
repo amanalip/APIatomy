@@ -1,3 +1,4 @@
+import { ExampleDirection } from '../model/exampleDirection';
 import { ownValue } from '../utils/dictionary';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { SchemaModel } from '../model';
@@ -24,6 +25,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
     selectedSchemaName || Object.keys(schemas)[0] || ''
   );
   const [viewMode, setViewMode] = useState<'tree' | 'example'>('tree');
+  const [exampleDirection, setExampleDirection] = useState<ExampleDirection>('neutral');
   const [mockFormat, setMockFormat] = useState<'json' | 'yaml'>('json');
   const [copiedExample, setCopiedExample] = useState(false);
   const [copiedSchemaAst, setCopiedSchemaAst] = useState(false);
@@ -97,8 +99,11 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
   const activeSchema = ownValue(schemas, activeSchemaName);
 
   const mockExample = useMemo(
-    () => (activeSchema ? generateMockExample(activeSchema, schemas) : { value: {}, issues: [] }),
-    [activeSchema, schemas]
+    () =>
+      activeSchema
+        ? generateMockExample(activeSchema, schemas, exampleDirection)
+        : { value: {}, issues: [] },
+    [activeSchema, schemas, exampleDirection]
   );
 
   const generatedMockText = useMemo(() => {
@@ -358,6 +363,21 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                 </div>
               ) : (
                 <div className="space-y-3">
+                  <label className="flex flex-wrap items-center gap-2 text-xs">
+                    Example direction
+                    <select
+                      aria-label="Example direction"
+                      value={exampleDirection}
+                      onChange={(event) =>
+                        setExampleDirection(event.target.value as ExampleDirection)
+                      }
+                      className="rounded border bg-white dark:bg-slate-900 px-2 py-1"
+                    >
+                      <option value="neutral">All fields</option>
+                      <option value="request">Request (exclude read-only)</option>
+                      <option value="response">Response (exclude write-only)</option>
+                    </select>
+                  </label>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-600 dark:text-slate-400 font-mono">
