@@ -1,6 +1,6 @@
 # User-facing improvements - October 25, 2026
 
-This review prioritizes actionable changes that protect user work, improve correctness, and make API exploration more useful. Items OCT25-01 through OCT25-05 are implemented and verified. Items OCT25-06 through OCT25-10 remain pending. The earlier review's completed fixes are recorded separately in `improvements_oct19.md`.
+This review prioritizes actionable changes that protect user work, improve correctness, and make API exploration more useful. All ten improvements are implemented and verified within the browser limits recorded below. Verification records for each implementation batch appear below. The earlier review's completed fixes are recorded separately in `improvements_oct19.md`.
 
 Review evidence: source inspection and selected local browser exercises. All 311 unit tests passed. The full browser regression suite was not run during this review. Findings explicitly described as confirmed were exercised locally; other workflow gaps and proposed improvements were identified through source inspection.
 
@@ -77,58 +77,63 @@ Review evidence: source inspection and selected local browser exercises. All 311
 
 ### OCT25-06: Protect saved workspaces from silent overwrite and deletion
 
-- [ ] Complete
+- [x] Complete
 - **Problem:** Saving with an existing workspace name overwrites that workspace, and Delete removes it immediately.
 - **Change:** Provide explicit `Update existing` and `Save as new` actions, plus undo for deletion.
 - **User benefit:** Users can update a workspace intentionally without accidentally destroying another saved version.
 - **Acceptance criteria:** Make overwrite intent explicit; reject unintended naming collisions; show clear save feedback; allow deleted workspaces to be restored with all dependencies; preserve atomic, collision-safe renames and compatibility with older records.
 - **References:** `src/ui/WorkspaceDialog.tsx`, `src/utils/workspaceStore.ts`.
-- **Commits:** Pending, minimum eight substantive commits.
-- **Validation and pushed range:** Pending.
+- **Implementation:** Implemented insert-only Save as new, explicit Update existing confirmation, save/status feedback, and durable deletion undo. Complete records move between live and trash stores in one IndexedDB transaction. Restore collisions and write failures retain both live and deleted projects. The database upgrade retains older workspace records.
+- **Commits:** `8685799`, `20225ce`, `c022319`, `dca800f`, `7e3e506`, `a3111ae`, `c12de6b`, `2a6ec7b`, `9fec0c4`, `b0af34b` (10 focused commits, each with a detailed message).
+- **Validation and pushed range:** Focused production regressions, full repository checks, and Chromium/Firefox/mobile Chrome browser workflows passed. See the batch verification record below. Commits are local; no push was requested.
 
 ### OCT25-07: Make importing and editing multi-file APIs practical
 
-- [ ] Complete
+- [x] Complete
 - **Problem:** The importer understands relative paths, but the upload picker lacks a folder workflow, and the editor exposes only the root document.
 - **Change:** Add folder import that preserves directories, a project file tree, and navigation from unresolved references to the relevant file.
 - **User benefit:** Users can explore and repair realistic API projects without flattening directories or editing dependencies elsewhere.
 - **Acceptance criteria:** Preserve nested file paths and duplicate basenames in different directories; select or clearly identify the root; allow dependency editing; resolve references relative to their containing document; retain complete projects through save, export, share, and restore; offer a fallback where folder selection is unavailable.
 - **References:** `src/ui/Header.tsx`, `src/ui/EditorPane.tsx`, `src/share/importService.ts`, `src/parser/fileMap.ts`.
-- **Commits:** Pending, minimum eight substantive commits.
-- **Validation and pushed range:** Pending.
+- **Implementation:** Added feature-detected folder import with multi-file fallback, full-path project navigation with root identification, bounded dependency editing, and containing-file diagnostic navigation. Nested paths and duplicate basenames survive import; edits flow through the existing project codec into drafts, workspaces, downloads, and share links.
+- **Commits:** `81accde`, `987a670`, `376c911`, `5ea4311`, `e4e333d`, `22acbbd`, `cec547f`, `95700e6`, `a841cd2`, `6354cc3` (10 focused commits, each with a detailed message).
+- **Validation and pushed range:** Focused production regressions, full repository checks, and Chromium/Firefox/mobile Chrome browser workflows passed. See the batch verification record below. Commits are local; no push was requested.
 
 ### OCT25-08: Expose webhooks and callbacks instead of silently omitting them
 
-- [ ] Complete
+- [x] Complete
 - **Problem:** Confirmed that the included Webhooks and Callbacks sample produces only the two `/subscriptions` operations. Callback operations are absent without an omission warning.
 - **Change:** Add webhook and callback sections with payloads, responses, and graph connections. Clearly identify omitted content until supported.
 - **User benefit:** Users can see the outbound event contract as well as the API's inbound operations.
 - **Acceptance criteria:** Represent top-level webhooks and operation callbacks distinctly; preserve callback runtime expressions; expose request and response details; resolve local and uploaded references; include relevant graph relationships and diff changes; show clear limitations rather than silently dropping supported-document content.
 - **References:** `src/parser/normalizer.ts`, `src/model/index.ts`, `src/ui/EndpointDetails.tsx`, `src/graph/TopologyGraph.tsx`, `src/samples/webhooks.ts`.
-- **Commits:** Pending, minimum eight substantive commits.
-- **Validation and pushed range:** Pending.
+- **Implementation:** Normalized top-level webhooks and referenced operation callbacks through the shared path parser, preserving runtime expressions, parent identity, request/response details, and reference scopes. Added kind filtering, outbound destination guidance, topology origin edges, and distinct semantic diff identities. Bound recursive exploration with visible omission warnings and retained outbound schema usage in validation.
+- **Commits:** `1096b17`, `c5334f9`, `c14f6af`, `c253c49`, `53809f1`, `a4a1a83`, `d0bb4d9`, `ee020a8`, `41409a3`, `1af0d29`, `0a8c2b5`, `bc37852` (12 focused commits, each with a detailed message).
+- **Validation and pushed range:** Focused production regressions, full repository checks, and Chromium/Firefox/mobile Chrome browser workflows passed. See the batch verification record below. Commits are local; no push was requested.
 
 ### OCT25-09: Show real request and response examples alongside schemas
 
-- [ ] Complete
+- [x] Complete
 - **Problem:** Response examples are hidden when a schema exists, named examples lack a selector, and schema-less `false` or `0` examples disappear because of truthiness checks.
 - **Change:** Add Schema and Examples tabs, named-example selection, and copy controls for request and response bodies.
 - **User benefit:** Users can inspect realistic payloads and copy documented examples directly into integration work.
 - **Acceptance criteria:** Show supplied examples alongside schemas; preserve `false`, `0`, empty strings, and null; expose named example summaries and descriptions; distinguish supplied examples from generated examples; support each media type; retain local-only handling of imported data and explain unresolved example references.
 - **References:** `src/ui/EndpointDetails.tsx`, `src/model/index.ts`, `src/parser/normalizer.ts`.
-- **Commits:** Pending, minimum eight substantive commits.
-- **Validation and pushed range:** Pending.
+- **Implementation:** Added Schema and Examples tabs for every request/response media type, named example selection, summaries/descriptions, exact falsy values, media-aware copy controls, and supplied/generated labels. Example Object references resolve locally; unresolved references and externalValue URLs display explicit limitations without fetching content.
+- **Commits:** `f3ed537`, `2f89465`, `205cef2`, `03bb67c`, `a14ed0c`, `cd4c87a`, `0e72551`, `d5293e9`, `be389fa` (9 focused commits, each with a detailed message).
+- **Validation and pushed range:** Focused production regressions, full repository checks, and Chromium/Firefox/mobile Chrome browser workflows passed. See the batch verification record below. Commits are local; no push was requested.
 
 ### OCT25-10: Give schema browsing a dedicated mobile flow
 
-- [ ] Complete
+- [x] Complete
 - **Problem:** Schema navigation and details remain side by side, reducing the space available to inspect properties on narrow screens. Diff inputs and result grids also use fixed column layouts.
 - **Change:** Use a searchable schema list followed by full-width details with Back navigation on mobile. Stack diff inputs and results on narrow screens.
 - **User benefit:** Schema inspection and API comparisons become practical on phones and small windows.
 - **Acceptance criteria:** Preserve search, selection, and list position when navigating back; retain direct schema navigation from endpoints and graph nodes; provide readable details and usable controls at narrow widths; stack comparison sections; verify keyboard focus, touch interaction, and desktop behavior.
 - **References:** `src/ui/SchemaViewer.tsx`, `src/ui/DiffView.tsx`, `src/App.tsx`.
-- **Commits:** Pending, minimum eight substantive commits.
-- **Validation and pushed range:** Pending.
+- **Implementation:** Added full-width mobile schema detail navigation with Back, retained search, restored list scroll and focus, and direct-link support. Virtual windows synchronize before focus restoration and clamp after filtering. Increased row touch space, wrapped inspector controls, and stacked comparison inputs and summaries on narrow screens.
+- **Commits:** `7926e82`, `8867280`, `aaca82b`, `48e8a31`, `44ea765`, `a708759`, `a2aaa2e`, `1c32ca9`, `b48d2d5`, `6a07fc3`, `a2bf2db`, `72f3dfb`, `ceb2515`, `1691e28` (14 focused commits, each with a detailed message).
+- **Validation and pushed range:** Focused production regressions, full repository checks, and Chromium/Firefox/mobile Chrome browser workflows passed. See the batch verification record below. Commits are local; no push was requested.
 
 ## Implementation verification for OCT25-01 through OCT25-05
 
@@ -139,3 +144,16 @@ Review evidence: source inspection and selected local browser exercises. All 311
 - The updated development skill passed its validator. `git diff --check` and `npm run check:text` passed.
 - XML and arbitrary binary payload generation remains unsupported by design: commands identify the file to supply and show an explicit limitation. Compatibility classification remains conservative, and field explanations are capped at 200 per traversal with visible truncation guidance. Recovery requires browser storage and does not replace explicit backups.
 - Each improvement has at least eight substantive commits with detailed messages, recorded above. No commits were pushed and no deployment was performed.
+
+## Implementation verification for OCT25-06 through OCT25-10
+
+- `npm run check` passed: strict TypeScript, source text enforcement, lint, formatting, 366 unit tests across 53 files, coverage thresholds, and a production build. Configured line coverage is 85.10%.
+- The complete Chromium, Firefox, and mobile Chrome browser run passed 83 scenarios. Four desktop executions of the two mobile-only navigation tests were intentionally skipped. Folder import with nested duplicate basenames passed on all three browser configurations.
+- After the final outbound validation adjustment, six focused webhook/callback and named-example browser scenarios passed again across Chromium, Firefox, and mobile Chrome.
+- New browser workflows cover save collisions and explicit updates, durable deletion undo, dependency editing and draft recovery, actual folder selection, outbound filters and expressions, named falsy examples, mobile Back/search/focus, stacked comparisons, and virtual-list scroll restoration. The new scroll regression caught a real mismatch between DOM offsets and rendered virtual rows; the corrected workflow passed its targeted rerun and the full browser run.
+- WebKit launch was attempted for the new workspace workflow but could not execute because the host lacks `libicu74` and `libflite1`. Local Safari/WebKit validation remains unavailable; the existing Ubuntu CI workflow installs browser prerequisites.
+- The updated development skill passed its validator. `npm run check:text` and `git diff --check` passed.
+- Deleted workspaces remain recoverable in this browser's storage; restoring a reused name requires renaming the newer live workspace first. Folder selection falls back to multi-file upload where unsupported. Only YAML and JSON files are imported from folders.
+- Callback exploration is bounded to eight nested levels and 2000 outbound operations with explicit omission warnings. Structural outbound delivery changes are conservatively classified as breaking. Receiver URLs are integration-provided; runtime expressions are not treated as executable API server paths.
+- Supplied Example Objects resolve only from local project content. External example URLs are never fetched, and cyclic values show a serialization limitation. Full JSON Schema 2020-12 validation remains outside the supported feature set.
+- Each of the five improvements has at least eight focused commits with detailed messages, recorded above. No push or deployment was performed.

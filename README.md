@@ -18,7 +18,7 @@ Zero backend, no accounts, no specs leaving your machine. The entire application
 
 ## Core Features
 
-- **Multi Spec Normalization**: Broad OpenAPI 3.0/3.1 support with automatic conversion of Swagger 2.0 specs including `host`/`basePath`/`schemes`, `collectionFormat`, file uploads and OAuth2 flow mapping. External file refs and full JSON Schema 2020-12 require bundling.
+- **Multi Spec Normalization**: Broad OpenAPI 3.0/3.1 support with automatic conversion of Swagger 2.0 specs including `host`/`basePath`/`schemes`, `collectionFormat`, file uploads and OAuth2 flow mapping. Upload external reference files with the API root. Full JSON Schema 2020-12 validation is not provided.
 - **Interactive Topology Graph**: Powered by React Flow and Dagre with lazy loading. Maps relationships between HTTP endpoints, consumed request payloads, produced response models and nested component schemas with layout direction controls, tag filtering, PNG and SVG export and efficient rendering for large specs.
 - **Endpoint Explorer**: Color coded HTTP method badges, filterable by path, method and tag, with quick search via `/` (Ctrl/Cmd+K is reserved for command palette), method pills and tag grouping, paginated lists with access to every endpoint and detailed drawer with parameters, bodies, responses and security.
 - **Schema Viewer**: Expandable tree view for component schemas with composition support (`allOf`, `oneOf`, `anyOf`, `not`), circular reference protection, clickable `$ref` navigation, additionalProperties maps, mock data generator with JSON and YAML toggle, virtualized list and quick search via `/`.
@@ -216,11 +216,21 @@ The reusable [$apiatomy-development skill](.agents/skills/apiatomy-development/S
 
 Workspace saves, private links, and downloaded `apiatomy-project.json` files preserve uploaded project dependencies. Upload a project file through the regular Upload action to restore it. Plain YAML and JSON specs and older workspace records remain supported.
 
+Named workspaces use separate Save as new and Update existing actions. Save as new rejects an existing name; updating an existing workspace requires an explicit replacement decision. Deletion moves the complete project into local recovery storage. Reopen Workspaces and use Undo deletion to restore it. If its name has been reused, rename the newer workspace first; undo retains both projects on a collision.
+
+Use Folder to import a project directory while preserving nested paths and duplicate basenames. Browsers without folder input use multi-file selection instead. The editor's Project files list identifies the root and lets you edit uploaded dependencies. Dependency edits are included in workspace saves, drafts, downloads, and share links. Diagnostic entries show the containing filename and open that file before jumping to the problem line. Folder import skips files outside YAML and JSON; include one API root with its dependencies.
+
 The current project also has an automatic local recovery draft, including uploaded dependencies. The status strip distinguishes unsaved edits from an explicitly saved workspace and shows whether draft storage succeeded. Refresh restores the draft; opening a shared link takes precedence. Replacing edited work offers Save and continue, Discard changes, or Cancel. Recovery depends on browser storage: use a named workspace or download a project file when storage is unavailable.
 
 Uploads, drops, project files, and URL responses are checked for fatal syntax and API-root errors before replacing the current project. Invalid imports retain the current API. Specifications with nonfatal lint findings, such as missing metadata or unresolved references, remain available for inspection.
 
 Diff keeps independent old and new snapshots while you explore other tabs or edit the main specification. Use current explicitly replaces one snapshot, Upload accepts a root with dependencies, and each side has its own Clear action. Incomplete and invalid comparisons are distinguished from unchanged APIs. Expand changed endpoints, schemas, or authentication definitions to inspect field paths and before/after values. The breaking-endpoint filter focuses on removed or potentially incompatible endpoints; large endpoint result lists have Show more controls.
+
+The endpoint explorer includes separate filters for API endpoints, webhooks, and callbacks. Outbound operation details preserve callback expressions and identify their registering operation. The topology graph links callbacks to their origin and includes their payload schema relationships. Diffs retain distinct outbound identities and conservatively flag structural delivery changes. Callback exploration stops after eight levels or 2000 outbound operations and reports a visible warning; outbound destinations require your integration's receiver URL.
+
+Request and response media have Schema and Examples tabs. Choose named examples to inspect summaries, descriptions, and literal values, including false, zero, empty strings, and null, then use Copy example. Supplied examples are labeled separately from generated samples. Uploaded example references resolve locally; unresolved references and externalValue URLs show a limitation without making network requests.
+
+On phones, schema navigation opens a full-width detail screen. Back to schemas restores the list's search, scroll position, and focus. Direct links from endpoint or graph views still open the requested schema. Comparison inputs and summaries stack vertically on narrow screens.
 
 The cURL preview lets you select a request content type. Generated requests exclude read-only fields, and the schema example viewer offers request and response modes that exclude read-only and write-only fields respectively. Supplied examples remain literal user data. XML and other unsupported generation paths clearly identify the payload file you must supply, rather than producing an unrelated form body.
 
