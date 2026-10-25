@@ -217,7 +217,6 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
                     <button
                       disabled={saving}
                       aria-label={`Undo deletion of ${item.id}`}
-                      disabled={saving}
                       onClick={async () => {
                         setSaving(true);
                         try {
