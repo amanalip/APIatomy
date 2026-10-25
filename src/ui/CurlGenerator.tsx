@@ -378,11 +378,10 @@ export function buildCurlCommand(
   const hasExplicitAuthHeader = endpoint.parameters.some(
     (p) => p.in === 'header' && p.name.toLowerCase() === 'authorization'
   );
-  const hasExplicitContentTypeHeader = endpoint.parameters.some(
-    (p) => p.in === 'header' && p.name.toLowerCase() === 'content-type'
-  );
 
   for (const header of endpoint.parameters.filter((p) => p.in === 'header')) {
+    if (endpoint.requestBody?.content.length && header.name.toLowerCase() === 'content-type')
+      continue;
     let val =
       header.example !== undefined
         ? header.example
@@ -487,18 +486,24 @@ export function buildCurlCommand(
     const isMultipart = lowerType.includes('multipart/form-data');
     const isFormUrlEncoded = lowerType.includes('application/x-www-form-urlencoded');
     if (isMultipart) {
-      if (primaryMedia.schema?.properties) {
-        for (const [propKey, propVal] of Object.entries(primaryMedia.schema.properties)) {
-          const isFile = propVal.format === 'binary' || (propVal.type as string) === 'file';
-          lines.push(`  -F ${shellQuote(`${propKey}=${isFile ? '@filename.ext' : 'value'}`)}`);
+      const value =
+        primaryMedia.example !== undefined
+          ? primaryMedia.example
+          : primaryMedia.schema
+            ? generateMockExample(primaryMedia.schema, {}, 'request').value
+            : {};
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        for (const [name, item] of Object.entries(value)) {
+          const property =
+            primaryMedia.schema?.properties && ownValue(primaryMedia.schema.properties, name);
+          const file = property?.format === 'binary' || (property?.type as string) === 'file';
+          lines.push(
+            `  ${file ? '-F' : '--form-string'} ${shellQuote(`${name}=${file ? '@filename.ext' : typeof item === 'object' ? JSON.stringify(item) : String(item)}`)}`
+          );
         }
-      } else {
-        lines.push(`  -F "file=@filename.ext"`);
       }
     } else {
-      if (!hasExplicitContentTypeHeader) {
-        lines.push(`  -H ${shellQuote(`Content-Type: ${primaryMedia.contentType}`)}`);
-      }
+      lines.push(`  -H ${shellQuote(`Content-Type: ${primaryMedia.contentType}`)}`);
       if (lowerType.includes('json')) {
         const rawBody =
           primaryMedia.example !== undefined
@@ -508,20 +513,24 @@ export function buildCurlCommand(
         const sampleBody = rawBody.replace(/'/g, `'\\''`);
         lines.push(`  -d '${sampleBody}'`);
       } else if (isFormUrlEncoded) {
-        if (primaryMedia.schema?.properties) {
-          const fieldNames = Object.keys(primaryMedia.schema.properties);
-          if (fieldNames.length > 0) {
-            for (const k of fieldNames) {
-              lines.push(`  --data-urlencode ${shellQuote(`${k}=value`)}`);
-            }
-          } else {
-            lines.push(`  --data-urlencode "field=value"`);
-          }
-        } else {
-          lines.push(`  -d "field=value"`);
+        const value =
+          primaryMedia.example !== undefined
+            ? primaryMedia.example
+            : primaryMedia.schema
+              ? generateMockExample(primaryMedia.schema, {}, 'request').value
+              : {};
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          for (const [name, item] of Object.entries(value))
+            lines.push(
+              `  --data-urlencode ${shellQuote(`${name}=${typeof item === 'object' ? JSON.stringify(item) : String(item)}`)}`
+            );
         }
+      } else if (typeof primaryMedia.example === 'string') {
+        lines.push(`  --data-raw ${shellQuote(primaryMedia.example)}`);
       } else {
-        lines.push(`  -d "field=value"`);
+        lines.push(
+          `  --data-binary ${shellQuote(lowerType.includes('xml') ? '@payload.xml' : '@payload.bin')}`
+        );
       }
     }
   }
