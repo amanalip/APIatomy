@@ -60,6 +60,33 @@ export const DiffView: React.FC<DiffViewProps> = ({
     return compareSpecTexts(debouncedOld, debouncedNew);
   }, [debouncedOld, debouncedNew]);
 
+  const isParsing = oldText !== debouncedOld || newText !== debouncedNew;
+  const ready =
+    Boolean(oldText.trim() && newText.trim()) && !isParsing && !oldParseError && !newParseError;
+  const changeCount =
+    added.length +
+    removed.length +
+    changed.length +
+    addedSchemas.length +
+    removedSchemas.length +
+    changedSchemas.length +
+    addedSecurity.length +
+    removedSecurity.length +
+    changedSecurity.length +
+    addedServers.length +
+    removedServers.length +
+    globalChanges.length;
+  const readiness =
+    !oldText.trim() || !newText.trim()
+      ? 'Choose both specifications to compare.'
+      : isParsing
+        ? 'Comparing specifications...'
+        : oldParseError || newParseError
+          ? 'Comparison unavailable. Fix the invalid specification.'
+          : changeCount
+            ? 'Comparison ready. Review the changes below.'
+            : 'Specifications are unchanged.';
+
   const pendingImports = useRef(new Map<string, AbortController>());
   useEffect(() => {
     const imports = pendingImports.current;
@@ -123,6 +150,9 @@ export const DiffView: React.FC<DiffViewProps> = ({
           {inputError}
         </p>
       )}
+      <p role="status" className="rounded-lg border border-slate-200 dark:border-slate-700 p-3">
+        {readiness}
+      </p>
       {(oldParseError || newParseError) && (
         <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 space-y-1">
           {oldParseError && (
@@ -255,131 +285,141 @@ export const DiffView: React.FC<DiffViewProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-          <div className="font-semibold text-emerald-700 dark:text-emerald-300">
-            Added ({added.length})
-          </div>
-          {added.map((e) => (
-            <div key={e.id} className="font-mono text-emerald-800 dark:text-emerald-200">
-              {e.method.toUpperCase()} {e.path}
-            </div>
-          ))}
-          {added.length === 0 && <div className="text-slate-500">None</div>}
-        </div>
-        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
-          <div className="font-semibold text-red-700 dark:text-red-300">
-            Removed ({removed.length}) - breaking
-          </div>
-          {removed.map((e) => (
-            <div key={e.id} className="font-mono text-red-800 dark:text-red-200">
-              {e.method.toUpperCase()} {e.path}
-            </div>
-          ))}
-          {removed.length === 0 && <div className="text-slate-500">None</div>}
-        </div>
-        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-          <div className="font-semibold text-amber-700 dark:text-amber-300">
-            Changed ({changed.length})
-          </div>
-          {changedDetails.map((d) => (
-            <div
-              key={d.key}
-              className="font-mono text-amber-800 dark:text-amber-200 flex justify-between"
-            >
-              <span>{d.key}</span>
-              <span className="text-[10px] px-1 rounded bg-white/50 dark:bg-black/20">{d.cls}</span>
-            </div>
-          ))}
-          {changed.length === 0 && <div className="text-slate-500">None</div>}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-          <div className="font-semibold text-slate-700 dark:text-slate-300">Schemas</div>
-          <div className="text-slate-600 dark:text-slate-400">
-            Added ({addedSchemas.length}): {addedSchemas.join(', ') || 'None'}
-          </div>
-          <div className="text-slate-600 dark:text-slate-400">
-            Removed ({removedSchemas.length}): {removedSchemas.join(', ') || 'None'}
-          </div>
-          <div className="text-amber-700 dark:text-amber-300">
-            Changed ({changedSchemas.length}): {changedSchemas.join(', ') || 'None'}
-          </div>
-        </div>
-        <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-          <div className="font-semibold text-slate-700 dark:text-slate-300">Security Schemes</div>
-          <div className="text-slate-600 dark:text-slate-400">
-            Added ({addedSecurity.length}): {addedSecurity.join(', ') || 'None'}
-          </div>
-          <div className="text-slate-600 dark:text-slate-400">
-            Removed ({removedSecurity.length}): {removedSecurity.join(', ') || 'None'}
-          </div>
-          <div className="text-amber-700 dark:text-amber-300">
-            Changed ({changedSecurity.length}): {changedSecurity.join(', ') || 'None'}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-          <div className="font-semibold text-slate-700 dark:text-slate-300">Servers</div>
-          {addedServers.length === 0 && removedServers.length === 0 ? (
-            <div className="text-slate-500">No server changes</div>
-          ) : (
-            <>
-              {addedServers.length > 0 && (
-                <div className="text-emerald-700 dark:text-emerald-300">
-                  Added: {addedServers.map((s) => s.url).join(', ')}
-                </div>
-              )}
-              {removedServers.length > 0 && (
-                <div className="text-red-700 dark:text-red-300">
-                  Removed: {removedServers.map((s) => s.url).join(', ')}
-                </div>
-              )}
-            </>
-          )}
-          {oldSpec &&
-            newSpec &&
-            oldSpec.servers.length === newSpec.servers.length &&
-            addedServers.length === 0 &&
-            removedServers.length === 0 && (
-              <div className="text-slate-500">
-                Servers: {oldSpec.servers.length} to {newSpec.servers.length}
+      {ready && (
+        <>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+              <div className="font-semibold text-emerald-700 dark:text-emerald-300">
+                Added ({added.length})
               </div>
-            )}
-        </div>
-        <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-          <div className="font-semibold text-slate-700 dark:text-slate-300">Global Metadata</div>
-          {globalChanges.length === 0 ? (
-            <div className="text-slate-500">No global changes</div>
-          ) : (
-            globalChanges.map((g) => (
-              <div key={g} className="text-amber-700 dark:text-amber-300">
-                {g}
+              {added.map((e) => (
+                <div key={e.id} className="font-mono text-emerald-800 dark:text-emerald-200">
+                  {e.method.toUpperCase()} {e.path}
+                </div>
+              ))}
+              {added.length === 0 && <div className="text-slate-500">None</div>}
+            </div>
+            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
+              <div className="font-semibold text-red-700 dark:text-red-300">
+                Removed ({removed.length}) - breaking
               </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {oldSpec && newSpec && (
-        <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-          <div className="font-semibold text-slate-700 dark:text-slate-300">Summary</div>
-          <div className="text-slate-600 dark:text-slate-400">
-            Schemas: {Object.keys(oldSpec.schemas).length} to {Object.keys(newSpec.schemas).length}{' '}
-            (
-            {Object.keys(newSpec.schemas).length - Object.keys(oldSpec.schemas).length > 0
-              ? '+'
-              : ''}
-            {Object.keys(newSpec.schemas).length - Object.keys(oldSpec.schemas).length}), Servers:{' '}
-            {oldSpec.servers.length} to {newSpec.servers.length}, Security:{' '}
-            {Object.keys(oldSpec.securitySchemes).length} to{' '}
-            {Object.keys(newSpec.securitySchemes).length}
+              {removed.map((e) => (
+                <div key={e.id} className="font-mono text-red-800 dark:text-red-200">
+                  {e.method.toUpperCase()} {e.path}
+                </div>
+              ))}
+              {removed.length === 0 && <div className="text-slate-500">None</div>}
+            </div>
+            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+              <div className="font-semibold text-amber-700 dark:text-amber-300">
+                Changed ({changed.length})
+              </div>
+              {changedDetails.map((d) => (
+                <div
+                  key={d.key}
+                  className="font-mono text-amber-800 dark:text-amber-200 flex justify-between"
+                >
+                  <span>{d.key}</span>
+                  <span className="text-[10px] px-1 rounded bg-white/50 dark:bg-black/20">
+                    {d.cls}
+                  </span>
+                </div>
+              ))}
+              {changed.length === 0 && <div className="text-slate-500">None</div>}
+            </div>
           </div>
-        </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <div className="font-semibold text-slate-700 dark:text-slate-300">Schemas</div>
+              <div className="text-slate-600 dark:text-slate-400">
+                Added ({addedSchemas.length}): {addedSchemas.join(', ') || 'None'}
+              </div>
+              <div className="text-slate-600 dark:text-slate-400">
+                Removed ({removedSchemas.length}): {removedSchemas.join(', ') || 'None'}
+              </div>
+              <div className="text-amber-700 dark:text-amber-300">
+                Changed ({changedSchemas.length}): {changedSchemas.join(', ') || 'None'}
+              </div>
+            </div>
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <div className="font-semibold text-slate-700 dark:text-slate-300">
+                Security Schemes
+              </div>
+              <div className="text-slate-600 dark:text-slate-400">
+                Added ({addedSecurity.length}): {addedSecurity.join(', ') || 'None'}
+              </div>
+              <div className="text-slate-600 dark:text-slate-400">
+                Removed ({removedSecurity.length}): {removedSecurity.join(', ') || 'None'}
+              </div>
+              <div className="text-amber-700 dark:text-amber-300">
+                Changed ({changedSecurity.length}): {changedSecurity.join(', ') || 'None'}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <div className="font-semibold text-slate-700 dark:text-slate-300">Servers</div>
+              {addedServers.length === 0 && removedServers.length === 0 ? (
+                <div className="text-slate-500">No server changes</div>
+              ) : (
+                <>
+                  {addedServers.length > 0 && (
+                    <div className="text-emerald-700 dark:text-emerald-300">
+                      Added: {addedServers.map((s) => s.url).join(', ')}
+                    </div>
+                  )}
+                  {removedServers.length > 0 && (
+                    <div className="text-red-700 dark:text-red-300">
+                      Removed: {removedServers.map((s) => s.url).join(', ')}
+                    </div>
+                  )}
+                </>
+              )}
+              {oldSpec &&
+                newSpec &&
+                oldSpec.servers.length === newSpec.servers.length &&
+                addedServers.length === 0 &&
+                removedServers.length === 0 && (
+                  <div className="text-slate-500">
+                    Servers: {oldSpec.servers.length} to {newSpec.servers.length}
+                  </div>
+                )}
+            </div>
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <div className="font-semibold text-slate-700 dark:text-slate-300">
+                Global Metadata
+              </div>
+              {globalChanges.length === 0 ? (
+                <div className="text-slate-500">No global changes</div>
+              ) : (
+                globalChanges.map((g) => (
+                  <div key={g} className="text-amber-700 dark:text-amber-300">
+                    {g}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {oldSpec && newSpec && (
+            <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <div className="font-semibold text-slate-700 dark:text-slate-300">Summary</div>
+              <div className="text-slate-600 dark:text-slate-400">
+                Schemas: {Object.keys(oldSpec.schemas).length} to{' '}
+                {Object.keys(newSpec.schemas).length} (
+                {Object.keys(newSpec.schemas).length - Object.keys(oldSpec.schemas).length > 0
+                  ? '+'
+                  : ''}
+                {Object.keys(newSpec.schemas).length - Object.keys(oldSpec.schemas).length}),
+                Servers: {oldSpec.servers.length} to {newSpec.servers.length}, Security:{' '}
+                {Object.keys(oldSpec.securitySchemes).length} to{' '}
+                {Object.keys(newSpec.securitySchemes).length}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
