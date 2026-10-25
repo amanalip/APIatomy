@@ -95,7 +95,16 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
   }
 
   // Check paths mapping in rawDoc
-  if (!rawDoc.paths || typeof rawDoc.paths !== 'object' || Array.isArray(rawDoc.paths)) {
+  const hasWebhookRoot =
+    typeof rawDoc.openapi === 'string' &&
+    /^3\.1\./.test(rawDoc.openapi) &&
+    rawDoc.webhooks !== null &&
+    typeof rawDoc.webhooks === 'object' &&
+    !Array.isArray(rawDoc.webhooks);
+  if (
+    (!rawDoc.paths || typeof rawDoc.paths !== 'object' || Array.isArray(rawDoc.paths)) &&
+    !hasWebhookRoot
+  ) {
     diagnostics.push({
       id: 'missing-paths-object',
       severity: 'error',
@@ -104,7 +113,7 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
       line: 1,
       source: 'schema',
     });
-  } else {
+  } else if (rawDoc.paths) {
     for (const pKey of Object.keys(rawDoc.paths as Record<string, unknown>)) {
       if (!pKey.startsWith('/')) {
         const line = findLineForPattern(rawText, pKey);
@@ -199,6 +208,8 @@ export function validateSpec(input: ValidationInput): DiagnosticItem[] {
     // Collect consumed and produced refs
     for (const ref of ep.consumedSchemaRefs) referencedSchemas.add(ref);
     for (const ref of ep.producedSchemaRefs) referencedSchemas.add(ref);
+    // Outbound destinations are logical names or runtime expressions, not inbound path templates.
+    if (ep.kind && ep.kind !== 'endpoint') continue;
 
     // Rule: Duplicate operationId validation
     if (ep.operationId) {

@@ -537,7 +537,7 @@ export function normalizeSpec(
 
   // Run linter / validator
   const validationDiagnostics = validateSpec({
-    endpoints: endpoints.filter((endpoint) => !endpoint.kind || endpoint.kind === 'endpoint'),
+    endpoints,
     schemas,
     rawText,
     rawDoc: doc,

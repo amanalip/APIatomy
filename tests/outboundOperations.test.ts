@@ -47,3 +47,10 @@ it('bounds branching callback expansion and warns rather than silently omitting 
   expect(spec.endpoints.filter((ep) => ep.kind === 'callback').length).toBe(2000);
   expect(spec.diagnostics.some((item) => item.id === 'outbound-count-limit')).toBe(true);
 });
+
+it('validates webhook-only roots without marking their payload schemas unused', () => {
+  const text = JSON.stringify({ openapi: '3.1.0', info: { title: 'Webhook only', version: '1' }, webhooks: { delivered: { post: { requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/Payload' } } } }, responses: { 200: { description: 'ok' } } } } }, components: { schemas: { Payload: { type: 'string' } } } });
+  const parsed = parseApiSpec(text);
+  expect(parsed.endpoints).toHaveLength(1);
+  expect(parsed.diagnostics.some((item) => item.id === 'missing-paths-object' || item.id.includes('unused-schema-Payload') || item.id.startsWith('missing-path-param-'))).toBe(false);
+});
