@@ -56,3 +56,18 @@ test('explores outbound webhooks and callback destinations', async ({ page }) =>
   await expect(page.getByText('Destination: {$request.body#/callbackUrl}', { exact: true })).toBeVisible();
   await expect(page.getByText('Triggered by post_/subscriptions', { exact: true })).toBeVisible();
 });
+
+test('shows named examples beside response schemas and preserves falsy values', async ({ page }) => {
+  await page.goto('/');
+  const text = JSON.stringify({ openapi: '3.0.3', info: { title: 'Examples', version: '1' }, paths: { '/example': { get: { responses: { 200: { description: 'ok', content: { 'application/json': { schema: { type: 'boolean' }, examples: { disabled: { summary: 'Feature disabled', description: 'The documented false value', value: false }, zero: { value: 0 }, empty: { value: '' }, nil: { value: null } } } } } } } } } });
+  await page.locator('#spec-upload-input').setInputFiles({ name: 'examples.json', mimeType: 'application/json', buffer: Buffer.from(text) });
+  await page.getByRole('button', { name: 'GET /example', exact: true }).click();
+  const payload = page.getByRole('region', { name: 'Response application/json', exact: true });
+  await payload.getByRole('tab', { name: 'Examples', exact: true }).click();
+  await expect(payload.getByText('Feature disabled', { exact: true })).toBeVisible();
+  await expect(payload.getByLabel('Response application/json example value')).toHaveText('false');
+  for (const [name, value] of [['zero', '0'], ['empty', '""'], ['nil', 'null']]) {
+    await payload.getByLabel('Response application/json example', { exact: true }).selectOption('named:' + name);
+    await expect(payload.getByLabel('Response application/json example value')).toHaveText(value);
+  }
+});
