@@ -1,3 +1,4 @@
+import { captureProject, encodeProject } from '../share/project';
 import { createPortal } from 'react-dom';
 import React, { useEffect, useState, useRef } from 'react';
 import { X, Save, FolderOpen, Trash2, Edit2 } from 'lucide-react';
@@ -30,6 +31,9 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
     Array<{ id: string; title?: string; savedAt: number }>
   >([]);
   const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState(currentTitle || 'my-spec');
+  const [updateId, setUpdateId] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const trapRef = useFocusTrap(true);
@@ -52,17 +56,29 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const handleSave = async () => {
-    const id = prompt('Workspace name:', currentTitle || 'my-spec');
-    if (!id) return;
+  const handleSave = async (id: string, overwrite: boolean) => {
+    if (!id.trim()) {
+      setError('Enter a workspace name');
+      return;
+    }
     setSaving(true);
     try {
       setError(null);
-      await saveWorkspace(id, currentText, currentTitle);
+      const project = captureProject(currentText);
+      encodeProject(project);
+      await saveWorkspace(id, currentText, currentTitle, project, overwrite);
       onSaved?.(currentText);
+      setMessage(`${overwrite ? 'Updated' : 'Saved'} workspace "${id}"`);
+      setUpdateId(null);
       await refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Save failed');
+      setError(
+        err instanceof DOMException && err.name === 'ConstraintError'
+          ? 'That workspace name already exists. Choose a new name or use Update workspace.'
+          : err instanceof Error
+            ? err.message
+            : 'Save failed'
+      );
     } finally {
       setSaving(false);
     }
@@ -118,17 +134,54 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
         </div>
         <div className="p-4 space-y-3">
           <p className="text-xs text-slate-600 dark:text-slate-400">
-            Named workspaces save only when you choose Save locally. A separate recovery draft is
-            stored automatically in this browser.
+            Named workspaces save only when you choose Save as new or Update existing. A separate
+            recovery draft is stored automatically in this browser.
           </p>
+          <label className="block text-xs text-slate-700 dark:text-slate-200">
+            New workspace name
+            <input
+              aria-label="New workspace name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 p-2"
+            />
+          </label>
           <button
-            onClick={handleSave}
+            onClick={() => void handleSave(name, false)}
             disabled={saving}
             className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50"
           >
             <Save className="w-3.5 h-3.5" />
-            {saving ? 'Saving...' : 'Save locally'}
+            {saving ? 'Working...' : 'Save as new'}
           </button>
+          {message && (
+            <p role="status" className="text-xs text-emerald-700 dark:text-emerald-300">
+              {message}
+            </p>
+          )}
+          {updateId !== null && (
+            <div className="rounded border border-amber-300 p-3 space-y-2 text-xs">
+              <p>
+                Replace workspace "{updateId}" with the current project, including its dependencies?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  disabled={saving}
+                  onClick={() => void handleSave(updateId, true)}
+                  className="rounded bg-blue-600 px-3 py-2 text-white"
+                >
+                  Update existing
+                </button>
+                <button
+                  disabled={saving}
+                  onClick={() => setUpdateId(null)}
+                  className="rounded border px-3 py-2"
+                >
+                  Cancel update
+                </button>
+              </div>
+            </div>
+          )}
           {error && (
             <p role="alert" className="text-xs text-red-600 dark:text-red-400">
               {error}
@@ -152,6 +205,14 @@ export const WorkspaceDialog: React.FC<WorkspaceDialogProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      title="Update workspace"
+                      disabled={saving}
+                      onClick={() => setUpdateId(ws.id)}
+                      className="p-1.5 rounded border border-slate-200 dark:border-slate-600"
+                    >
+                      <Save className="w-3 h-3" />
+                    </button>
                     <button
                       onClick={() => handleOpen(ws.id)}
                       className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-600"
