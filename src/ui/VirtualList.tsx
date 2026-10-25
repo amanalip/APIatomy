@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface VirtualListProps<T> {
   items: T[];
@@ -6,6 +6,7 @@ interface VirtualListProps<T> {
   itemHeight: number;
   renderItem: (item: T, index: number) => React.ReactNode;
   overscan?: number;
+  scrollToIndex?: number;
 }
 
 export function VirtualList<T>({
@@ -14,9 +15,19 @@ export function VirtualList<T>({
   itemHeight,
   renderItem,
   overscan = 5,
+  scrollToIndex,
 }: VirtualListProps<T>) {
   const [scrollTop, setScrollTop] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollToIndex === undefined || scrollToIndex < 0 || !ref.current) return;
+    const top = scrollToIndex * itemHeight;
+    if (top < ref.current.scrollTop || top + itemHeight > ref.current.scrollTop + height) {
+      ref.current.scrollTop = Math.max(0, top - height / 2);
+      setScrollTop(ref.current.scrollTop);
+    }
+  }, [scrollToIndex, itemHeight, height]);
 
   const onScroll = (e: React.UIEvent<HTMLDivElement>) => setScrollTop(e.currentTarget.scrollTop);
 

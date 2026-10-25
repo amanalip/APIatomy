@@ -209,6 +209,7 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
             <div ref={schemaListRef} className="flex-1 min-h-[300px]">
               <VirtualList
                 items={schemaNames}
+                scrollToIndex={schemaNames.indexOf(activeSchemaName)}
                 height={Math.max(300, schemaListHeight || 500)}
                 itemHeight={36}
                 renderItem={(name) => {
@@ -219,7 +220,6 @@ export const SchemaViewer: React.FC<SchemaViewerProps> = ({
                       key={name}
                       ref={isSelected ? activeSchemaRef : undefined}
                       onClick={() => {
-                        navigation.openDetails();
                         navigation.openDetails();
                         setActiveSchemaName(name);
                         onSelectSchema?.(name, s);
