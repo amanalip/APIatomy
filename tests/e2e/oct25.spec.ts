@@ -39,3 +39,17 @@ test('preserves comparison inputs across tabs and supports independent clearing'
   await expect(page.getByRole('textbox', { name: 'Old specification', exact: true })).toHaveValue('');
   await expect(page.getByRole('textbox', { name: 'New specification', exact: true })).toHaveValue(/Independent/);
 });
+
+test('explains response changes and distinguishes an incomplete comparison', async ({ page }) => {
+  const spec = (type: string) => JSON.stringify({ openapi: '3.0.3', info: { title: 'Prices', version: '1' }, paths: { '/price': { get: { responses: { 200: { description: 'ok', content: { 'application/json': { schema: { type } } } } } } } } });
+  await page.goto('/');
+  await selectView(page, /^Diff$/);
+  await expect(page.getByText('Choose both specifications to compare.')).toBeVisible();
+  await page.getByRole('textbox', { name: 'Old specification', exact: true }).fill(spec('number'));
+  await page.getByRole('textbox', { name: 'New specification', exact: true }).fill(spec('string'));
+  await page.getByText('get /price breaking', { exact: true }).click();
+  await expect(page.getByText('responses[200].content[application/json].schema.type', { exact: true })).toBeVisible();
+  await expect(page.getByText('Before', { exact: true })).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Breaking endpoint changes only' }).check();
+  await expect(page.getByText('Changed (1)', { exact: true })).toBeVisible();
+});
