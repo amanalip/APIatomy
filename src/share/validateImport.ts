@@ -19,5 +19,11 @@ export function validateImportRoot(text: string, label = 'Specification'): void 
 export function validateImportProject(project: SpecProject): SpecProject {
   validateProject(project);
   validateImportRoot(project.specText, project.rootFilename || 'Specification');
+  for (const [name, text] of Object.entries(project.files)) {
+    if (name === project.rootFilename) continue;
+    const result = parseRawText(text);
+    const error = result.diagnostics.find((item) => item.severity === 'error');
+    if (error) throw new Error(`${name}: ${error.message}`);
+  }
   return project;
 }
