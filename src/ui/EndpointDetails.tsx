@@ -1,3 +1,4 @@
+import { PayloadViewer } from './PayloadViewer';
 import { ownValue } from '../utils/dictionary';
 import { dictionary } from '../utils/dictionary';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
@@ -403,15 +404,17 @@ export const EndpointDetails: React.FC<EndpointDetailsProps> = ({
                         )}
                       </div>
 
-                      {c.schema && (
-                        <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
-                          <SchemaPropertyTree
-                            schema={c.schema}
-                            schemas={schemas}
-                            onSelectSchema={onSelectSchema}
-                          />
-                        </div>
-                      )}
+                      <PayloadViewer media={c} direction="request" schemas={schemas}>
+                        {c.schema && (
+                          <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-300 overflow-x-auto">
+                            <SchemaPropertyTree
+                              schema={c.schema}
+                              schemas={schemas}
+                              onSelectSchema={onSelectSchema}
+                            />
+                          </div>
+                        )}
+                      </PayloadViewer>
                     </div>
                   ))}
                 </div>
