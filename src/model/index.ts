@@ -13,11 +13,19 @@ export interface ParameterModel {
   allowReserved?: boolean;
 }
 
+export interface PayloadExampleModel {
+  summary?: string;
+  description?: string;
+  value?: unknown;
+  externalValue?: string;
+  unresolvedReason?: string;
+}
+
 export interface MediaTypeModel {
   contentType: string;
   schema?: SchemaModel;
   example?: unknown;
-  examples?: Record<string, { summary?: string; description?: string; value?: unknown }>;
+  examples?: Record<string, PayloadExampleModel>;
 }
 
 export interface RequestBodyModel {
